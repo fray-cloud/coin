@@ -3,7 +3,7 @@ import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  console.log('worker-service started');
-  // Kafka microservice transport will be configured in Phase 1
+  await app.init();
+  console.log('worker-service started - exchange WebSocket connections active');
 }
 bootstrap();

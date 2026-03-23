@@ -1,0 +1,101 @@
+import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import { Kafka, Producer } from 'kafkajs';
+import Redis from 'ioredis';
+import { Ticker } from '@coin/types';
+import { KAFKA_TOPICS } from '@coin/kafka-contracts';
+import {
+  UpbitWebSocket,
+  BinanceWebSocket,
+  BybitWebSocket,
+  IExchangeWebSocket,
+} from '@coin/exchange-adapters';
+
+@Injectable()
+export class ExchangesService implements OnModuleInit, OnModuleDestroy {
+  private readonly logger = new Logger(ExchangesService.name);
+  private readonly adapters: IExchangeWebSocket[] = [];
+  private kafka: Kafka;
+  private producer: Producer;
+  private redis: Redis;
+
+  constructor() {
+    this.kafka = new Kafka({
+      clientId: 'worker-service',
+      brokers: (process.env.KAFKA_BROKERS || 'localhost:9092').split(','),
+    });
+    this.producer = this.kafka.producer();
+    this.redis = new Redis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: Number(process.env.REDIS_PORT || 6379),
+    });
+  }
+
+  async onModuleInit() {
+    await this.producer.connect();
+    this.logger.log('Kafka producer connected');
+
+    const upbit = new UpbitWebSocket({
+      onConnected: () => this.logger.log('Upbit WebSocket connected'),
+      onDisconnected: () => this.logger.warn('Upbit WebSocket disconnected'),
+      onError: (err) => this.logger.error(`Upbit WS error: ${err.message}`),
+    });
+
+    const binance = new BinanceWebSocket({
+      onConnected: () => this.logger.log('Binance WebSocket connected'),
+      onDisconnected: () => this.logger.warn('Binance WebSocket disconnected'),
+      onError: (err) => this.logger.error(`Binance WS error: ${err.message}`),
+    });
+
+    const bybit = new BybitWebSocket({
+      onConnected: () => this.logger.log('Bybit WebSocket connected'),
+      onDisconnected: () => this.logger.warn('Bybit WebSocket disconnected'),
+      onError: (err) => this.logger.error(`Bybit WS error: ${err.message}`),
+    });
+
+    const tickerHandler = (ticker: Ticker) => this.handleTicker(ticker);
+
+    // Upbit: KRW-BTC 형식
+    upbit.subscribeTicker(['KRW-BTC', 'KRW-ETH', 'KRW-XRP'], tickerHandler);
+    upbit.connect();
+
+    // Binance: BTCUSDT 형식
+    binance.subscribeTicker(['BTCUSDT', 'ETHUSDT', 'XRPUSDT'], tickerHandler);
+
+    // Bybit: BTCUSDT 형식
+    bybit.subscribeTicker(['BTCUSDT', 'ETHUSDT', 'XRPUSDT'], tickerHandler);
+    bybit.connect();
+
+    this.adapters.push(upbit, binance, bybit);
+    this.logger.log('All exchange WebSocket adapters started');
+  }
+
+  async onModuleDestroy() {
+    for (const adapter of this.adapters) {
+      adapter.disconnect();
+    }
+    await this.producer.disconnect();
+    this.redis.disconnect();
+    this.logger.log('All connections closed');
+  }
+
+  private async handleTicker(ticker: Ticker) {
+    try {
+      // Redis cache
+      const key = `ticker:${ticker.exchange}:${ticker.symbol}`;
+      await this.redis.set(key, JSON.stringify(ticker), 'EX', 5);
+
+      // Kafka publish
+      await this.producer.send({
+        topic: KAFKA_TOPICS.MARKET_TICKER_UPDATED,
+        messages: [
+          {
+            key: `${ticker.exchange}:${ticker.symbol}`,
+            value: JSON.stringify(ticker),
+          },
+        ],
+      });
+    } catch (err) {
+      this.logger.error(`Failed to process ticker: ${err}`);
+    }
+  }
+}

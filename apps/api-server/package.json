@@ -21,6 +21,8 @@
     "@nestjs/microservices": "^11",
     "@nestjs/websockets": "^11",
     "@nestjs/platform-socket.io": "^11",
+    "ioredis": "^5",
+    "socket.io": "^4",
     "kafkajs": "^2",
     "reflect-metadata": "^0.2",
     "rxjs": "^7"

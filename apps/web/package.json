@@ -11,9 +11,11 @@
   },
   "dependencies": {
     "@coin/types": "workspace:*",
+    "lightweight-charts": "^4",
     "next": "^15",
     "react": "^19",
-    "react-dom": "^19"
+    "react-dom": "^19",
+    "socket.io-client": "^4"
   },
   "devDependencies": {
     "@coin/tsconfig": "workspace:*",
