@@ -1,0 +1,23 @@
+services:
+  api-server:
+    build:
+      context: ../..
+      dockerfile: apps/api-server/Dockerfile
+      target: ${BUILD_TARGET:-production}
+    env_file:
+      - ../../.env
+    expose:
+      - "3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks: [coin-net]
+    restart: unless-stopped
+
+networks:
+  coin-net:
+    name: coin-net
