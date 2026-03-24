@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-kakao';
 import { ConfigService } from '@nestjs/config';
@@ -6,6 +6,8 @@ import { AuthService } from '../auth.service';
 
 @Injectable()
 export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
+  private readonly logger = new Logger(KakaoStrategy.name);
+
   constructor(
     config: ConfigService,
     private readonly authService: AuthService,
@@ -32,8 +34,7 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
     done: (error: Error | null, user?: unknown) => void,
   ) {
     const kakaoAccount = profile._json?.kakao_account;
-    const email = kakaoAccount?.email;
-    if (!email) return done(new Error('No email from Kakao'));
+    const email = kakaoAccount?.email || `kakao_${profile.id}@placeholder.local`;
 
     const user = await this.authService.validateOAuthUser('kakao', String(profile.id), {
       email,

@@ -10,7 +10,14 @@ async function tryRefresh(): Promise<boolean> {
     method: 'POST',
     credentials: 'same-origin',
   })
-    .then((res) => res.ok)
+    .then((res) => {
+      if (res.ok && typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('auth:refresh', { detail: { timestamp: Date.now() } }),
+        );
+      }
+      return res.ok;
+    })
     .finally(() => {
       isRefreshing = false;
       refreshPromise = null;
