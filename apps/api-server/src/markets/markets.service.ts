@@ -64,7 +64,14 @@ export class MarketsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async getAllTickers(): Promise<Ticker[]> {
-    const keys = await this.redis.keys('ticker:*');
+    const keys: string[] = [];
+    let cursor = '0';
+    do {
+      const [nextCursor, batch] = await this.redis.scan(cursor, 'MATCH', 'ticker:*', 'COUNT', 100);
+      cursor = nextCursor;
+      keys.push(...batch);
+    } while (cursor !== '0');
+
     if (keys.length === 0) return [];
     const values = await this.redis.mget(...keys);
     return values

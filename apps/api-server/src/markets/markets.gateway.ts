@@ -11,7 +11,11 @@ import { MarketsService } from './markets.service';
 
 @WebSocketGateway({
   path: '/ws',
-  cors: { origin: '*' },
+  cors: {
+    origin: process.env.NODE_ENV === 'production'
+      ? (process.env.WS_CORS_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean)
+      : '*',
+  },
 })
 export class MarketsGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
