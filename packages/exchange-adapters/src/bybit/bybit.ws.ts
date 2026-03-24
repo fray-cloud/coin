@@ -85,20 +85,26 @@ export class BybitWebSocket implements IExchangeWebSocket {
 
   private normalizeTicker(raw: Record<string, unknown>, topic: string): Ticker {
     const symbol = topic.replace('tickers.', '');
+
+    const lastPrice = Number(raw.lastPrice);
+    const prevPrice24h = Number(raw.prevPrice24h);
+    const hasValidChange = Number.isFinite(lastPrice) && Number.isFinite(prevPrice24h);
+
+    const price24hPcnt = Number(raw.price24hPcnt);
+    const hasValidChangePercent = Number.isFinite(price24hPcnt);
+
+    const rawTimestamp = typeof raw.ts === 'number' ? raw.ts : undefined;
+
     return {
       exchange: 'bybit',
       symbol,
       price: raw.lastPrice as string,
       volume24h: raw.volume24h as string,
-      change24h: String(
-        Number(raw.lastPrice) - Number(raw.prevPrice24h),
-      ),
-      changePercent24h: raw.price24hPcnt
-        ? String(Number(raw.price24hPcnt) * 100)
-        : '0',
+      change24h: hasValidChange ? String(lastPrice - prevPrice24h) : '0',
+      changePercent24h: hasValidChangePercent ? String(price24hPcnt * 100) : '0',
       high24h: raw.highPrice24h as string,
       low24h: raw.lowPrice24h as string,
-      timestamp: Date.now(),
+      timestamp: rawTimestamp ?? Date.now(),
     };
   }
 

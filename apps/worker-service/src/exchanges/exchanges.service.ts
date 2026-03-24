@@ -80,20 +80,21 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
 
   private async handleTicker(ticker: Ticker) {
     try {
-      // Redis cache
       const key = `ticker:${ticker.exchange}:${ticker.symbol}`;
-      await this.redis.set(key, JSON.stringify(ticker), 'EX', 5);
+      const tickerJson = JSON.stringify(ticker);
 
-      // Kafka publish
-      await this.producer.send({
-        topic: KAFKA_TOPICS.MARKET_TICKER_UPDATED,
-        messages: [
-          {
-            key: `${ticker.exchange}:${ticker.symbol}`,
-            value: JSON.stringify(ticker),
-          },
-        ],
-      });
+      await Promise.all([
+        this.redis.set(key, tickerJson, 'EX', 5),
+        this.producer.send({
+          topic: KAFKA_TOPICS.MARKET_TICKER_UPDATED,
+          messages: [
+            {
+              key: `${ticker.exchange}:${ticker.symbol}`,
+              value: tickerJson,
+            },
+          ],
+        }),
+      ]);
     } catch (err) {
       this.logger.error(`Failed to process ticker: ${err}`);
     }
