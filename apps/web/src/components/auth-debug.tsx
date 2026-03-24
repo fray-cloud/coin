@@ -3,17 +3,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { apiFetch } from '@/lib/api-client';
 
-function getCookieExpiry(name: string): number | null {
-  // access_token is httpOnly, so we can't read it directly.
-  // Instead we track it via the last login/refresh timestamp + known TTL.
-  return null;
+interface AuthDebugProps {
+  accessTtl: number; // seconds, from server env
 }
 
-export function AuthDebug() {
+export function AuthDebug({ accessTtl }: AuthDebugProps) {
   const [logs, setLogs] = useState<string[]>([]);
   const [secondsLeft, setSecondsLeft] = useState<number | null>(null);
   const [loginTime, setLoginTime] = useState<number | null>(null);
-  const ttl = 60; // matches dev JWT_ACCESS_EXPIRES_IN=1m
 
   const addLog = useCallback((msg: string) => {
     const time = new Date().toLocaleTimeString();
@@ -50,7 +47,7 @@ export function AuthDebug() {
     }
     const interval = setInterval(() => {
       const elapsed = Math.floor((Date.now() - loginTime) / 1000);
-      const remaining = ttl - elapsed;
+      const remaining = accessTtl - elapsed;
       setSecondsLeft(remaining > 0 ? remaining : 0);
     }, 1000);
     return () => clearInterval(interval);

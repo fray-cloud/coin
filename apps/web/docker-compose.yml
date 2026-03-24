@@ -7,8 +7,9 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-/api}
       - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-/ws}
+      - JWT_ACCESS_EXPIRES_IN=${JWT_ACCESS_EXPIRES_IN:-15m}
     expose:
-      - "3001"
+      - '3001'
     networks: [coin-net]
     restart: unless-stopped
 
