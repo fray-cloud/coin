@@ -9,6 +9,8 @@ import {
   BybitWebSocket,
   IExchangeWebSocket,
 } from '@coin/exchange-adapters';
+import { PaperEngineService } from '../orders/paper-engine.service';
+import { OrdersService } from '../orders/orders.service';
 
 @Injectable()
 export class ExchangesService implements OnModuleInit, OnModuleDestroy {
@@ -18,7 +20,10 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
   private producer: Producer;
   private redis: Redis;
 
-  constructor() {
+  constructor(
+    private readonly paperEngine: PaperEngineService,
+    private readonly ordersService: OrdersService,
+  ) {
     this.kafka = new Kafka({
       clientId: 'worker-service',
       brokers: (process.env.KAFKA_BROKERS || 'localhost:9092').split(','),
@@ -95,6 +100,9 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
           ],
         }),
       ]);
+
+      // 페이퍼 지정가 주문 체결 체크
+      await this.paperEngine.checkPendingOrders(ticker, this.ordersService.getProducer());
     } catch (err) {
       this.logger.error(`Failed to process ticker: ${err}`);
     }

@@ -97,6 +97,16 @@ export class ExchangeKeysService {
     return adapter.getOpenOrders(credentials, symbol);
   }
 
+  async getMarkets(userId: string, id: string) {
+    const key = await this.prisma.exchangeKey.findFirst({
+      where: { id, userId },
+    });
+    if (!key) throw new NotFoundException('Exchange key not found');
+
+    const adapter = REST_ADAPTERS[key.exchange as ExchangeId]();
+    return adapter.getMarkets();
+  }
+
   private async getAdapterWithCredentials(userId: string, id: string) {
     const key = await this.prisma.exchangeKey.findFirst({
       where: { id, userId },

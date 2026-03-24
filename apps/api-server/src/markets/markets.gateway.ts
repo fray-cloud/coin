@@ -12,14 +12,16 @@ import { MarketsService } from './markets.service';
 @WebSocketGateway({
   path: '/ws',
   cors: {
-    origin: process.env.NODE_ENV === 'production'
-      ? (process.env.WS_CORS_ORIGINS ?? '').split(',').map((o) => o.trim()).filter(Boolean)
-      : '*',
+    origin:
+      process.env.NODE_ENV === 'production'
+        ? (process.env.WS_CORS_ORIGINS ?? '')
+            .split(',')
+            .map((o) => o.trim())
+            .filter(Boolean)
+        : '*',
   },
 })
-export class MarketsGateway
-  implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
-{
+export class MarketsGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
   private readonly logger = new Logger(MarketsGateway.name);
 
   @WebSocketServer()
@@ -31,10 +33,28 @@ export class MarketsGateway
     this.marketsService.onTicker((ticker) => {
       this.server.emit('ticker', ticker);
     });
+
+    this.marketsService.onOrderUpdate((payload) => {
+      this.server.to(`user:${payload.userId}`).emit('order:updated', {
+        orderId: payload.orderId,
+        status: payload.status,
+        filledQuantity: payload.filledQuantity,
+        filledPrice: payload.filledPrice,
+        fee: payload.fee,
+        feeCurrency: payload.feeCurrency,
+      });
+    });
+
     this.logger.log('WebSocket Gateway initialized');
   }
 
   handleConnection(client: Socket) {
+    // userId를 handshake query에서 추출하여 room join
+    const userId = client.handshake.query.userId as string;
+    if (userId) {
+      client.join(`user:${userId}`);
+      this.logger.debug(`Client ${client.id} joined room user:${userId}`);
+    }
     this.logger.debug(`Client connected: ${client.id}`);
   }
 
