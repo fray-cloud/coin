@@ -8,9 +8,13 @@
     "test": "turbo run test",
     "clean": "turbo run clean",
     "db:generate": "turbo run db:generate",
-    "db:migrate": "turbo run db:migrate"
+    "db:migrate": "turbo run db:migrate",
+    "prepare": "husky"
   },
   "devDependencies": {
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
+    "prettier": "^3",
     "turbo": "^2"
   },
   "packageManager": "pnpm@9.15.4",
