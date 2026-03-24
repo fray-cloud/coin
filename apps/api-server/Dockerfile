@@ -21,6 +21,7 @@ RUN pnpm install --frozen-lockfile
 FROM base AS development
 COPY --from=deps /app ./
 COPY . .
+RUN pnpm install --frozen-lockfile
 WORKDIR /app/apps/api-server
 EXPOSE 3000
 CMD ["sh", "-c", "pnpm --filter @coin/database db:generate && pnpm --filter @coin/database build && pnpm --filter @coin/database exec prisma migrate deploy && pnpm dev"]
