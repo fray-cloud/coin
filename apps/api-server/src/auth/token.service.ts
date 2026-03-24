@@ -6,6 +6,19 @@ import { Response } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import type { User } from '@coin/database';
 
+function parseExpiresInMs(value: string): number {
+  const match = value.match(/^(\d+)(s|m|h|d)$/);
+  if (!match) return 15 * 60 * 1000;
+  const num = parseInt(match[1]);
+  switch (match[2]) {
+    case 's': return num * 1000;
+    case 'm': return num * 60 * 1000;
+    case 'h': return num * 60 * 60 * 1000;
+    case 'd': return num * 24 * 60 * 60 * 1000;
+    default: return 15 * 60 * 1000;
+  }
+}
+
 @Injectable()
 export class TokenService {
   constructor(
@@ -90,13 +103,20 @@ export class TokenService {
       path: '/',
     };
 
+    const accessMaxAge = parseExpiresInMs(
+      this.config.get('JWT_ACCESS_EXPIRES_IN', '15m'),
+    );
+    const refreshMaxAge = parseExpiresInMs(
+      this.config.get('JWT_REFRESH_EXPIRES_IN', '7d'),
+    );
+
     res.cookie('access_token', tokens.accessToken, {
       ...cookieOpts,
-      maxAge: 15 * 60 * 1000,
+      maxAge: accessMaxAge,
     });
     res.cookie('refresh_token', tokens.refreshToken, {
       ...cookieOpts,
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: refreshMaxAge,
     });
   }
 
