@@ -23,7 +23,7 @@ COPY --from=deps /app ./
 COPY . .
 WORKDIR /app/apps/api-server
 EXPOSE 3000
-CMD ["pnpm", "dev"]
+CMD ["sh", "-c", "pnpm --filter @coin/database db:generate && npx prisma migrate deploy --schema=../../packages/database/prisma/schema.prisma && pnpm dev"]
 
 # Build + deploy
 FROM base AS builder
@@ -40,6 +40,7 @@ WORKDIR /app
 RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 COPY --from=builder /app/deployed ./
+COPY --from=builder /app/packages/database/prisma ./prisma
 USER nestjs
 EXPOSE 3000
-CMD ["node", "dist/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]
