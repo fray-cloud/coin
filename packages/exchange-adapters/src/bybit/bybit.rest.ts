@@ -101,6 +101,12 @@ export class BybitRest implements IExchangeRest {
       throw new Error(`Bybit API error ${res.status}: ${body}`);
     }
 
+    const cloned = res.clone();
+    const json = (await cloned.json()) as { retCode: number; retMsg: string };
+    if (json.retCode !== 0) {
+      throw new Error(`Bybit API error: ${json.retMsg}`);
+    }
+
     return res;
   }
 }
