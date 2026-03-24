@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Provider } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -10,6 +10,14 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { KakaoStrategy } from './strategies/kakao.strategy';
 import { NaverStrategy } from './strategies/naver.strategy';
+
+function oauthProviders(): Provider[] {
+  const providers: Provider[] = [];
+  if (process.env.GOOGLE_CLIENT_ID) providers.push(GoogleStrategy);
+  if (process.env.KAKAO_CLIENT_ID) providers.push(KakaoStrategy);
+  if (process.env.NAVER_CLIENT_ID) providers.push(NaverStrategy);
+  return providers;
+}
 
 @Module({
   imports: [
@@ -24,15 +32,7 @@ import { NaverStrategy } from './strategies/naver.strategy';
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    TokenService,
-    LocalStrategy,
-    JwtStrategy,
-    GoogleStrategy,
-    KakaoStrategy,
-    NaverStrategy,
-  ],
+  providers: [AuthService, TokenService, LocalStrategy, JwtStrategy, ...oauthProviders()],
   exports: [AuthService, TokenService],
 })
 export class AuthModule {}
