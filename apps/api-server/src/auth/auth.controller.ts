@@ -8,6 +8,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
@@ -68,7 +69,7 @@ export class AuthController {
     const refreshToken = req.cookies?.refresh_token;
     if (!refreshToken) {
       this.tokenService.clearCookies(res);
-      return res.status(HttpStatus.UNAUTHORIZED).json({ message: 'No refresh token' });
+      throw new UnauthorizedException('No refresh token');
     }
     const tokens = await this.tokenService.rotateRefreshToken(refreshToken);
     this.tokenService.setCookies(res, tokens);
