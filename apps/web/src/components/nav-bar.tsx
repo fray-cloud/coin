@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { getMe, logout } from '@/lib/api-client';
 
 export function NavBar() {
@@ -11,7 +11,9 @@ export function NavBar() {
   const [user, setUser] = useState<{ email: string; nickname?: string } | null>(null);
 
   useEffect(() => {
-    getMe().then(setUser).catch(() => setUser(null));
+    getMe()
+      .then(setUser)
+      .catch(() => setUser(null));
   }, []);
 
   const handleLogout = async () => {
@@ -41,12 +43,12 @@ export function NavBar() {
             </>
           ) : (
             <>
-              <Button variant="ghost" size="sm" asChild>
-                <Link href="/login">Login</Link>
-              </Button>
-              <Button size="sm" asChild>
-                <Link href="/signup">Sign up</Link>
-              </Button>
+              <Link href="/login" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+                Login
+              </Link>
+              <Link href="/signup" className={buttonVariants({ size: 'sm' })}>
+                Sign up
+              </Link>
             </>
           )}
         </div>

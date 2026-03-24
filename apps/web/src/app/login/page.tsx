@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
@@ -76,15 +76,24 @@ export default function LoginPage() {
           </div>
 
           <div className="grid gap-2">
-            <Button variant="outline" className="w-full" asChild>
-              <a href="/api/auth/google">Google</a>
-            </Button>
-            <Button variant="outline" className="w-full" asChild>
-              <a href="/api/auth/kakao">Kakao</a>
-            </Button>
-            <Button variant="outline" className="w-full" asChild>
-              <a href="/api/auth/naver">Naver</a>
-            </Button>
+            <a
+              href="/api/auth/google"
+              className={buttonVariants({ variant: 'outline', className: 'w-full' })}
+            >
+              Google
+            </a>
+            <a
+              href="/api/auth/kakao"
+              className={buttonVariants({ variant: 'outline', className: 'w-full' })}
+            >
+              Kakao
+            </a>
+            <a
+              href="/api/auth/naver"
+              className={buttonVariants({ variant: 'outline', className: 'w-full' })}
+            >
+              Naver
+            </a>
           </div>
 
           <p className="mt-4 text-center text-sm text-muted-foreground">
