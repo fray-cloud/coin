@@ -23,7 +23,7 @@ COPY --from=deps /app ./
 COPY . .
 WORKDIR /app/apps/api-server
 EXPOSE 3000
-CMD ["sh", "-c", "pnpm --filter @coin/database db:generate && pnpm --filter @coin/database exec prisma migrate deploy && pnpm dev"]
+CMD ["sh", "-c", "pnpm --filter @coin/database db:generate && pnpm --filter @coin/database build && pnpm --filter @coin/database exec prisma migrate deploy && pnpm dev"]
 
 # Build + deploy
 FROM base AS builder

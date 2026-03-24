@@ -11,9 +11,9 @@ export class NaverStrategy extends PassportStrategy(Strategy, 'naver') {
     private readonly authService: AuthService,
   ) {
     super({
-      clientID: config.get('NAVER_CLIENT_ID'),
-      clientSecret: config.get('NAVER_CLIENT_SECRET'),
-      callbackURL: config.get('NAVER_CALLBACK_URL'),
+      clientID: config.get<string>('NAVER_CLIENT_ID', ''),
+      clientSecret: config.get<string>('NAVER_CLIENT_SECRET', ''),
+      callbackURL: config.get<string>('NAVER_CALLBACK_URL', ''),
     });
   }
 

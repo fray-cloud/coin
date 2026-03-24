@@ -4,7 +4,7 @@ const isProd = process.env.NODE_ENV === 'production';
 
 export class SignupDto {
   @IsEmail()
-  email: string;
+  email!: string;
 
   @IsString()
   @MinLength(isProd ? 8 : 4)
@@ -16,7 +16,7 @@ export class SignupDto {
         : 'Password is too short',
     },
   )
-  password: string;
+  password!: string;
 
   @IsString()
   @IsOptional()
