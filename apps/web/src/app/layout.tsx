@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import { NavBar } from '@/components/nav-bar';
 
 export const metadata: Metadata = {
   title: 'Coin Trading Platform',
@@ -13,7 +14,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
-      <body>{children}</body>
+      <body>
+        <NavBar />
+        <main>{children}</main>
+      </body>
     </html>
   );
 }
