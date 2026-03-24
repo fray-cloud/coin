@@ -1,0 +1,21 @@
+services:
+  worker-service:
+    build:
+      context: ../..
+      dockerfile: apps/worker-service/Dockerfile
+      target: ${BUILD_TARGET:-production}
+    env_file:
+      - ../../.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks: [coin-net]
+    restart: unless-stopped
+
+networks:
+  coin-net:
+    name: coin-net

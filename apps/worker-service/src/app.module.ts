@@ -1,0 +1,7 @@
+import { Module } from '@nestjs/common';
+import { ExchangesModule } from './exchanges/exchanges.module';
+
+@Module({
+  imports: [ExchangesModule],
+})
+export class AppModule {}

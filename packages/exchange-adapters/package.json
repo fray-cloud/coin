@@ -1,0 +1,19 @@
+{
+  "name": "@coin/exchange-adapters",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@coin/types": "workspace:*",
+    "ws": "^8"
+  },
+  "devDependencies": {
+    "@types/ws": "^8",
+    "typescript": "^5"
+  }
+}
