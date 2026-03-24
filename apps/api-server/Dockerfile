@@ -23,7 +23,7 @@ COPY --from=deps /app ./
 COPY . .
 WORKDIR /app/apps/api-server
 EXPOSE 3000
-CMD ["sh", "-c", "pnpm --filter @coin/database db:generate && npx prisma migrate deploy --schema=../../packages/database/prisma/schema.prisma && pnpm dev"]
+CMD ["sh", "-c", "pnpm --filter @coin/database db:generate && pnpm --filter @coin/database exec prisma migrate deploy && pnpm dev"]
 
 # Build + deploy
 FROM base AS builder
@@ -37,10 +37,13 @@ RUN pnpm --filter @coin/types --filter @coin/utils --filter @coin/database --fil
 FROM node:20-alpine AS production
 ENV NODE_ENV=production
 WORKDIR /app
-RUN addgroup --system --gid 1001 nodejs && \
+RUN corepack enable && corepack prepare pnpm@9.15.4 --activate && \
+    addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 COPY --from=builder /app/deployed ./
 COPY --from=builder /app/packages/database/prisma ./prisma
+COPY --from=builder /app/node_modules/.pnpm/prisma@*/node_modules/prisma ./node_modules/prisma
+COPY --from=builder /app/node_modules/.pnpm/@prisma+engines@*/node_modules/@prisma/engines ./node_modules/@prisma/engines
 USER nestjs
 EXPOSE 3000
-CMD ["sh", "-c", "npx prisma migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]
