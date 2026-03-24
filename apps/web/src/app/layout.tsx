@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { NavBar } from '@/components/nav-bar';
 import { AuthDebug } from '@/components/auth-debug';
+import { Providers } from './providers';
 
 export const metadata: Metadata = {
   title: 'Coin Trading Platform',
@@ -32,9 +33,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko">
       <body>
-        <NavBar />
-        <main>{children}</main>
-        <AuthDebug accessTtl={accessTtl} />
+        <Providers>
+          <NavBar />
+          <main>{children}</main>
+          <AuthDebug accessTtl={accessTtl} />
+        </Providers>
       </body>
     </html>
   );

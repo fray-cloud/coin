@@ -17,6 +17,7 @@ model User {
   updatedAt     DateTime       @updatedAt
   accounts      Account[]
   refreshTokens RefreshToken[]
+  exchangeKeys  ExchangeKey[]
 }
 
 model Account {
@@ -41,4 +42,18 @@ model RefreshToken {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model ExchangeKey {
+  id        String   @id @default(cuid())
+  userId    String
+  exchange  String
+  apiKey    String
+  secretKey String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, exchange])
+  @@index([userId])
 }

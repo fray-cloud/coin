@@ -82,3 +82,53 @@ export async function getMe() {
   if (!res.ok) return null;
   return res.json();
 }
+
+// --- Exchange Keys ---
+
+export interface ExchangeKeyItem {
+  id: string;
+  exchange: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface BalanceItem {
+  exchange: string;
+  currency: string;
+  free: string;
+  locked: string;
+}
+
+export async function getExchangeKeys(): Promise<ExchangeKeyItem[]> {
+  const res = await apiFetch('/exchange-keys');
+  if (!res.ok) throw new Error('Failed to fetch exchange keys');
+  return res.json();
+}
+
+export async function createExchangeKey(data: {
+  exchange: string;
+  apiKey: string;
+  secretKey: string;
+}): Promise<{ id: string; exchange: string }> {
+  const res = await apiFetch('/exchange-keys', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to register exchange key');
+  }
+  return res.json();
+}
+
+export async function deleteExchangeKey(id: string): Promise<void> {
+  const res = await apiFetch(`/exchange-keys/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete exchange key');
+}
+
+export async function getBalances(keyId: string): Promise<BalanceItem[]> {
+  const res = await apiFetch(`/exchange-keys/${keyId}/balances`);
+  if (!res.ok) throw new Error('Failed to fetch balances');
+  return res.json();
+}

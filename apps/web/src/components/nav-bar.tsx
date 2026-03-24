@@ -32,6 +32,11 @@ export function NavBar() {
           <Link href="/markets" className="text-sm text-muted-foreground hover:text-foreground">
             Markets
           </Link>
+          {user && (
+            <Link href="/accounts" className="text-sm text-muted-foreground hover:text-foreground">
+              Accounts
+            </Link>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {user ? (
