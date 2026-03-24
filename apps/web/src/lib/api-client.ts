@@ -27,7 +27,9 @@ export async function apiFetch(path: string, options: RequestInit = {}): Promise
     if (refreshed) {
       return fetch(url, { credentials: 'same-origin', ...options });
     }
-    window.location.href = '/login';
+    if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+      window.location.href = '/login';
+    }
   }
 
   return res;
@@ -69,7 +71,7 @@ export async function logout() {
 }
 
 export async function getMe() {
-  const res = await apiFetch('/auth/me');
+  const res = await fetch(`${API_BASE}/auth/me`, { credentials: 'same-origin' });
   if (!res.ok) return null;
   return res.json();
 }
