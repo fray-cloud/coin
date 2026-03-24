@@ -21,6 +21,7 @@ RUN pnpm install --frozen-lockfile
 FROM base AS development
 COPY --from=deps /app ./
 COPY . .
+RUN pnpm install --frozen-lockfile
 WORKDIR /app/apps/worker-service
 CMD ["pnpm", "dev"]
 

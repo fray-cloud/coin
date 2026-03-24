@@ -11,11 +11,18 @@
   },
   "dependencies": {
     "@coin/types": "workspace:*",
+    "@tailwindcss/postcss": "^4.2.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
     "lightweight-charts": "^4",
+    "lucide-react": "^1.0.1",
     "next": "^15",
+    "postcss": "^8.5.8",
     "react": "^19",
     "react-dom": "^19",
-    "socket.io-client": "^4"
+    "socket.io-client": "^4",
+    "tailwind-merge": "^3.5.0",
+    "tailwindcss": "^4.2.2"
   },
   "devDependencies": {
     "@coin/tsconfig": "workspace:*",

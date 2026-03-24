@@ -12,7 +12,7 @@ services:
       redis:
         condition: service_healthy
       kafka:
-        condition: service_started
+        condition: service_healthy
     networks: [coin-net]
     restart: unless-stopped
 
