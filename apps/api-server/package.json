@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@coin/database": "workspace:*",
+    "@coin/exchange-adapters": "workspace:*",
     "@coin/kafka-contracts": "workspace:*",
     "@coin/types": "workspace:*",
     "@coin/utils": "workspace:*",
