@@ -1,10 +1,25 @@
 import { createHash } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
-import { ExchangeCredentials, Balance, OrderResult } from '@coin/types';
+import type { ExchangeCredentials, Balance, OrderResult, OrderRequest, Market } from '@coin/types';
 import { IExchangeRest } from '../interfaces/exchange-rest';
 
 const BASE_URL = 'https://api.upbit.com';
+
+interface UpbitOrderResponse {
+  uuid: string;
+  side: string;
+  ord_type: string;
+  price: string | null;
+  state: string;
+  market: string;
+  volume: string | null;
+  remaining_volume: string | null;
+  executed_volume: string;
+  trades_count: number;
+  created_at: string;
+  paid_fee?: string;
+}
 
 export class UpbitRest implements IExchangeRest {
   readonly exchangeId = 'upbit' as const;
@@ -28,35 +43,103 @@ export class UpbitRest implements IExchangeRest {
   async getOpenOrders(credentials: ExchangeCredentials): Promise<OrderResult[]> {
     const query = 'state=wait';
     const res = await this.request(credentials, 'GET', `/v1/orders?${query}`, query);
+    const data = (await res.json()) as UpbitOrderResponse[];
+
+    return data.map((o) => this.mapOrderResponse(o));
+  }
+
+  async placeOrder(credentials: ExchangeCredentials, order: OrderRequest): Promise<OrderResult> {
+    const body: Record<string, string> = {
+      market: order.symbol,
+      side: order.side === 'buy' ? 'bid' : 'ask',
+      ord_type: 'limit',
+    };
+
+    if (order.type === 'market' && order.side === 'buy') {
+      // Market buy: specify total KRW amount via price, no volume
+      body.ord_type = 'price';
+      body.price = order.price!;
+    } else if (order.type === 'market' && order.side === 'sell') {
+      // Market sell: specify volume, no price
+      body.ord_type = 'market';
+      body.volume = order.quantity;
+    } else {
+      // Limit order: both volume and price
+      body.ord_type = 'limit';
+      body.volume = order.quantity;
+      body.price = order.price!;
+    }
+
+    const res = await this.request(credentials, 'POST', '/v1/orders', undefined, body);
+    const data = (await res.json()) as UpbitOrderResponse;
+
+    return this.mapOrderResponse(data);
+  }
+
+  async cancelOrder(credentials: ExchangeCredentials, orderId: string): Promise<OrderResult> {
+    const query = `uuid=${orderId}`;
+    const res = await this.request(credentials, 'DELETE', `/v1/order?${query}`, query);
+    const data = (await res.json()) as UpbitOrderResponse;
+
+    return this.mapOrderResponse(data);
+  }
+
+  async getOrder(credentials: ExchangeCredentials, orderId: string): Promise<OrderResult> {
+    const query = `uuid=${orderId}`;
+    const res = await this.request(credentials, 'GET', `/v1/order?${query}`, query);
+    const data = (await res.json()) as UpbitOrderResponse;
+
+    return this.mapOrderResponse(data);
+  }
+
+  async getMarkets(): Promise<Market[]> {
+    const res = await fetch(`${BASE_URL}/v1/market/all?is_details=false`);
+
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Upbit API error ${res.status}: ${body}`);
+    }
+
     const data = (await res.json()) as Array<{
-      uuid: string;
-      side: string;
-      ord_type: string;
-      price: string | null;
-      state: string;
       market: string;
-      volume: string;
-      remaining_volume: string;
-      executed_volume: string;
-      trades_count: number;
-      created_at: string;
+      korean_name: string;
+      english_name: string;
     }>;
 
-    return data.map((o) => ({
+    return data.map((item) => {
+      const [quoteAsset, baseAsset] = item.market.split('-');
+      return {
+        exchange: this.exchangeId,
+        symbol: item.market,
+        baseAsset,
+        quoteAsset,
+      };
+    });
+  }
+
+  private mapOrderResponse(o: UpbitOrderResponse): OrderResult {
+    const stateMap: Record<string, OrderResult['status']> = {
+      wait: 'placed',
+      watch: 'placed',
+      done: 'filled',
+      cancel: 'cancelled',
+    };
+
+    return {
       exchange: this.exchangeId,
       orderId: o.uuid,
       symbol: o.market,
-      side: o.side === 'bid' ? ('buy' as const) : ('sell' as const),
-      type: o.ord_type === 'limit' ? ('limit' as const) : ('market' as const),
-      status: 'placed' as const,
-      quantity: o.volume,
+      side: o.side === 'bid' ? 'buy' : 'sell',
+      type: o.ord_type === 'limit' ? 'limit' : 'market',
+      status: stateMap[o.state] ?? 'pending',
+      quantity: o.volume ?? '0',
       filledQuantity: o.executed_volume,
       price: o.price ?? '0',
       filledPrice: '0',
-      fee: '0',
+      fee: o.paid_fee ?? '0',
       feeCurrency: 'KRW',
       timestamp: new Date(o.created_at).getTime(),
-    }));
+    };
   }
 
   private async request(
@@ -64,28 +147,40 @@ export class UpbitRest implements IExchangeRest {
     method: string,
     path: string,
     queryString?: string,
+    body?: Record<string, string>,
   ): Promise<Response> {
     const payload: Record<string, string> = {
       access_key: credentials.apiKey,
       nonce: uuidv4(),
     };
 
-    if (queryString) {
-      const hash = createHash('sha512').update(queryString).digest('hex');
+    // For POST with body, compute query_hash from body params as query string
+    const hashSource = body ? new URLSearchParams(body).toString() : queryString;
+
+    if (hashSource) {
+      const hash = createHash('sha512').update(hashSource).digest('hex');
       payload.query_hash = hash;
       payload.query_hash_alg = 'SHA512';
     }
 
     const token = jwt.sign(payload, credentials.secretKey);
 
-    const res = await fetch(`${BASE_URL}${path}`, {
-      method,
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const headers: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+    };
+
+    const fetchOptions: RequestInit = { method, headers };
+
+    if (body) {
+      headers['Content-Type'] = 'application/json';
+      fetchOptions.body = JSON.stringify(body);
+    }
+
+    const res = await fetch(`${BASE_URL}${path}`, fetchOptions);
 
     if (!res.ok) {
-      const body = await res.text();
-      throw new Error(`Upbit API error ${res.status}: ${body}`);
+      const text = await res.text();
+      throw new Error(`Upbit API error ${res.status}: ${text}`);
     }
 
     return res;
