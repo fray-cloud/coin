@@ -10,9 +10,13 @@
   },
   "dependencies": {
     "@coin/types": "workspace:*",
+    "jsonwebtoken": "^9",
+    "uuid": "^11",
     "ws": "^8"
   },
   "devDependencies": {
+    "@types/jsonwebtoken": "^9",
+    "@types/uuid": "^10",
     "@types/ws": "^8",
     "typescript": "^5"
   }

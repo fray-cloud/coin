@@ -1,6 +1,8 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
 import { MarketsService } from './markets.service';
+import { Public } from '../auth/decorators/public.decorator';
 
+@Public()
 @Controller('markets')
 export class MarketsController {
   constructor(private readonly marketsService: MarketsService) {}
@@ -17,7 +19,7 @@ export class MarketsController {
   ) {
     const ticker = await this.marketsService.getLatestTicker(exchange, symbol);
     if (!ticker) {
-      return { error: 'Ticker not found' };
+      throw new NotFoundException('Ticker not found');
     }
     return ticker;
   }

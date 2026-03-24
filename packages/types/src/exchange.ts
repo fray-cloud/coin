@@ -73,3 +73,10 @@ export interface OrderResult {
   feeCurrency: string;
   timestamp: number;
 }
+
+export interface Market {
+  exchange: ExchangeId;
+  symbol: string;
+  baseAsset: string;
+  quoteAsset: string;
+}
