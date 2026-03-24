@@ -42,7 +42,8 @@ export class TokenService {
     );
 
     const hashed = this.hashToken(refreshRaw);
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const refreshExpiresIn = this.config.get('JWT_REFRESH_EXPIRES_IN', '7d');
+    const expiresAt = new Date(Date.now() + parseExpiresInMs(refreshExpiresIn));
 
     await this.prisma.refreshToken.create({
       data: { token: hashed, userId: user.id, expiresAt },
