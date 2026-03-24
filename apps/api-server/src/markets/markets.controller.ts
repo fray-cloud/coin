@@ -1,6 +1,8 @@
 import { Controller, Get, Param, NotFoundException } from '@nestjs/common';
 import { MarketsService } from './markets.service';
+import { Public } from '../auth/decorators/public.decorator';
 
+@Public()
 @Controller('markets')
 export class MarketsController {
   constructor(private readonly marketsService: MarketsService) {}
