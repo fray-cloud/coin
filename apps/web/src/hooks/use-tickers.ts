@@ -1,37 +1,20 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { io, Socket } from 'socket.io-client';
-import { Ticker } from '@coin/types';
+import { useEffect, useMemo } from 'react';
+import { useTickersStore } from '@/stores/use-tickers-store';
 
 export function useTickers() {
-  const [tickers, setTickers] = useState<Map<string, Ticker>>(new Map());
-  const [connected, setConnected] = useState(false);
-  const socketRef = useRef<Socket | null>(null);
+  const connect = useTickersStore((s) => s.connect);
+  const disconnect = useTickersStore((s) => s.disconnect);
+  const connected = useTickersStore((s) => s.connected);
+  const tickers = useTickersStore((s) => s.tickers);
 
   useEffect(() => {
-    const socket = io({
-      path: '/ws',
-      transports: ['websocket'],
-    });
+    connect();
+    return () => disconnect();
+  }, [connect, disconnect]);
 
-    socketRef.current = socket;
+  const tickersArray = useMemo(() => Array.from(tickers.values()), [tickers]);
 
-    socket.on('connect', () => setConnected(true));
-    socket.on('disconnect', () => setConnected(false));
-
-    socket.on('ticker', (ticker: Ticker) => {
-      setTickers((prev) => {
-        const next = new Map(prev);
-        next.set(`${ticker.exchange}:${ticker.symbol}`, ticker);
-        return next;
-      });
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
-
-  return { tickers: Array.from(tickers.values()), connected };
+  return { tickers: tickersArray, connected };
 }

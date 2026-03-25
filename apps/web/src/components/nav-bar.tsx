@@ -1,26 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Button, buttonVariants } from '@/components/ui/button';
-import { getMe, logout } from '@/lib/api-client';
+import { useUser, useLogout } from '@/hooks/use-user';
 
 export function NavBar() {
-  const router = useRouter();
-  const [user, setUser] = useState<{ email: string; nickname?: string } | null>(null);
-
-  useEffect(() => {
-    getMe()
-      .then(setUser)
-      .catch(() => setUser(null));
-  }, []);
-
-  const handleLogout = async () => {
-    await logout();
-    setUser(null);
-    router.push('/login');
-  };
+  const { user } = useUser();
+  const logout = useLogout();
 
   return (
     <nav className="border-b">
@@ -56,7 +42,7 @@ export function NavBar() {
           {user ? (
             <>
               <span className="text-sm text-muted-foreground">{user.nickname || user.email}</span>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
+              <Button variant="ghost" size="sm" onClick={logout}>
                 Logout
               </Button>
             </>

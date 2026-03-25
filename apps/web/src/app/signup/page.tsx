@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +12,7 @@ import { signup } from '@/lib/api-client';
 
 export default function SignupPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -30,6 +32,7 @@ export default function SignupPage() {
     setLoading(true);
     try {
       await signup(email, password, nickname || undefined);
+      await queryClient.invalidateQueries({ queryKey: ['user'] });
       router.push('/markets');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Signup failed');
