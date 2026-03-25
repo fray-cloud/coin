@@ -24,7 +24,7 @@ COPY . .
 RUN pnpm install --frozen-lockfile
 WORKDIR /app/apps/api-server
 EXPOSE 3000
-CMD ["sh", "-c", "pnpm --filter @coin/database db:generate && pnpm --filter @coin/database build && pnpm --filter @coin/database exec prisma migrate deploy && pnpm dev"]
+CMD ["sh", "-c", "pnpm --filter @coin/database db:generate && pnpm --filter @coin/database build && pnpm --filter @coin/kafka-contracts build && pnpm --filter @coin/database exec prisma migrate deploy && pnpm dev"]
 
 # Build + deploy
 FROM base AS builder

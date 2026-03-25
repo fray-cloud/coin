@@ -1,9 +1,13 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
-import { Kafka, Consumer } from 'kafkajs';
+import { Kafka, Consumer, Producer } from 'kafkajs';
 import Redis from 'ioredis';
 import { Ticker } from '@coin/types';
 import { KAFKA_TOPICS } from '@coin/kafka-contracts';
-import type { OrderResultEvent, StrategySignalEvent } from '@coin/kafka-contracts';
+import type {
+  OrderResultEvent,
+  StrategySignalEvent,
+  NotificationEvent,
+} from '@coin/kafka-contracts';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface StrategySignalPayload {
@@ -33,6 +37,7 @@ export class MarketsService implements OnModuleInit, OnModuleDestroy {
   private tickerConsumer: Consumer;
   private orderConsumer: Consumer;
   private strategyConsumer: Consumer;
+  private producer: Producer;
   private redis: Redis;
   private tickerListeners: ((ticker: Ticker) => void)[] = [];
   private orderListeners: ((payload: OrderUpdatePayload) => void)[] = [];
@@ -46,6 +51,7 @@ export class MarketsService implements OnModuleInit, OnModuleDestroy {
     this.tickerConsumer = this.kafka.consumer({ groupId: 'api-server-ticker' });
     this.orderConsumer = this.kafka.consumer({ groupId: 'api-server-orders' });
     this.strategyConsumer = this.kafka.consumer({ groupId: 'api-server-strategies' });
+    this.producer = this.kafka.producer();
     this.redis = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: Number(process.env.REDIS_PORT || 6379),
@@ -53,6 +59,8 @@ export class MarketsService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleInit() {
+    await this.producer.connect();
+
     // Ticker consumer
     await this.tickerConsumer.connect();
     await this.tickerConsumer.subscribe({
@@ -130,6 +138,7 @@ export class MarketsService implements OnModuleInit, OnModuleDestroy {
     await this.tickerConsumer.disconnect();
     await this.orderConsumer.disconnect();
     await this.strategyConsumer.disconnect();
+    await this.producer.disconnect();
     this.redis.disconnect();
   }
 
@@ -174,6 +183,26 @@ export class MarketsService implements OnModuleInit, OnModuleDestroy {
 
     for (const listener of this.orderListeners) {
       listener(payload);
+    }
+
+    // Emit notification
+    const isFilled = result.status === 'filled' || result.status === 'partial';
+    const isFailed = result.status === 'failed';
+    if (isFilled || isFailed) {
+      const notif: NotificationEvent = {
+        userId,
+        type: isFilled ? 'order_filled' : 'order_failed',
+        title: isFilled
+          ? `주문 체결 | ${result.exchange.toUpperCase()} ${result.symbol}`
+          : `주문 실패 | ${result.exchange.toUpperCase()} ${result.symbol}`,
+        message: isFilled
+          ? `${result.side.toUpperCase()} ${result.filledQuantity} @ ${result.filledPrice}`
+          : `${result.side.toUpperCase()} ${result.quantity} — 체결 실패`,
+      };
+      await this.producer.send({
+        topic: KAFKA_TOPICS.NOTIFICATION_SEND,
+        messages: [{ key: userId, value: JSON.stringify(notif) }],
+      });
     }
   }
 

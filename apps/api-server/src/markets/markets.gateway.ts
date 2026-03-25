@@ -8,6 +8,7 @@ import {
 import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { MarketsService } from './markets.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @WebSocketGateway({
   path: '/ws',
@@ -27,7 +28,10 @@ export class MarketsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
   @WebSocketServer()
   server!: Server;
 
-  constructor(private readonly marketsService: MarketsService) {}
+  constructor(
+    private readonly marketsService: MarketsService,
+    private readonly notificationsService: NotificationsService,
+  ) {}
 
   afterInit() {
     this.marketsService.onTicker((ticker) => {
@@ -53,6 +57,14 @@ export class MarketsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
         signal: payload.signal,
         strategyType: payload.strategyType,
         reason: payload.reason,
+      });
+    });
+
+    this.notificationsService.onNotification((payload) => {
+      this.server.to(`user:${payload.userId}`).emit('notification:received', {
+        type: payload.type,
+        title: payload.title,
+        message: payload.message,
       });
     });
 

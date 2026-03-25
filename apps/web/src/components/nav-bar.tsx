@@ -30,10 +30,22 @@ export function NavBar() {
                 Strategies
               </Link>
               <Link
+                href="/portfolio"
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Portfolio
+              </Link>
+              <Link
                 href="/accounts"
                 className="text-sm text-muted-foreground hover:text-foreground"
               >
                 Accounts
+              </Link>
+              <Link
+                href="/notifications"
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Alerts
               </Link>
             </>
           )}

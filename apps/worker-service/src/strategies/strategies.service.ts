@@ -2,7 +2,11 @@ import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/commo
 import { Kafka, Producer } from 'kafkajs';
 import Redis from 'ioredis';
 import { KAFKA_TOPICS } from '@coin/kafka-contracts';
-import type { StrategySignalEvent, OrderRequestedEvent } from '@coin/kafka-contracts';
+import type {
+  StrategySignalEvent,
+  OrderRequestedEvent,
+  NotificationEvent,
+} from '@coin/kafka-contracts';
 import type { ExchangeId } from '@coin/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { RiskService, type RiskConfig } from './risk/risk.service';
@@ -170,6 +174,18 @@ export class StrategiesService implements OnModuleInit, OnModuleDestroy {
           riskReason: riskResult.reason,
           price: currentPrice,
         });
+
+        const riskNotif: NotificationEvent = {
+          userId: strategy.userId,
+          type: 'risk_blocked',
+          title: `리스크 차단 | ${strategy.name}`,
+          message: `${evaluation.signal.toUpperCase()} 차단 — ${riskResult.reason}`,
+        };
+        await this.producer.send({
+          topic: KAFKA_TOPICS.NOTIFICATION_SEND,
+          messages: [{ key: strategy.userId, value: JSON.stringify(riskNotif) }],
+        });
+
         this.logger.log(
           `Strategy ${strategy.name}: ${evaluation.signal} blocked by risk - ${riskResult.reason}`,
         );
@@ -199,6 +215,17 @@ export class StrategiesService implements OnModuleInit, OnModuleDestroy {
           ...evaluation.indicatorValues,
           price: currentPrice,
           reason: evaluation.reason,
+        });
+
+        const signalNotif: NotificationEvent = {
+          userId: strategy.userId,
+          type: 'strategy_signal',
+          title: `전략 신호 | ${strategy.name}`,
+          message: `${evaluation.signal.toUpperCase()} — ${evaluation.reason}`,
+        };
+        await this.producer.send({
+          topic: KAFKA_TOPICS.NOTIFICATION_SEND,
+          messages: [{ key: strategy.userId, value: JSON.stringify(signalNotif) }],
         });
 
         this.logger.log(`Strategy ${strategy.name}: ${evaluation.signal} signal sent`);
