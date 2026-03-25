@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { NavBar } from '@/components/nav-bar';
 import { AuthDebug } from '@/components/auth-debug';
+import { ToastContainer } from '@/components/toast';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Providers>
           <NavBar />
           <main>{children}</main>
+          <ToastContainer />
           <AuthDebug accessTtl={accessTtl} />
         </Providers>
       </body>

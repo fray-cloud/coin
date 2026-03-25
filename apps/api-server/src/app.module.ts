@@ -8,6 +8,8 @@ import { AuthModule } from './auth/auth.module';
 import { ExchangeKeysModule } from './exchange-keys/exchange-keys.module';
 import { OrdersModule } from './orders/orders.module';
 import { StrategiesModule } from './strategies/strategies.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { PortfolioModule } from './portfolio/portfolio.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -19,6 +21,8 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     ExchangeKeysModule,
     OrdersModule,
     StrategiesModule,
+    NotificationsModule,
+    PortfolioModule,
   ],
   controllers: [AppController],
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],

@@ -39,7 +39,8 @@
     "passport-naver-v2": "^2.0.8",
     "reflect-metadata": "^0.2",
     "rxjs": "^7",
-    "socket.io": "^4"
+    "socket.io": "^4",
+    "telegraf": "^4.16.3"
   },
   "devDependencies": {
     "@coin/tsconfig": "workspace:*",

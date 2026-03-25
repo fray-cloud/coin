@@ -339,3 +339,56 @@ export async function getStrategyLogs(
   if (!res.ok) throw new Error('Failed to fetch strategy logs');
   return res.json();
 }
+
+// --- Notifications ---
+
+export interface NotificationSettingItem {
+  telegramChatId: string | null;
+  notifyOrders: boolean;
+  notifySignals: boolean;
+  notifyRisks: boolean;
+}
+
+export async function getNotificationSettings(): Promise<NotificationSettingItem> {
+  const res = await apiFetch('/notifications/settings');
+  if (!res.ok) throw new Error('Failed to fetch notification settings');
+  return res.json();
+}
+
+export async function updateNotificationSettings(
+  data: Partial<NotificationSettingItem>,
+): Promise<NotificationSettingItem> {
+  const res = await apiFetch('/notifications/settings', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error('Failed to update notification settings');
+  return res.json();
+}
+
+// --- Portfolio ---
+
+export interface PortfolioAsset {
+  exchange: string;
+  currency: string;
+  quantity: string;
+  avgCost: number;
+  currentPrice: number;
+  valueKrw: number;
+  pnl: number;
+}
+
+export interface PortfolioSummary {
+  totalValueKrw: number;
+  realizedPnl: number;
+  unrealizedPnl: number;
+  assets: PortfolioAsset[];
+  dailyPnl: Array<{ date: string; pnl: number }>;
+}
+
+export async function getPortfolioSummary(): Promise<PortfolioSummary> {
+  const res = await apiFetch('/portfolio/summary');
+  if (!res.ok) throw new Error('Failed to fetch portfolio');
+  return res.json();
+}

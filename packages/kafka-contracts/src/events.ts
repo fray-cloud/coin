@@ -28,3 +28,11 @@ export interface StrategySignalEvent {
   reason: string;
   timestamp: number;
 }
+
+export interface NotificationEvent {
+  userId: string;
+  type: 'order_filled' | 'order_failed' | 'strategy_signal' | 'risk_blocked';
+  title: string;
+  message: string;
+  data?: Record<string, unknown>;
+}

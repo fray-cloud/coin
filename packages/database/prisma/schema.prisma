@@ -18,8 +18,9 @@ model User {
   accounts      Account[]
   refreshTokens RefreshToken[]
   exchangeKeys  ExchangeKey[]
-  orders        Order[]
-  strategies    Strategy[]
+  orders              Order[]
+  strategies          Strategy[]
+  notificationSetting NotificationSetting?
 }
 
 model Account {
@@ -126,4 +127,16 @@ model StrategyLog {
 
   @@index([strategyId])
   @@index([strategyId, createdAt])
+}
+
+model NotificationSetting {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  telegramChatId String?
+  notifyOrders   Boolean  @default(true)
+  notifySignals  Boolean  @default(true)
+  notifyRisks    Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

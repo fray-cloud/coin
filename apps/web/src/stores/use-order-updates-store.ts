@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
 import type { QueryClient } from '@tanstack/react-query';
+import { useToastStore } from './use-toast-store';
 
 interface OrderUpdatesState {
   _socket: Socket | null;
@@ -44,6 +45,20 @@ export const useOrderUpdatesStore = create<OrderUpdatesState>((set, get) => ({
 
     socket.on('strategy:signal', () => {
       queryClient.invalidateQueries({ queryKey: ['strategies'] });
+    });
+
+    socket.on('notification:received', (data: { type: string; title: string; message: string }) => {
+      const toastType =
+        data.type === 'order_filled' || data.type === 'strategy_signal'
+          ? 'success'
+          : data.type === 'order_failed'
+            ? 'error'
+            : 'warning';
+      useToastStore.getState().addToast({
+        type: toastType,
+        title: data.title,
+        message: data.message,
+      });
     });
 
     set({ _socket: socket, _userId: userId });
