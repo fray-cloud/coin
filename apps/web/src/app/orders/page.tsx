@@ -11,11 +11,11 @@ import {
   getOrders,
   createOrder,
   cancelOrder,
-  getMe,
   type ExchangeKeyItem,
 } from '@/lib/api-client';
 import { useTickers } from '@/hooks/use-tickers';
 import { useOrderUpdates } from '@/hooks/use-order-updates';
+import { useUser } from '@/hooks/use-user';
 import type { Ticker } from '@coin/types';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -485,7 +485,7 @@ function OrdersTable() {
 
 export default function OrdersPage() {
   const queryClient = useQueryClient();
-  const [userId, setUserId] = useState<string | null>(null);
+  const { user } = useUser();
 
   const { data: keys = [] } = useQuery({
     queryKey: ['exchangeKeys'],
@@ -494,13 +494,7 @@ export default function OrdersPage() {
 
   const { tickers } = useTickers();
 
-  useEffect(() => {
-    getMe().then((user) => {
-      if (user) setUserId(user.id);
-    });
-  }, []);
-
-  useOrderUpdates(userId);
+  useOrderUpdates(user?.id ?? null);
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-6">

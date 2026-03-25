@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +12,7 @@ import { login } from '@/lib/api-client';
 
 export default function LoginPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -22,6 +24,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await login(email, password);
+      await queryClient.invalidateQueries({ queryKey: ['user'] });
       router.push('/markets');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');

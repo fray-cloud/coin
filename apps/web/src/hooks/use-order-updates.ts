@@ -1,39 +1,17 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-
-interface OrderUpdate {
-  orderId: string;
-  status: string;
-  filledQuantity: string;
-  filledPrice: string;
-  fee: string;
-  feeCurrency: string;
-}
+import { useOrderUpdatesStore } from '@/stores/use-order-updates-store';
 
 export function useOrderUpdates(userId: string | null) {
-  const socketRef = useRef<Socket | null>(null);
   const queryClient = useQueryClient();
+  const connect = useOrderUpdatesStore((s) => s.connect);
+  const disconnect = useOrderUpdatesStore((s) => s.disconnect);
 
   useEffect(() => {
     if (!userId) return;
-
-    const socket = io({
-      path: '/ws',
-      transports: ['websocket'],
-      query: { userId },
-    });
-
-    socketRef.current = socket;
-
-    socket.on('order:updated', (_update: OrderUpdate) => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-    });
-
-    return () => {
-      socket.disconnect();
-    };
-  }, [userId, queryClient]);
+    connect(userId, queryClient);
+    return () => disconnect();
+  }, [userId, queryClient, connect, disconnect]);
 }

@@ -1,7 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+function AuthRefreshListener({ queryClient }: { queryClient: QueryClient }) {
+  useEffect(() => {
+    const handler = () => {
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    };
+    window.addEventListener('auth:refresh', handler);
+    return () => window.removeEventListener('auth:refresh', handler);
+  }, [queryClient]);
+  return null;
+}
 
 export function Providers({ children }: { children: React.ReactNode }) {
   const [queryClient] = useState(
@@ -16,5 +27,10 @@ export function Providers({ children }: { children: React.ReactNode }) {
       }),
   );
 
-  return <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>;
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthRefreshListener queryClient={queryClient} />
+      {children}
+    </QueryClientProvider>
+  );
 }
