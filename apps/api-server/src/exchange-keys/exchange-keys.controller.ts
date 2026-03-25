@@ -47,4 +47,9 @@ export class ExchangeKeysController {
   ) {
     return this.service.getOpenOrders(user.id, id, symbol);
   }
+
+  @Get(':id/markets')
+  async getMarkets(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.service.getMarkets(user.id, id);
+  }
 }

@@ -11,10 +11,10 @@
     "clean": "rm -rf dist .turbo"
   },
   "dependencies": {
-    "@coin/types": "workspace:*",
     "@coin/database": "workspace:*",
     "@coin/exchange-adapters": "workspace:*",
     "@coin/kafka-contracts": "workspace:*",
+    "@coin/types": "workspace:*",
     "@coin/utils": "workspace:*",
     "@nestjs/common": "^11",
     "@nestjs/core": "^11",
@@ -22,7 +22,8 @@
     "ioredis": "^5",
     "kafkajs": "^2",
     "reflect-metadata": "^0.2",
-    "rxjs": "^7"
+    "rxjs": "^7",
+    "technicalindicators": "^3.1.0"
   },
   "devDependencies": {
     "@coin/tsconfig": "workspace:*",

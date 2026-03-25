@@ -33,9 +33,23 @@ export function NavBar() {
             Markets
           </Link>
           {user && (
-            <Link href="/accounts" className="text-sm text-muted-foreground hover:text-foreground">
-              Accounts
-            </Link>
+            <>
+              <Link href="/orders" className="text-sm text-muted-foreground hover:text-foreground">
+                Orders
+              </Link>
+              <Link
+                href="/strategies"
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Strategies
+              </Link>
+              <Link
+                href="/accounts"
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Accounts
+              </Link>
+            </>
           )}
         </div>
         <div className="flex items-center gap-2">

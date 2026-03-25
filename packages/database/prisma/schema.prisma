@@ -18,6 +18,8 @@ model User {
   accounts      Account[]
   refreshTokens RefreshToken[]
   exchangeKeys  ExchangeKey[]
+  orders        Order[]
+  strategies    Strategy[]
 }
 
 model Account {
@@ -52,8 +54,76 @@ model ExchangeKey {
   secretKey String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  orders     Order[]
+  strategies Strategy[]
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, exchange])
   @@index([userId])
+}
+
+model Order {
+  id              String       @id @default(cuid())
+  userId          String
+  exchangeKeyId   String?
+  exchange        String
+  symbol          String
+  side            String
+  type            String
+  mode            String
+  status          String       @default("pending")
+  quantity        String
+  price           String?
+  exchangeOrderId String?
+  filledQuantity  String       @default("0")
+  filledPrice     String       @default("0")
+  fee             String       @default("0")
+  feeCurrency     String       @default("")
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exchangeKey     ExchangeKey? @relation(fields: [exchangeKeyId], references: [id])
+
+  @@index([userId])
+  @@index([userId, status])
+  @@index([userId, createdAt])
+  @@index([exchangeOrderId])
+  @@index([mode, status])
+}
+
+model Strategy {
+  id              String        @id @default(cuid())
+  userId          String
+  name            String
+  type            String
+  exchange        String
+  symbol          String
+  mode            String
+  tradingMode     String        @default("paper")
+  exchangeKeyId   String?
+  enabled         Boolean       @default(false)
+  config          Json
+  riskConfig      Json          @default("{}")
+  intervalSeconds Int           @default(60)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exchangeKey     ExchangeKey?  @relation(fields: [exchangeKeyId], references: [id])
+  logs            StrategyLog[]
+
+  @@index([userId])
+  @@index([userId, enabled])
+}
+
+model StrategyLog {
+  id         String   @id @default(cuid())
+  strategyId String
+  action     String
+  signal     String?
+  details    Json
+  createdAt  DateTime @default(now())
+  strategy   Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+
+  @@index([strategyId])
+  @@index([strategyId, createdAt])
 }

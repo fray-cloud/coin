@@ -132,3 +132,210 @@ export async function getBalances(keyId: string): Promise<BalanceItem[]> {
   if (!res.ok) throw new Error('Failed to fetch balances');
   return res.json();
 }
+
+// --- Markets ---
+
+export interface MarketItem {
+  exchange: string;
+  symbol: string;
+  baseAsset: string;
+  quoteAsset: string;
+}
+
+export async function getMarkets(keyId: string): Promise<MarketItem[]> {
+  const res = await apiFetch(`/exchange-keys/${keyId}/markets`);
+  if (!res.ok) throw new Error('Failed to fetch markets');
+  return res.json();
+}
+
+export interface TickerItem {
+  exchange: string;
+  symbol: string;
+  price: string;
+  volume24h: string;
+  change24h: string;
+  changePercent24h: string;
+  high24h: string;
+  low24h: string;
+  timestamp: number;
+}
+
+export async function getActiveTickers(): Promise<TickerItem[]> {
+  const res = await apiFetch('/markets/tickers');
+  if (!res.ok) throw new Error('Failed to fetch tickers');
+  return res.json();
+}
+
+// --- Orders ---
+
+export interface OrderItem {
+  id: string;
+  exchange: string;
+  symbol: string;
+  side: string;
+  type: string;
+  mode: string;
+  status: string;
+  quantity: string;
+  price: string | null;
+  filledQuantity: string;
+  filledPrice: string;
+  fee: string;
+  feeCurrency: string;
+  createdAt: string;
+}
+
+export interface OrdersResponse {
+  items: OrderItem[];
+  nextCursor: string | null;
+}
+
+export async function createOrder(data: {
+  exchange: string;
+  symbol: string;
+  side: string;
+  type: string;
+  quantity: string;
+  price?: string;
+  mode: string;
+  exchangeKeyId?: string;
+}): Promise<{ id: string; status: string }> {
+  const res = await apiFetch('/orders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to create order');
+  }
+  return res.json();
+}
+
+export async function getOrders(cursor?: string, limit = 20): Promise<OrdersResponse> {
+  const params = new URLSearchParams();
+  if (cursor) params.set('cursor', cursor);
+  params.set('limit', String(limit));
+  const res = await apiFetch(`/orders?${params}`);
+  if (!res.ok) throw new Error('Failed to fetch orders');
+  return res.json();
+}
+
+export async function cancelOrder(id: string): Promise<{ id: string; status: string }> {
+  const res = await apiFetch(`/orders/${id}`, { method: 'DELETE' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to cancel order');
+  }
+  return res.json();
+}
+
+// --- Strategies ---
+
+export interface StrategyItem {
+  id: string;
+  name: string;
+  type: string;
+  exchange: string;
+  symbol: string;
+  mode: string;
+  tradingMode: string;
+  enabled: boolean;
+  config: Record<string, unknown>;
+  riskConfig: Record<string, unknown>;
+  intervalSeconds: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface StrategyLogItem {
+  id: string;
+  strategyId: string;
+  action: string;
+  signal: string | null;
+  details: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface StrategyLogsResponse {
+  items: StrategyLogItem[];
+  nextCursor: string | null;
+}
+
+export interface CreateStrategyInput {
+  name: string;
+  type: string;
+  exchange: string;
+  symbol: string;
+  mode: string;
+  tradingMode: string;
+  exchangeKeyId?: string;
+  config: Record<string, unknown>;
+  riskConfig?: Record<string, unknown>;
+  intervalSeconds?: number;
+}
+
+export async function getStrategies(): Promise<StrategyItem[]> {
+  const res = await apiFetch('/strategies');
+  if (!res.ok) throw new Error('Failed to fetch strategies');
+  return res.json();
+}
+
+export async function getStrategy(id: string): Promise<StrategyItem> {
+  const res = await apiFetch(`/strategies/${id}`);
+  if (!res.ok) throw new Error('Failed to fetch strategy');
+  return res.json();
+}
+
+export async function createStrategy(data: CreateStrategyInput): Promise<StrategyItem> {
+  const res = await apiFetch('/strategies', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to create strategy');
+  }
+  return res.json();
+}
+
+export async function updateStrategy(
+  id: string,
+  data: Partial<CreateStrategyInput>,
+): Promise<StrategyItem> {
+  const res = await apiFetch(`/strategies/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to update strategy');
+  }
+  return res.json();
+}
+
+export async function toggleStrategy(id: string): Promise<{ id: string; enabled: boolean }> {
+  const res = await apiFetch(`/strategies/${id}/toggle`, { method: 'PATCH' });
+  if (!res.ok) throw new Error('Failed to toggle strategy');
+  return res.json();
+}
+
+export async function deleteStrategy(id: string): Promise<void> {
+  const res = await apiFetch(`/strategies/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete strategy');
+}
+
+export async function getStrategyLogs(
+  id: string,
+  cursor?: string,
+  limit = 20,
+): Promise<StrategyLogsResponse> {
+  const params = new URLSearchParams();
+  if (cursor) params.set('cursor', cursor);
+  params.set('limit', String(limit));
+  const res = await apiFetch(`/strategies/${id}/logs?${params}`);
+  if (!res.ok) throw new Error('Failed to fetch strategy logs');
+  return res.json();
+}

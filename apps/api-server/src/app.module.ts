@@ -6,6 +6,8 @@ import { MarketsModule } from './markets/markets.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { ExchangeKeysModule } from './exchange-keys/exchange-keys.module';
+import { OrdersModule } from './orders/orders.module';
+import { StrategiesModule } from './strategies/strategies.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -15,6 +17,8 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     AuthModule,
     MarketsModule,
     ExchangeKeysModule,
+    OrdersModule,
+    StrategiesModule,
   ],
   controllers: [AppController],
   providers: [{ provide: APP_GUARD, useClass: JwtAuthGuard }],
