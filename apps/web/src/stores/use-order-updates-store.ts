@@ -5,6 +5,7 @@ import type { QueryClient } from '@tanstack/react-query';
 interface OrderUpdatesState {
   _socket: Socket | null;
   _userId: string | null;
+  _disconnectTimer: ReturnType<typeof setTimeout> | null;
   connect: (userId: string, queryClient: QueryClient) => void;
   disconnect: () => void;
 }
@@ -12,9 +13,16 @@ interface OrderUpdatesState {
 export const useOrderUpdatesStore = create<OrderUpdatesState>((set, get) => ({
   _socket: null,
   _userId: null,
+  _disconnectTimer: null,
 
   connect: (userId: string, queryClient: QueryClient) => {
     const state = get();
+
+    // Cancel pending disconnect (React Strict Mode remount)
+    if (state._disconnectTimer) {
+      clearTimeout(state._disconnectTimer);
+      set({ _disconnectTimer: null });
+    }
 
     // Already connected for this user
     if (state._socket && state._userId === userId) return;
@@ -44,8 +52,15 @@ export const useOrderUpdatesStore = create<OrderUpdatesState>((set, get) => ({
   disconnect: () => {
     const state = get();
     if (state._socket) {
-      state._socket.disconnect();
-      set({ _socket: null, _userId: null });
+      // Delay actual disconnect to survive React Strict Mode remount
+      const timer = setTimeout(() => {
+        const current = get();
+        if (current._socket && current._disconnectTimer === timer) {
+          current._socket.disconnect();
+          set({ _socket: null, _userId: null, _disconnectTimer: null });
+        }
+      }, 100);
+      set({ _disconnectTimer: timer });
     }
   },
 }));

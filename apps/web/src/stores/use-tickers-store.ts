@@ -7,6 +7,7 @@ interface TickersState {
   connected: boolean;
   _socket: Socket | null;
   _refCount: number;
+  _disconnectTimer: ReturnType<typeof setTimeout> | null;
   connect: () => void;
   disconnect: () => void;
   getTickersArray: () => Ticker[];
@@ -17,9 +18,17 @@ export const useTickersStore = create<TickersState>((set, get) => ({
   connected: false,
   _socket: null,
   _refCount: 0,
+  _disconnectTimer: null,
 
   connect: () => {
     const state = get();
+
+    // Cancel pending disconnect (React Strict Mode remount)
+    if (state._disconnectTimer) {
+      clearTimeout(state._disconnectTimer);
+      set({ _disconnectTimer: null });
+    }
+
     set({ _refCount: state._refCount + 1 });
 
     if (state._socket) return;
@@ -49,8 +58,15 @@ export const useTickersStore = create<TickersState>((set, get) => ({
     set({ _refCount: nextRef });
 
     if (nextRef === 0 && state._socket) {
-      state._socket.disconnect();
-      set({ _socket: null, connected: false });
+      // Delay actual disconnect to survive React Strict Mode remount
+      const timer = setTimeout(() => {
+        const current = get();
+        if (current._refCount === 0 && current._socket) {
+          current._socket.disconnect();
+          set({ _socket: null, connected: false, _disconnectTimer: null });
+        }
+      }, 100);
+      set({ _disconnectTimer: timer });
     }
   },
 
