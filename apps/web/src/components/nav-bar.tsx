@@ -38,6 +38,12 @@ export function NavBar() {
                 Orders
               </Link>
               <Link
+                href="/strategies"
+                className="text-sm text-muted-foreground hover:text-foreground"
+              >
+                Strategies
+              </Link>
+              <Link
                 href="/accounts"
                 className="text-sm text-muted-foreground hover:text-foreground"
               >

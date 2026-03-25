@@ -88,6 +88,9 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
       const key = `ticker:${ticker.exchange}:${ticker.symbol}`;
       const tickerJson = JSON.stringify(ticker);
 
+      const priceKey = `prices:${ticker.exchange}:${ticker.symbol}`;
+      const now = Date.now();
+
       await Promise.all([
         this.redis.set(key, tickerJson, 'EX', 5),
         this.producer.send({
@@ -99,6 +102,12 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
             },
           ],
         }),
+        this.redis
+          .multi()
+          .zadd(priceKey, now, `${now}:${ticker.price}`)
+          .zremrangebyrank(priceKey, 0, -501)
+          .expire(priceKey, 3600)
+          .exec(),
       ]);
 
       // 페이퍼 지정가 주문 체결 체크

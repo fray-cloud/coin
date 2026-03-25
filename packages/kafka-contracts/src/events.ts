@@ -16,3 +16,15 @@ export interface OrderResultEvent {
   result: OrderResult;
   mode: 'paper' | 'real';
 }
+
+export interface StrategySignalEvent {
+  strategyId: string;
+  userId: string;
+  exchange: string;
+  symbol: string;
+  signal: 'buy' | 'sell';
+  strategyType: string;
+  indicatorValues: Record<string, number | string>;
+  reason: string;
+  timestamp: number;
+}

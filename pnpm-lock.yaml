@@ -243,6 +243,9 @@ importers:
       rxjs:
         specifier: ^7
         version: 7.8.2
+      technicalindicators:
+        specifier: ^3.1.0
+        version: 3.1.0
     devDependencies:
       '@coin/tsconfig':
         specifier: workspace:*
@@ -1627,6 +1630,12 @@ packages:
     resolution:
       {
         integrity: sha512-F0R/h2+dsy5wJAUe3tAU6oqa2qbWY5TpNfL/RGmo1y38hiyO1w3x2jPtt76wmuaJI4DQnOBu21cNXQ2STIUUWg==,
+      }
+
+  '@types/node@6.14.13':
+    resolution:
+      {
+        integrity: sha512-J1F0XJ/9zxlZel5ZlbeSuHW2OpabrUAqpFuC2sm2I3by8sERQ8+KCjNKUcq8QHuzpGMWiJpo9ZxeHrqrP2KzQw==,
       }
 
   '@types/oauth@0.9.6':
@@ -4702,6 +4711,12 @@ packages:
       }
     engines: { node: '>=6' }
 
+  technicalindicators@3.1.0:
+    resolution:
+      {
+        integrity: sha512-f16mOc+Y05hNy/of+UbGxhxQQmxUztCiluhsqC5QLUYz4WowUgKde9m6nIjK1Kay0wGHigT0IkOabpp0+22UfA==,
+      }
+
   terser-webpack-plugin@5.4.0:
     resolution:
       {
@@ -5814,6 +5829,8 @@ snapshots:
   '@types/node@22.19.15':
     dependencies:
       undici-types: 6.21.0
+
+  '@types/node@6.14.13': {}
 
   '@types/oauth@0.9.6':
     dependencies:
@@ -7647,6 +7664,10 @@ snapshots:
   tailwindcss@4.2.2: {}
 
   tapable@2.3.1: {}
+
+  technicalindicators@3.1.0:
+    dependencies:
+      '@types/node': 6.14.13
 
   terser-webpack-plugin@5.4.0(webpack@5.104.1):
     dependencies:

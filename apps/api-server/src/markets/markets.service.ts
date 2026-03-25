@@ -3,8 +3,18 @@ import { Kafka, Consumer } from 'kafkajs';
 import Redis from 'ioredis';
 import { Ticker } from '@coin/types';
 import { KAFKA_TOPICS } from '@coin/kafka-contracts';
-import type { OrderResultEvent } from '@coin/kafka-contracts';
+import type { OrderResultEvent, StrategySignalEvent } from '@coin/kafka-contracts';
 import { PrismaService } from '../prisma/prisma.service';
+
+export interface StrategySignalPayload {
+  strategyId: string;
+  userId: string;
+  exchange: string;
+  symbol: string;
+  signal: 'buy' | 'sell';
+  strategyType: string;
+  reason: string;
+}
 
 export interface OrderUpdatePayload {
   userId: string;
@@ -22,9 +32,11 @@ export class MarketsService implements OnModuleInit, OnModuleDestroy {
   private kafka: Kafka;
   private tickerConsumer: Consumer;
   private orderConsumer: Consumer;
+  private strategyConsumer: Consumer;
   private redis: Redis;
   private tickerListeners: ((ticker: Ticker) => void)[] = [];
   private orderListeners: ((payload: OrderUpdatePayload) => void)[] = [];
+  private strategySignalListeners: ((payload: StrategySignalPayload) => void)[] = [];
 
   constructor(private readonly prisma: PrismaService) {
     this.kafka = new Kafka({
@@ -33,6 +45,7 @@ export class MarketsService implements OnModuleInit, OnModuleDestroy {
     });
     this.tickerConsumer = this.kafka.consumer({ groupId: 'api-server-ticker' });
     this.orderConsumer = this.kafka.consumer({ groupId: 'api-server-orders' });
+    this.strategyConsumer = this.kafka.consumer({ groupId: 'api-server-strategies' });
     this.redis = new Redis({
       host: process.env.REDIS_HOST || 'localhost',
       port: Number(process.env.REDIS_PORT || 6379),
@@ -80,12 +93,43 @@ export class MarketsService implements OnModuleInit, OnModuleDestroy {
       },
     });
 
-    this.logger.log('Kafka consumers started - listening for ticker and order updates');
+    // Strategy signal consumer
+    await this.strategyConsumer.connect();
+    await this.strategyConsumer.subscribe({
+      topic: KAFKA_TOPICS.TRADING_STRATEGY_SIGNAL,
+      fromBeginning: false,
+    });
+
+    await this.strategyConsumer.run({
+      eachMessage: async ({ message }) => {
+        if (!message.value) return;
+        try {
+          const event: StrategySignalEvent = JSON.parse(message.value.toString());
+          const payload: StrategySignalPayload = {
+            strategyId: event.strategyId,
+            userId: event.userId,
+            exchange: event.exchange,
+            symbol: event.symbol,
+            signal: event.signal,
+            strategyType: event.strategyType,
+            reason: event.reason,
+          };
+          for (const listener of this.strategySignalListeners) {
+            listener(payload);
+          }
+        } catch (err) {
+          this.logger.error(`Failed to process strategy signal: ${err}`);
+        }
+      },
+    });
+
+    this.logger.log('Kafka consumers started - listening for ticker, order, and strategy updates');
   }
 
   async onModuleDestroy() {
     await this.tickerConsumer.disconnect();
     await this.orderConsumer.disconnect();
+    await this.strategyConsumer.disconnect();
     this.redis.disconnect();
   }
 
@@ -95,6 +139,10 @@ export class MarketsService implements OnModuleInit, OnModuleDestroy {
 
   onOrderUpdate(callback: (payload: OrderUpdatePayload) => void) {
     this.orderListeners.push(callback);
+  }
+
+  onStrategySignal(callback: (payload: StrategySignalPayload) => void) {
+    this.strategySignalListeners.push(callback);
   }
 
   private async handleOrderResult(event: OrderResultEvent) {

@@ -45,6 +45,17 @@ export class MarketsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
       });
     });
 
+    this.marketsService.onStrategySignal((payload) => {
+      this.server.to(`user:${payload.userId}`).emit('strategy:signal', {
+        strategyId: payload.strategyId,
+        exchange: payload.exchange,
+        symbol: payload.symbol,
+        signal: payload.signal,
+        strategyType: payload.strategyType,
+        reason: payload.reason,
+      });
+    });
+
     this.logger.log('WebSocket Gateway initialized');
   }
 
