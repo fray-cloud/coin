@@ -1,6 +1,10 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { Telegraf } from 'telegraf';
 
+function escapeHtml(text: string): string {
+  return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
 @Injectable()
 export class TelegramService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(TelegramService.name);
@@ -18,8 +22,9 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     this.bot.start((ctx) => {
       const chatId = ctx.chat.id;
       ctx.reply(
-        `Chat ID: \`${chatId}\`\n\n` + `웹사이트의 알림 설정 페이지에서 이 ID를 입력하세요.`,
-        { parse_mode: 'Markdown' },
+        `Chat ID: <code>${chatId}</code>\n\n` +
+          `웹사이트의 알림 설정 페이지에서 이 ID를 입력하세요.`,
+        { parse_mode: 'HTML' },
       );
       this.logger.log(`Telegram /start from chat ${chatId}`);
     });
@@ -38,8 +43,10 @@ export class TelegramService implements OnModuleInit, OnModuleDestroy {
     if (!this.bot) return false;
 
     try {
-      await this.bot.telegram.sendMessage(chatId, `*${title}*\n${message}`, {
-        parse_mode: 'Markdown',
+      const safeTitle = escapeHtml(title);
+      const safeMessage = escapeHtml(message);
+      await this.bot.telegram.sendMessage(chatId, `<b>${safeTitle}</b>\n${safeMessage}`, {
+        parse_mode: 'HTML',
       });
       return true;
     } catch (err) {

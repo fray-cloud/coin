@@ -22,6 +22,25 @@ interface PortfolioAsset {
   pnl: number;
 }
 
+/**
+ * Parse base currency from exchange-specific symbol format.
+ * - Upbit: "KRW-BTC" → "BTC"
+ * - Binance/Bybit: "BTCUSDT" → "BTC"
+ */
+function parseBaseCurrency(exchange: string, symbol: string): string {
+  if (exchange === 'upbit') {
+    const parts = symbol.split('-');
+    return parts.length > 1 ? parts[1] : symbol;
+  }
+  // Binance / Bybit: remove known quote currencies
+  for (const quote of ['USDT', 'BUSD', 'USD', 'USDC']) {
+    if (symbol.endsWith(quote)) {
+      return symbol.slice(0, -quote.length);
+    }
+  }
+  return symbol;
+}
+
 @Injectable()
 export class PortfolioService {
   private readonly logger = new Logger(PortfolioService.name);
@@ -39,6 +58,15 @@ export class PortfolioService {
 
   async getSummary(userId: string) {
     const masterKey = this.config.getOrThrow<string>('ENCRYPTION_MASTER_KEY');
+
+    // Prefetch all filled orders once for avg cost + P&L calculations
+    const allFilledOrders = await this.prisma.order.findMany({
+      where: { userId, status: 'filled' },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // Build avg cost map: key = "exchange|currency"
+    const avgCostMap = this.buildAvgCostMap(allFilledOrders);
 
     // 1. Fetch balances from all exchange keys
     const keys = await this.prisma.exchangeKey.findMany({
@@ -63,7 +91,8 @@ export class PortfolioService {
           if (total <= 0) continue;
 
           const currentPrice = await this.getTickerPrice(key.exchange, bal.currency);
-          const avgCost = await this.getAvgCost(userId, key.exchange, bal.currency);
+          const costKey = `${key.exchange}|${bal.currency}`;
+          const avgCost = avgCostMap.get(costKey) ?? 0;
 
           const valueKrw = currentPrice * total;
           const pnl = avgCost > 0 ? (currentPrice - avgCost) * total : 0;
@@ -83,11 +112,11 @@ export class PortfolioService {
       }
     }
 
-    // 2. Calculate realized P&L from filled orders
-    const realizedPnl = await this.calculateRealizedPnl(userId);
+    // 2. Calculate realized P&L from prefetched orders
+    const realizedPnl = this.calculateRealizedPnl(allFilledOrders, avgCostMap);
 
-    // 3. Calculate daily P&L from orders
-    const dailyPnl = await this.calculateDailyPnl(userId);
+    // 3. Calculate daily P&L from prefetched orders
+    const dailyPnl = this.calculateDailyPnl(allFilledOrders);
 
     const totalValueKrw = assets.reduce((sum, a) => sum + a.valueKrw, 0);
     const unrealizedPnl = assets.reduce((sum, a) => sum + a.pnl, 0);
@@ -95,8 +124,41 @@ export class PortfolioService {
     return { totalValueKrw, realizedPnl, unrealizedPnl, assets, dailyPnl };
   }
 
+  private buildAvgCostMap(
+    orders: Array<{
+      exchange: string;
+      symbol: string;
+      side: string;
+      filledQuantity: string;
+      filledPrice: string;
+    }>,
+  ): Map<string, number> {
+    const aggregates = new Map<string, { totalCost: number; totalQty: number }>();
+
+    for (const order of orders) {
+      if (order.side !== 'buy') continue;
+
+      const qty = parseFloat(order.filledQuantity);
+      const price = parseFloat(order.filledPrice);
+      if (!Number.isFinite(qty) || !Number.isFinite(price) || qty <= 0 || price <= 0) continue;
+
+      const currency = parseBaseCurrency(order.exchange, order.symbol);
+      const key = `${order.exchange}|${currency}`;
+
+      const existing = aggregates.get(key) ?? { totalCost: 0, totalQty: 0 };
+      existing.totalCost += qty * price;
+      existing.totalQty += qty;
+      aggregates.set(key, existing);
+    }
+
+    const result = new Map<string, number>();
+    for (const [key, { totalCost, totalQty }] of aggregates.entries()) {
+      result.set(key, totalQty > 0 ? totalCost / totalQty : 0);
+    }
+    return result;
+  }
+
   private async getTickerPrice(exchange: string, currency: string): Promise<number> {
-    // Try common symbol patterns
     const symbols =
       exchange === 'upbit' ? [`KRW-${currency}`] : [`${currency}USDT`, `${currency}USD`];
 
@@ -109,53 +171,34 @@ export class PortfolioService {
       }
     }
 
-    // Base currencies (KRW, USDT) have value 1
     if (['KRW', 'USDT', 'USD'].includes(currency)) return 1;
-
     return 0;
   }
 
-  private async getAvgCost(userId: string, exchange: string, currency: string): Promise<number> {
-    // Find buy orders for this currency on this exchange
-    const buyOrders = await this.prisma.order.findMany({
-      where: {
-        userId,
-        exchange,
-        side: 'buy',
-        status: 'filled',
-        symbol: { contains: currency },
-      },
-    });
-
-    let totalCost = 0;
-    let totalQty = 0;
-    for (const order of buyOrders) {
-      const qty = parseFloat(order.filledQuantity);
-      const price = parseFloat(order.filledPrice);
-      if (qty > 0 && price > 0) {
-        totalCost += qty * price;
-        totalQty += qty;
-      }
-    }
-
-    return totalQty > 0 ? totalCost / totalQty : 0;
-  }
-
-  private async calculateRealizedPnl(userId: string): Promise<number> {
-    const sellOrders = await this.prisma.order.findMany({
-      where: { userId, side: 'sell', status: 'filled' },
-    });
-
+  private calculateRealizedPnl(
+    orders: Array<{
+      exchange: string;
+      symbol: string;
+      side: string;
+      filledQuantity: string;
+      filledPrice: string;
+      fee: string;
+    }>,
+    avgCostMap: Map<string, number>,
+  ): number {
     let realized = 0;
-    for (const order of sellOrders) {
+
+    for (const order of orders) {
+      if (order.side !== 'sell') continue;
+
       const qty = parseFloat(order.filledQuantity);
       const price = parseFloat(order.filledPrice);
       const fee = parseFloat(order.fee);
+      if (!Number.isFinite(qty) || !Number.isFinite(price) || qty <= 0 || price <= 0) continue;
 
-      // Get average cost for this symbol
-      const parts = order.symbol.split('-');
-      const currency = parts.length > 1 ? parts[1] : parts[0].replace('USDT', '');
-      const avgCost = await this.getAvgCost(userId, order.exchange, currency);
+      const currency = parseBaseCurrency(order.exchange, order.symbol);
+      const key = `${order.exchange}|${currency}`;
+      const avgCost = avgCostMap.get(key) ?? 0;
 
       if (avgCost > 0) {
         realized += (price - avgCost) * qty - fee;
@@ -165,12 +208,15 @@ export class PortfolioService {
     return Math.round(realized * 100) / 100;
   }
 
-  private async calculateDailyPnl(userId: string): Promise<Array<{ date: string; pnl: number }>> {
-    const orders = await this.prisma.order.findMany({
-      where: { userId, status: 'filled' },
-      orderBy: { createdAt: 'asc' },
-    });
-
+  private calculateDailyPnl(
+    orders: Array<{
+      createdAt: Date;
+      side: string;
+      filledQuantity: string;
+      filledPrice: string;
+      fee: string;
+    }>,
+  ): Array<{ date: string; pnl: number }> {
     const dailyMap = new Map<string, number>();
 
     for (const order of orders) {
@@ -188,7 +234,6 @@ export class PortfolioService {
       }
     }
 
-    // Cumulative P&L
     let cumulative = 0;
     return Array.from(dailyMap.entries()).map(([date, pnl]) => {
       cumulative += pnl;
