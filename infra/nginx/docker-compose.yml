@@ -2,9 +2,11 @@ services:
   nginx:
     image: nginx:1.27-alpine
     ports:
-      - "${NGINX_PORT:-80}:80"
+      - '${NGINX_PORT:-80}:80'
+      - '${NGINX_SSL_PORT:-443}:443'
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./certs:/etc/nginx/certs:ro
     depends_on:
       web:
         condition: service_started
@@ -12,6 +14,18 @@ services:
         condition: service_started
     networks: [coin-net]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: '0.25'
+    healthcheck:
+      test:
+        ['CMD', 'wget', '-q', '--spider', '--no-check-certificate', 'https://localhost/api/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
 networks:
   coin-net:

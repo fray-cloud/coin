@@ -10,6 +10,7 @@ import {
   HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
@@ -32,6 +33,7 @@ export class AuthController {
   ) {}
 
   @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('signup')
   async signup(@Body() dto: SignupDto, @Res({ passthrough: true }) res: Response) {
     const user = await this.authService.signup(dto);
@@ -41,6 +43,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)

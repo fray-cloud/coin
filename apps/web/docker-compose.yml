@@ -12,6 +12,17 @@ services:
       - '3001'
     networks: [coin-net]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+          cpus: '0.5'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3001']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
 networks:
   coin-net:

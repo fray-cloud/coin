@@ -35,3 +35,4 @@ packages/database/prisma/*.db
 
 # Docker volumes
 docker/data/
+infra/nginx/certs/

@@ -15,6 +15,11 @@ services:
         condition: service_healthy
     networks: [coin-net]
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '1.0'
 
 networks:
   coin-net:
