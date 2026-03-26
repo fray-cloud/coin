@@ -19,6 +19,7 @@ import { useTranslations } from 'next-intl';
 import { useTickers } from '@/hooks/use-tickers';
 import { ExchangeIcon, CoinIcon } from '@/components/icons';
 import { MiniChart } from '@/components/mini-chart';
+import { StrategyChart } from '@/components/strategy-chart';
 
 const STRATEGY_TYPES = [
   { value: 'rsi', label: 'RSI' },
@@ -395,6 +396,18 @@ function CreateStrategyForm({
             {mutation.isPending ? t('creating') : t('create')}
           </Button>
         </form>
+
+        {/* Preview chart with selected indicator */}
+        {exchange && symbol && (
+          <div className="mt-4 pt-4 border-t">
+            <StrategyChart
+              exchange={exchange}
+              symbol={symbol}
+              strategyType={type}
+              config={config}
+            />
+          </div>
+        )}
       </CardContent>
     </Card>
   );
