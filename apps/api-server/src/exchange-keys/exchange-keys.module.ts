@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
+import { CqrsModule } from '@nestjs/cqrs';
 import { ExchangeKeysController } from './exchange-keys.controller';
-import { ExchangeKeysService } from './exchange-keys.service';
+import { ExchangeKeyCommandHandlers } from './commands';
+import { ExchangeKeyQueryHandlers } from './queries';
 
 @Module({
+  imports: [CqrsModule],
   controllers: [ExchangeKeysController],
-  providers: [ExchangeKeysService],
+  providers: [...ExchangeKeyCommandHandlers, ...ExchangeKeyQueryHandlers],
 })
 export class ExchangeKeysModule {}

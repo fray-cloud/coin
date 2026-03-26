@@ -1,37 +1,25 @@
 import { Controller, Get, Patch, Body } from '@nestjs/common';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { PrismaService } from '../prisma/prisma.service';
+import { UpdateNotificationSettingCommand } from './commands';
+import { GetNotificationSettingsQuery } from './queries';
 import { UpdateNotificationSettingDto } from './dto/update-notification-setting.dto';
 import type { User } from '@coin/database';
 
 @Controller('notifications')
 export class NotificationsController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+  ) {}
 
   @Get('settings')
   async getSettings(@CurrentUser() user: User) {
-    const setting = await this.prisma.notificationSetting.findUnique({
-      where: { userId: user.id },
-    });
-    return (
-      setting || {
-        telegramChatId: null,
-        notifyOrders: true,
-        notifySignals: true,
-        notifyRisks: false,
-      }
-    );
+    return this.queryBus.execute(new GetNotificationSettingsQuery(user.id));
   }
 
   @Patch('settings')
   async updateSettings(@CurrentUser() user: User, @Body() dto: UpdateNotificationSettingDto) {
-    return this.prisma.notificationSetting.upsert({
-      where: { userId: user.id },
-      create: {
-        userId: user.id,
-        ...dto,
-      },
-      update: dto,
-    });
+    return this.commandBus.execute(new UpdateNotificationSettingCommand(user.id, dto));
   }
 }

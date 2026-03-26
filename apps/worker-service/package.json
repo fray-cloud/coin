@@ -18,7 +18,7 @@
     "@coin/utils": "workspace:*",
     "@nestjs/common": "^11",
     "@nestjs/core": "^11",
-    "@nestjs/microservices": "^11",
+    "@nestjs/microservices": "^11.1.17",
     "ioredis": "^5",
     "kafkajs": "^2",
     "nestjs-pino": "^4.6.1",
