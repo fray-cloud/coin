@@ -1,12 +1,19 @@
 'use client';
 
-import { use } from 'react';
+import { use, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { getStrategy, getStrategyLogs, toggleStrategy, deleteStrategy } from '@/lib/api-client';
+import {
+  getStrategy,
+  getStrategyLogs,
+  getStrategyPerformance,
+  toggleStrategy,
+  deleteStrategy,
+} from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
+import { createChart, ColorType, type IChartApi } from 'lightweight-charts';
 import { ExchangeIcon, CoinIcon } from '@/components/icons';
 import { StrategyChart } from '@/components/strategy-chart';
 
@@ -21,6 +28,71 @@ const SIGNAL_STYLES: Record<string, string> = {
   buy: 'text-green-600 font-medium',
   sell: 'text-red-600 font-medium',
 };
+
+function formatKrw(value: number): string {
+  if (Math.abs(value) >= 1_000_000) {
+    return `${(value / 1_000_000).toFixed(2)}M`;
+  }
+  return value.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
+}
+
+function PnlValue({ value }: { value: number }) {
+  const color = value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-muted-foreground';
+  const sign = value > 0 ? '+' : '';
+  return (
+    <span className={`font-bold ${color}`}>
+      {sign}
+      {formatKrw(value)}
+    </span>
+  );
+}
+
+function PnlMiniChart({ data }: { data: Array<{ date: string; pnl: number }> }) {
+  const chartRef = useRef<HTMLDivElement>(null);
+  const chartInstance = useRef<IChartApi | null>(null);
+
+  useEffect(() => {
+    if (!chartRef.current || data.length === 0) return;
+    if (chartInstance.current) {
+      chartInstance.current.remove();
+      chartInstance.current = null;
+    }
+
+    const chart = createChart(chartRef.current, {
+      width: chartRef.current.clientWidth,
+      height: 150,
+      layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: '#9ca3af' },
+      grid: {
+        vertLines: { color: 'rgba(243,244,246,0.1)' },
+        horzLines: { color: 'rgba(243,244,246,0.1)' },
+      },
+      rightPriceScale: { borderVisible: false },
+      timeScale: { borderVisible: false },
+    });
+
+    const series = chart.addAreaSeries({
+      lineColor: data[data.length - 1].pnl >= 0 ? '#22c55e' : '#ef4444',
+      topColor: data[data.length - 1].pnl >= 0 ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)',
+      bottomColor: data[data.length - 1].pnl >= 0 ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.05)',
+      lineWidth: 2,
+    });
+
+    series.setData(data.map((d) => ({ time: d.date as any, value: d.pnl })));
+    chart.timeScale().fitContent();
+    chartInstance.current = chart;
+
+    const handleResize = () => {
+      if (chartRef.current) chart.applyOptions({ width: chartRef.current.clientWidth });
+    };
+    window.addEventListener('resize', handleResize);
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      chart.remove();
+    };
+  }, [data]);
+
+  return <div ref={chartRef} />;
+}
 
 function ActionBadge({ action }: { action: string }) {
   return (
@@ -61,6 +133,12 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
       queryClient.invalidateQueries({ queryKey: ['strategy', id] });
       queryClient.invalidateQueries({ queryKey: ['strategies'] });
     },
+  });
+
+  const { data: performance } = useQuery({
+    queryKey: ['strategyPerformance', id],
+    queryFn: () => getStrategyPerformance(id),
+    staleTime: 30_000,
   });
 
   const deleteMutation = useMutation({
@@ -195,6 +273,50 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Performance */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Performance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {performance && performance.totalTrades > 0 ? (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div>
+                  <p className="text-xs text-muted-foreground">총 거래</p>
+                  <p className="text-xl font-bold">{performance.totalTrades}</p>
+                  <p className="text-xs text-muted-foreground">
+                    매수 {performance.buyTrades} / 매도 {performance.sellTrades}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">승률</p>
+                  <p
+                    className={`text-xl font-bold ${performance.winRate >= 50 ? 'text-green-600' : 'text-red-600'}`}
+                  >
+                    {performance.winRate}%
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {performance.wins}승 {performance.losses}패
+                  </p>
+                </div>
+                <div className="col-span-2">
+                  <p className="text-xs text-muted-foreground">실현 손익</p>
+                  <p className="text-xl">
+                    <PnlValue value={performance.realizedPnl} />
+                  </p>
+                </div>
+              </div>
+              {performance.dailyPnl.length > 0 && <PnlMiniChart data={performance.dailyPnl} />}
+            </>
+          ) : (
+            <p className="text-center text-muted-foreground py-6">
+              아직 거래 기록이 없습니다. 전략을 활성화하면 수익이 여기에 표시됩니다.
+            </p>
+          )}
         </CardContent>
       </Card>
 

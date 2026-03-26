@@ -18,7 +18,12 @@ import {
   ToggleStrategyCommand,
   DeleteStrategyCommand,
 } from './commands';
-import { GetStrategiesQuery, GetStrategyQuery, GetStrategyLogsQuery } from './queries';
+import {
+  GetStrategiesQuery,
+  GetStrategyQuery,
+  GetStrategyLogsQuery,
+  GetStrategyPerformanceQuery,
+} from './queries';
 import { CreateStrategyDto } from './dto/create-strategy.dto';
 import { UpdateStrategyDto } from './dto/update-strategy.dto';
 import type { User } from '@coin/database';
@@ -59,6 +64,11 @@ export class StrategiesController {
   @HttpCode(HttpStatus.OK)
   async remove(@CurrentUser() user: User, @Param('id') id: string) {
     return this.commandBus.execute(new DeleteStrategyCommand(user.id, id));
+  }
+
+  @Get(':id/performance')
+  async getPerformance(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.queryBus.execute(new GetStrategyPerformanceQuery(user.id, id));
   }
 
   @Get(':id/logs')

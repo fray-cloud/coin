@@ -262,6 +262,23 @@ export interface StrategyLogsResponse {
   nextCursor: string | null;
 }
 
+export interface StrategyPerformance {
+  totalTrades: number;
+  buyTrades: number;
+  sellTrades: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  realizedPnl: number;
+  dailyPnl: Array<{ date: string; pnl: number }>;
+}
+
+export async function getStrategyPerformance(id: string): Promise<StrategyPerformance> {
+  const res = await apiFetch(`/strategies/${id}/performance`);
+  if (!res.ok) throw new Error('Failed to fetch strategy performance');
+  return res.json();
+}
+
 export interface CreateStrategyInput {
   name: string;
   type: string;
