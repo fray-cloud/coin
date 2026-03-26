@@ -29,7 +29,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
           req: (req: any) => ({ method: req.method, url: req.url }),
           res: (res: any) => ({ statusCode: res.statusCode }),
         },
-        autoLogging: { ignore: (req: any) => req.url === '/health' },
+        autoLogging: {
+          ignore: (req: any) => req.url === '/health' || req.url === '/ready',
+        },
       },
     }),
     ThrottlerModule.forRoot([{ ttl: 60000, limit: 60 }]),
