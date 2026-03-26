@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { getStrategy, getStrategyLogs, toggleStrategy, deleteStrategy } from '@/lib/api-client';
 import { useRouter } from 'next/navigation';
+import { ExchangeIcon, CoinIcon } from '@/components/icons';
+import { StrategyChart } from '@/components/strategy-chart';
 
 const ACTION_STYLES: Record<string, string> = {
   signal_generated: 'bg-blue-100 text-blue-800',
@@ -193,6 +195,25 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
               </div>
             )}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Strategy Chart with Indicator */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <ExchangeIcon exchange={strategy.exchange} size={18} />
+            <CoinIcon symbol={strategy.symbol} size={18} />
+            {strategy.exchange.toUpperCase()} — {strategy.symbol}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <StrategyChart
+            exchange={strategy.exchange}
+            symbol={strategy.symbol}
+            strategyType={strategy.type}
+            config={config}
+          />
         </CardContent>
       </Card>
 

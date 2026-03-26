@@ -18,6 +18,7 @@ import {
 import { useTranslations } from 'next-intl';
 import { useTickers } from '@/hooks/use-tickers';
 import { ExchangeIcon, CoinIcon } from '@/components/icons';
+import { MiniChart } from '@/components/mini-chart';
 
 const STRATEGY_TYPES = [
   { value: 'rsi', label: 'RSI' },
@@ -114,6 +115,16 @@ function StrategyCard({
               Delete
             </Button>
           </div>
+        </div>
+        <div className="mt-3">
+          <Link href={`/strategies/${strategy.id}`}>
+            <MiniChart
+              exchange={strategy.exchange}
+              symbol={strategy.symbol}
+              width={200}
+              height={40}
+            />
+          </Link>
         </div>
       </CardContent>
     </Card>
