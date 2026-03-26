@@ -1,34 +1,17 @@
 import { BadRequestException, Logger, NotFoundException } from '@nestjs/common';
 import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
-import { Kafka, Producer } from 'kafkajs';
-import { KAFKA_TOPICS } from '@coin/kafka-contracts';
-import type { OrderRequestedEvent } from '@coin/kafka-contracts';
-import type { ExchangeId, OrderRequest } from '@coin/types';
 import { PrismaService } from '../../prisma/prisma.service';
+import { OrderLifecycleOrchestrator } from '../sagas/order-lifecycle.orchestrator';
 import { CreateOrderCommand } from './create-order.command';
-import { randomUUID } from 'crypto';
 
 @CommandHandler(CreateOrderCommand)
 export class CreateOrderHandler implements ICommandHandler<CreateOrderCommand> {
   private readonly logger = new Logger(CreateOrderHandler.name);
-  private kafka: Kafka;
-  private producer: Producer;
-  private connected = false;
 
-  constructor(private readonly prisma: PrismaService) {
-    this.kafka = new Kafka({
-      clientId: 'api-orders',
-      brokers: (process.env.KAFKA_BROKERS || 'localhost:9092').split(','),
-    });
-    this.producer = this.kafka.producer();
-  }
-
-  private async ensureConnected() {
-    if (!this.connected) {
-      await this.producer.connect();
-      this.connected = true;
-    }
-  }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly orchestrator: OrderLifecycleOrchestrator,
+  ) {}
 
   async execute(command: CreateOrderCommand) {
     const { userId, dto } = command;
@@ -51,46 +34,11 @@ export class CreateOrderHandler implements ICommandHandler<CreateOrderCommand> {
       if (!key) throw new NotFoundException('Exchange key not found');
     }
 
-    const order = await this.prisma.order.create({
-      data: {
-        userId,
-        exchangeKeyId: dto.mode === 'real' ? dto.exchangeKeyId : null,
-        exchange: dto.exchange,
-        symbol: dto.symbol,
-        side: dto.side,
-        type: dto.type,
-        mode: dto.mode,
-        status: 'pending',
-        quantity: dto.quantity,
-        price: dto.price || null,
-      },
-    });
+    const result = await this.orchestrator.startSaga(userId, dto);
 
-    const orderRequest: OrderRequest = {
-      exchange: dto.exchange as ExchangeId,
-      symbol: dto.symbol,
-      side: dto.side as 'buy' | 'sell',
-      type: dto.type as 'limit' | 'market',
-      quantity: dto.quantity,
-      price: dto.price,
-    };
-
-    const event: OrderRequestedEvent = {
-      requestId: randomUUID(),
-      userId,
-      exchangeKeyId: dto.exchangeKeyId || '',
-      order: orderRequest,
-      mode: dto.mode as 'paper' | 'real',
-      dbOrderId: order.id,
-    };
-
-    await this.ensureConnected();
-    await this.producer.send({
-      topic: KAFKA_TOPICS.TRADING_ORDER_REQUESTED,
-      messages: [{ key: userId, value: JSON.stringify(event) }],
-    });
-
-    this.logger.log(`Order submitted: ${order.id} (${dto.mode} ${dto.side} ${dto.symbol})`);
-    return { id: order.id, status: 'pending' };
+    this.logger.log(
+      `Order submitted via saga: ${result.id} (${dto.mode} ${dto.side} ${dto.symbol})`,
+    );
+    return result;
   }
 }
