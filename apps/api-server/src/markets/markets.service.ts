@@ -9,6 +9,7 @@ import type {
   NotificationEvent,
 } from '@coin/kafka-contracts';
 import { PrismaService } from '../prisma/prisma.service';
+import { executePositionUpdateSaga } from '../portfolio/sagas/position-update-steps';
 
 export interface StrategySignalPayload {
   strategyId: string;
@@ -154,21 +155,19 @@ export class MarketsService implements OnModuleInit, OnModuleDestroy {
     this.strategySignalListeners.push(callback);
   }
 
+  setOrchestrator(orchestrator: any) {
+    this.orchestrator = orchestrator;
+  }
+
+  private orchestrator: any = null;
+
   private async handleOrderResult(event: OrderResultEvent) {
     const { dbOrderId, userId, result } = event;
 
-    // DB 업데이트
-    await this.prisma.order.update({
-      where: { id: dbOrderId },
-      data: {
-        status: result.status,
-        exchangeOrderId: result.orderId || undefined,
-        filledQuantity: result.filledQuantity,
-        filledPrice: result.filledPrice,
-        fee: result.fee,
-        feeCurrency: result.feeCurrency,
-      },
-    });
+    // Saga completion — Worker already updated DB
+    if (this.orchestrator) {
+      await this.orchestrator.onWorkerResult(event.requestId, result);
+    }
 
     // WebSocket으로 브로드캐스트
     const payload: OrderUpdatePayload = {
@@ -203,6 +202,29 @@ export class MarketsService implements OnModuleInit, OnModuleDestroy {
         topic: KAFKA_TOPICS.NOTIFICATION_SEND,
         messages: [{ key: userId, value: JSON.stringify(notif) }],
       });
+    }
+
+    // Position update saga for filled orders
+    if (isFilled) {
+      try {
+        await executePositionUpdateSaga(
+          {
+            userId,
+            orderId: dbOrderId,
+            exchange: result.exchange,
+            symbol: result.symbol,
+            side: result.side,
+            filledQuantity: result.filledQuantity,
+            filledPrice: result.filledPrice,
+            fee: result.fee,
+            feeCurrency: result.feeCurrency,
+          },
+          this.prisma,
+          this.producer,
+        );
+      } catch (err) {
+        this.logger.error(`Position update saga failed for ${dbOrderId}: ${err}`);
+      }
     }
   }
 

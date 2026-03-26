@@ -1,20 +1,13 @@
 import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
 import { Kafka, Producer } from 'kafkajs';
 import Redis from 'ioredis';
-import { KAFKA_TOPICS } from '@coin/kafka-contracts';
-import type {
-  StrategySignalEvent,
-  OrderRequestedEvent,
-  NotificationEvent,
-} from '@coin/kafka-contracts';
-import type { ExchangeId } from '@coin/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { RiskService, type RiskConfig } from './risk/risk.service';
 import type { ITradingStrategy, StrategySignal } from './strategy.interface';
 import { RsiStrategy } from './indicators/rsi.strategy';
 import { MacdStrategy } from './indicators/macd.strategy';
 import { BollingerStrategy } from './indicators/bollinger.strategy';
-import { randomUUID } from 'crypto';
+import { executeAutoTradeSaga } from './sagas/strategy-auto-trade-steps';
 
 interface StrategyRecord {
   id: string;
@@ -141,9 +134,8 @@ export class StrategiesService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
+      // Signal deduplication (before saga to avoid unnecessary work)
       const evaluation = impl.evaluate(closePrices, strategy.config);
-
-      // Signal deduplication
       const lastSignal = this.lastSignals.get(strategy.id);
       if (evaluation.signal === lastSignal) {
         return;
@@ -154,128 +146,16 @@ export class StrategiesService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
-      const currentPrice = closePrices[closePrices.length - 1];
-      const quantity = (strategy.config.quantity as string) || '0.001';
-
-      // Risk check
-      const riskResult = await this.riskService.checkRisk(
-        strategy.userId,
-        strategy.exchange,
-        strategy.symbol,
-        evaluation.signal,
-        quantity,
-        currentPrice,
-        strategy.riskConfig,
+      await executeAutoTradeSaga(
+        strategy,
+        closePrices,
+        impl,
+        this.riskService,
+        this.prisma,
+        this.producer,
+        (strategyId, action, signal, details) =>
+          this.createLog(strategyId, action, signal, details),
       );
-
-      if (!riskResult.allowed) {
-        await this.createLog(strategy.id, 'risk_blocked', evaluation.signal, {
-          ...evaluation.indicatorValues,
-          riskReason: riskResult.reason,
-          price: currentPrice,
-        });
-
-        const riskNotif: NotificationEvent = {
-          userId: strategy.userId,
-          type: 'risk_blocked',
-          title: `리스크 차단 | ${strategy.name}`,
-          message: `${evaluation.signal.toUpperCase()} 차단 — ${riskResult.reason}`,
-        };
-        await this.producer.send({
-          topic: KAFKA_TOPICS.NOTIFICATION_SEND,
-          messages: [{ key: strategy.userId, value: JSON.stringify(riskNotif) }],
-        });
-
-        this.logger.log(
-          `Strategy ${strategy.name}: ${evaluation.signal} blocked by risk - ${riskResult.reason}`,
-        );
-        return;
-      }
-
-      if (strategy.mode === 'signal') {
-        // Signal-only: publish event + log
-        const signalEvent: StrategySignalEvent = {
-          strategyId: strategy.id,
-          userId: strategy.userId,
-          exchange: strategy.exchange,
-          symbol: strategy.symbol,
-          signal: evaluation.signal,
-          strategyType: strategy.type,
-          indicatorValues: evaluation.indicatorValues,
-          reason: evaluation.reason,
-          timestamp: Date.now(),
-        };
-
-        await this.producer.send({
-          topic: KAFKA_TOPICS.TRADING_STRATEGY_SIGNAL,
-          messages: [{ key: strategy.userId, value: JSON.stringify(signalEvent) }],
-        });
-
-        await this.createLog(strategy.id, 'signal_generated', evaluation.signal, {
-          ...evaluation.indicatorValues,
-          price: currentPrice,
-          reason: evaluation.reason,
-        });
-
-        const signalNotif: NotificationEvent = {
-          userId: strategy.userId,
-          type: 'strategy_signal',
-          title: `전략 신호 | ${strategy.name}`,
-          message: `${evaluation.signal.toUpperCase()} — ${evaluation.reason}`,
-        };
-        await this.producer.send({
-          topic: KAFKA_TOPICS.NOTIFICATION_SEND,
-          messages: [{ key: strategy.userId, value: JSON.stringify(signalNotif) }],
-        });
-
-        this.logger.log(`Strategy ${strategy.name}: ${evaluation.signal} signal sent`);
-      } else {
-        // Auto mode: create order via existing pipeline
-        const order = await this.prisma.order.create({
-          data: {
-            userId: strategy.userId,
-            exchangeKeyId: strategy.tradingMode === 'real' ? strategy.exchangeKeyId : null,
-            exchange: strategy.exchange,
-            symbol: strategy.symbol,
-            side: evaluation.signal,
-            type: 'market',
-            mode: strategy.tradingMode,
-            status: 'pending',
-            quantity,
-          },
-        });
-
-        const orderEvent: OrderRequestedEvent = {
-          requestId: randomUUID(),
-          userId: strategy.userId,
-          exchangeKeyId: strategy.exchangeKeyId || '',
-          order: {
-            exchange: strategy.exchange as ExchangeId,
-            symbol: strategy.symbol,
-            side: evaluation.signal,
-            type: 'market',
-            quantity,
-          },
-          mode: strategy.tradingMode as 'paper' | 'real',
-          dbOrderId: order.id,
-        };
-
-        await this.producer.send({
-          topic: KAFKA_TOPICS.TRADING_ORDER_REQUESTED,
-          messages: [{ key: strategy.userId, value: JSON.stringify(orderEvent) }],
-        });
-
-        await this.createLog(strategy.id, 'order_placed', evaluation.signal, {
-          ...evaluation.indicatorValues,
-          price: currentPrice,
-          reason: evaluation.reason,
-          orderId: order.id,
-        });
-
-        this.logger.log(
-          `Strategy ${strategy.name}: ${evaluation.signal} order placed (${order.id})`,
-        );
-      }
     } catch (err) {
       this.logger.error(`Strategy ${strategy.id} evaluation failed: ${err}`);
       await this.createLog(strategy.id, 'error', null, {

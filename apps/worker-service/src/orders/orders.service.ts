@@ -3,17 +3,10 @@ import { Kafka, Consumer, Producer } from 'kafkajs';
 import Redis from 'ioredis';
 import { KAFKA_TOPICS } from '@coin/kafka-contracts';
 import type { OrderRequestedEvent, OrderResultEvent } from '@coin/kafka-contracts';
-import type { ExchangeId, ExchangeCredentials, OrderResult } from '@coin/types';
-import { UpbitRest, BinanceRest, BybitRest, IExchangeRest } from '@coin/exchange-adapters';
-import { decrypt } from '@coin/utils';
+import type { OrderResult } from '@coin/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { PaperEngineService } from './paper-engine.service';
-
-const REST_ADAPTERS: Record<ExchangeId, () => IExchangeRest> = {
-  upbit: () => new UpbitRest(),
-  binance: () => new BinanceRest(),
-  bybit: () => new BybitRest(),
-};
+import { executeRealOrderSaga } from './sagas/real-execution-steps';
 
 @Injectable()
 export class OrdersService implements OnModuleInit, OnModuleDestroy {
@@ -73,6 +66,15 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
 
   private async handleOrderRequested(event: OrderRequestedEvent) {
     const { mode, order, dbOrderId, userId, exchangeKeyId } = event;
+
+    // Idempotency check
+    const lockKey = `saga:lock:${event.requestId}`;
+    const acquired = await this.redis.set(lockKey, '1', 'EX', 60, 'NX');
+    if (!acquired) {
+      this.logger.warn(`Duplicate: ${event.requestId}`);
+      return;
+    }
+
     this.logger.log(`Order requested: ${dbOrderId} (${mode} ${order.side} ${order.symbol})`);
 
     try {
@@ -150,48 +152,7 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async executeRealOrder(event: OrderRequestedEvent) {
-    const { order, dbOrderId, userId, exchangeKeyId } = event;
-    const masterKey = process.env.ENCRYPTION_MASTER_KEY;
-    if (!masterKey) throw new Error('ENCRYPTION_MASTER_KEY not configured');
-
-    const exchangeKey = await this.prisma.exchangeKey.findFirst({
-      where: { id: exchangeKeyId, userId },
-    });
-    if (!exchangeKey) throw new Error(`Exchange key not found: ${exchangeKeyId}`);
-
-    const credentials: ExchangeCredentials = {
-      apiKey: decrypt(exchangeKey.apiKey, masterKey),
-      secretKey: decrypt(exchangeKey.secretKey, masterKey),
-    };
-
-    const adapter = REST_ADAPTERS[order.exchange]();
-    const result = await adapter.placeOrder(credentials, order);
-
-    await this.prisma.order.update({
-      where: { id: dbOrderId },
-      data: {
-        status: result.status,
-        exchangeOrderId: result.orderId,
-        filledQuantity: result.filledQuantity,
-        filledPrice: result.filledPrice,
-        fee: result.fee,
-        feeCurrency: result.feeCurrency,
-      },
-    });
-
-    const resultEvent: OrderResultEvent = {
-      requestId: event.requestId,
-      userId,
-      dbOrderId,
-      result,
-      mode: 'real',
-    };
-
-    await this.producer.send({
-      topic: KAFKA_TOPICS.TRADING_ORDER_RESULT,
-      messages: [{ key: userId, value: JSON.stringify(resultEvent) }],
-    });
-
-    this.logger.log(`Real order executed: ${dbOrderId} → ${result.status}`);
+    await executeRealOrderSaga(event, this.prisma, this.producer);
+    this.logger.log(`Real order executed via saga: ${event.dbOrderId}`);
   }
 }

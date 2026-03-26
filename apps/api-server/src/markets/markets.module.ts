@@ -1,13 +1,24 @@
-import { Module } from '@nestjs/common';
+import { Module, OnModuleInit, Inject } from '@nestjs/common';
 import { MarketsGateway } from './markets.gateway';
 import { MarketsService } from './markets.service';
 import { MarketsController } from './markets.controller';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { OrdersModule } from '../orders/orders.module';
+import { OrderLifecycleOrchestrator } from '../orders/sagas/order-lifecycle.orchestrator';
 
 @Module({
-  imports: [NotificationsModule],
+  imports: [NotificationsModule, OrdersModule],
   providers: [MarketsGateway, MarketsService],
   controllers: [MarketsController],
   exports: [MarketsService],
 })
-export class MarketsModule {}
+export class MarketsModule implements OnModuleInit {
+  constructor(
+    private readonly marketsService: MarketsService,
+    private readonly orchestrator: OrderLifecycleOrchestrator,
+  ) {}
+
+  onModuleInit() {
+    this.marketsService.setOrchestrator(this.orchestrator);
+  }
+}
