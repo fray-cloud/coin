@@ -1,7 +1,14 @@
 import { createHash } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 import jwt from 'jsonwebtoken';
-import type { ExchangeCredentials, Balance, OrderResult, OrderRequest, Market } from '@coin/types';
+import type {
+  ExchangeCredentials,
+  Balance,
+  OrderResult,
+  OrderRequest,
+  Market,
+  Candle,
+} from '@coin/types';
 import { IExchangeRest } from '../interfaces/exchange-rest';
 
 const BASE_URL = 'https://api.upbit.com';
@@ -115,6 +122,44 @@ export class UpbitRest implements IExchangeRest {
         quoteAsset,
       };
     });
+  }
+
+  async getCandles(symbol: string, interval: string, limit = 200): Promise<Candle[]> {
+    const INTERVAL_MAP: Record<string, string> = {
+      '1m': 'minutes/1',
+      '5m': 'minutes/5',
+      '15m': 'minutes/15',
+      '1h': 'minutes/60',
+      '4h': 'minutes/240',
+      '1d': 'days',
+    };
+    const path = INTERVAL_MAP[interval] || 'minutes/1';
+    const res = await fetch(`${BASE_URL}/v1/candles/${path}?market=${symbol}&count=${limit}`);
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Upbit API error ${res.status}: ${body}`);
+    }
+    const data = (await res.json()) as Array<{
+      candle_date_time_utc: string;
+      opening_price: number;
+      high_price: number;
+      low_price: number;
+      trade_price: number;
+      candle_acc_trade_volume: number;
+      timestamp: number;
+    }>;
+    // Upbit returns newest first, reverse to chronological order
+    return data.reverse().map((k) => ({
+      exchange: this.exchangeId,
+      symbol,
+      interval,
+      open: String(k.opening_price),
+      high: String(k.high_price),
+      low: String(k.low_price),
+      close: String(k.trade_price),
+      volume: String(k.candle_acc_trade_volume),
+      timestamp: k.timestamp,
+    }));
   }
 
   private mapOrderResponse(o: UpbitOrderResponse): OrderResult {

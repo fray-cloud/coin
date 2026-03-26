@@ -16,7 +16,10 @@ import {
 import { useTickers } from '@/hooks/use-tickers';
 import { useOrderUpdates } from '@/hooks/use-order-updates';
 import { useUser } from '@/hooks/use-user';
+import { useTranslations } from 'next-intl';
 import type { Ticker } from '@coin/types';
+import { CoinIcon, ExchangeIcon } from '@/components/icons';
+import { CandleChart } from '@/components/candle-chart';
 
 const STATUS_STYLES: Record<string, string> = {
   pending: 'bg-yellow-100 text-yellow-800',
@@ -105,7 +108,10 @@ function SymbolCard({
       }`}
     >
       <div className="flex items-center justify-between">
-        <span className="font-medium text-sm">{ticker.symbol}</span>
+        <span className="font-medium text-sm flex items-center gap-1.5">
+          <CoinIcon symbol={ticker.symbol} size={16} />
+          {ticker.symbol}
+        </span>
         <span className={`text-xs font-medium ${changeColor}`}>
           {changeNum > 0 ? '+' : ''}
           {changeNum.toFixed(2)}%
@@ -124,10 +130,12 @@ function OrderForm({
   keys,
   tickers,
   onSuccess,
+  onSelectionChange,
 }: {
   keys: ExchangeKeyItem[];
   tickers: Ticker[];
   onSuccess: () => void;
+  onSelectionChange?: (exchange: string, symbol: string) => void;
 }) {
   const [exchange, setExchange] = useState('');
   const [exchangeKeyId, setExchangeKeyId] = useState('');
@@ -138,6 +146,7 @@ function OrderForm({
   const [price, setPrice] = useState('');
   const [mode, setMode] = useState<'paper' | 'real'>('paper');
   const [error, setError] = useState('');
+  const t = useTranslations('orders');
 
   // 활성 티커에서 거래소 목록 추출
   const activeExchanges = [...new Set(tickers.map((t) => t.exchange))];
@@ -147,6 +156,11 @@ function OrderForm({
 
   // 선택된 심볼의 실시간 티커
   const selectedTicker = tickers.find((t) => t.exchange === exchange && t.symbol === symbol);
+
+  // Notify parent of selection
+  useEffect(() => {
+    onSelectionChange?.(exchange, symbol);
+  }, [exchange, symbol, onSelectionChange]);
 
   // 거래소 선택 시 해당 키 자동 설정
   useEffect(() => {
@@ -185,7 +199,7 @@ function OrderForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">New Order</CardTitle>
+        <CardTitle className="text-lg">{t('newOrder')}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -197,7 +211,7 @@ function OrderForm({
               size="sm"
               onClick={() => setMode('paper')}
             >
-              Paper
+              {t('paper')}
             </Button>
             <Button
               type="button"
@@ -205,13 +219,13 @@ function OrderForm({
               size="sm"
               onClick={() => setMode('real')}
             >
-              Real
+              {t('real')}
             </Button>
           </div>
 
           {/* Exchange */}
           <div className="space-y-2">
-            <Label>Exchange</Label>
+            <Label>{t('exchange')}</Label>
             <div className="flex gap-2">
               {activeExchanges.map((ex) => (
                 <Button
@@ -221,7 +235,10 @@ function OrderForm({
                   size="sm"
                   onClick={() => setExchange(ex)}
                 >
-                  {ex.charAt(0).toUpperCase() + ex.slice(1)}
+                  <span className="flex items-center gap-1.5">
+                    <ExchangeIcon exchange={ex} size={16} />
+                    {ex.charAt(0).toUpperCase() + ex.slice(1)}
+                  </span>
                 </Button>
               ))}
             </div>
@@ -230,7 +247,7 @@ function OrderForm({
           {/* Symbol selection - card grid with live prices */}
           {exchange && (
             <div className="space-y-2">
-              <Label>Symbol</Label>
+              <Label>{t('symbol')}</Label>
               <div className="grid grid-cols-1 gap-2">
                 {activeSymbols.map((t) => (
                   <SymbolCard
@@ -268,7 +285,7 @@ function OrderForm({
           {symbol && (
             <>
               <div className="space-y-2">
-                <Label>Side</Label>
+                <Label>{t('side')}</Label>
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -277,7 +294,7 @@ function OrderForm({
                     className={side === 'buy' ? 'bg-green-600 hover:bg-green-700' : ''}
                     onClick={() => setSide('buy')}
                   >
-                    Buy
+                    {t('buy')}
                   </Button>
                   <Button
                     type="button"
@@ -286,14 +303,14 @@ function OrderForm({
                     className={side === 'sell' ? 'bg-red-600 hover:bg-red-700' : ''}
                     onClick={() => setSide('sell')}
                   >
-                    Sell
+                    {t('sell')}
                   </Button>
                 </div>
               </div>
 
               {/* Type toggle */}
               <div className="space-y-2">
-                <Label>Type</Label>
+                <Label>{t('type')}</Label>
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -301,7 +318,7 @@ function OrderForm({
                     size="sm"
                     onClick={() => setType('market')}
                   >
-                    Market
+                    {t('market')}
                   </Button>
                   <Button
                     type="button"
@@ -309,14 +326,14 @@ function OrderForm({
                     size="sm"
                     onClick={() => setType('limit')}
                   >
-                    Limit
+                    {t('limit')}
                   </Button>
                 </div>
               </div>
 
               {/* Quantity */}
               <div className="space-y-2">
-                <Label>Quantity</Label>
+                <Label>{t('quantity')}</Label>
                 <Input
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
@@ -328,7 +345,7 @@ function OrderForm({
               {/* Price (limit only) */}
               {type === 'limit' && (
                 <div className="space-y-2">
-                  <Label>Price</Label>
+                  <Label>{t('priceLabel')}</Label>
                   <Input
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
@@ -339,9 +356,7 @@ function OrderForm({
               )}
 
               {mode === 'real' && exchange && !exchangeKeyId && (
-                <p className="text-sm text-yellow-600">
-                  No API key registered for {exchange}. Register one in Accounts first.
-                </p>
+                <p className="text-sm text-yellow-600">{t('noKeyWarning', { exchange })}</p>
               )}
 
               {error && <p className="text-sm text-destructive">{error}</p>}
@@ -352,8 +367,10 @@ function OrderForm({
                 className={`w-full ${side === 'buy' ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
               >
                 {mutation.isPending
-                  ? 'Submitting...'
-                  : `${side === 'buy' ? 'Buy' : 'Sell'} ${symbol}`}
+                  ? t('submitting')
+                  : side === 'buy'
+                    ? t('buySymbol', { symbol })
+                    : t('sellSymbol', { symbol })}
               </Button>
             </>
           )}
@@ -364,6 +381,7 @@ function OrderForm({
 }
 
 function OrdersTable() {
+  const t = useTranslations('orders');
   const queryClient = useQueryClient();
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
@@ -386,26 +404,26 @@ function OrdersTable() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Order History</CardTitle>
+        <CardTitle className="text-lg">{t('history')}</CardTitle>
       </CardHeader>
       <CardContent>
-        {isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}
+        {isLoading && <p className="text-sm text-muted-foreground">{t('loading')}</p>}
 
         {orders.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
-                  <th className="pb-2 font-medium">Time</th>
-                  <th className="pb-2 font-medium">Exchange</th>
-                  <th className="pb-2 font-medium">Symbol</th>
-                  <th className="pb-2 font-medium">Side</th>
-                  <th className="pb-2 font-medium">Type</th>
-                  <th className="pb-2 font-medium text-right">Qty</th>
-                  <th className="pb-2 font-medium text-right">Price</th>
-                  <th className="pb-2 font-medium text-right">Filled</th>
-                  <th className="pb-2 font-medium">Mode</th>
-                  <th className="pb-2 font-medium">Status</th>
+                  <th className="pb-2 font-medium">{t('time')}</th>
+                  <th className="pb-2 font-medium">{t('exchange')}</th>
+                  <th className="pb-2 font-medium">{t('symbol')}</th>
+                  <th className="pb-2 font-medium">{t('side')}</th>
+                  <th className="pb-2 font-medium">{t('type')}</th>
+                  <th className="pb-2 font-medium text-right">{t('qty')}</th>
+                  <th className="pb-2 font-medium text-right">{t('priceLabel')}</th>
+                  <th className="pb-2 font-medium text-right">{t('filled')}</th>
+                  <th className="pb-2 font-medium">{t('mode')}</th>
+                  <th className="pb-2 font-medium">{t('status')}</th>
                   <th className="pb-2 font-medium"></th>
                 </tr>
               </thead>
@@ -415,8 +433,18 @@ function OrdersTable() {
                     <td className="py-2 text-xs text-muted-foreground whitespace-nowrap">
                       {new Date(order.createdAt).toLocaleString()}
                     </td>
-                    <td className="py-2 capitalize">{order.exchange}</td>
-                    <td className="py-2 font-medium">{order.symbol}</td>
+                    <td className="py-2">
+                      <span className="flex items-center gap-1.5">
+                        <ExchangeIcon exchange={order.exchange} size={16} />
+                        <span className="capitalize">{order.exchange}</span>
+                      </span>
+                    </td>
+                    <td className="py-2 font-medium">
+                      <span className="flex items-center gap-1.5">
+                        <CoinIcon symbol={order.symbol} size={16} />
+                        {order.symbol}
+                      </span>
+                    </td>
                     <td
                       className={`py-2 font-medium ${order.side === 'buy' ? 'text-green-600' : 'text-red-600'}`}
                     >
@@ -451,7 +479,7 @@ function OrdersTable() {
                           onClick={() => cancelMutation.mutate(order.id)}
                           disabled={cancelMutation.isPending}
                         >
-                          Cancel
+                          {t('cancel')}
                         </Button>
                       )}
                     </td>
@@ -463,7 +491,7 @@ function OrdersTable() {
         )}
 
         {!isLoading && orders.length === 0 && (
-          <p className="text-center text-muted-foreground py-8">No orders yet</p>
+          <p className="text-center text-muted-foreground py-8">{t('noOrders')}</p>
         )}
 
         {hasNextPage && (
@@ -474,7 +502,7 @@ function OrdersTable() {
               onClick={() => fetchNextPage()}
               disabled={isFetchingNextPage}
             >
-              {isFetchingNextPage ? 'Loading...' : 'Load More'}
+              {isFetchingNextPage ? t('loading') : t('loadMore')}
             </Button>
           </div>
         )}
@@ -484,8 +512,11 @@ function OrdersTable() {
 }
 
 export default function OrdersPage() {
+  const t = useTranslations('orders');
   const queryClient = useQueryClient();
   const { user } = useUser();
+  const [selectedExchange, setSelectedExchange] = useState('');
+  const [selectedSymbol, setSelectedSymbol] = useState('');
 
   const { data: keys = [] } = useQuery({
     queryKey: ['exchangeKeys'],
@@ -496,9 +527,22 @@ export default function OrdersPage() {
 
   useOrderUpdates(user?.id ?? null);
 
+  const handleSelectionChange = (exchange: string, symbol: string) => {
+    setSelectedExchange(exchange);
+    setSelectedSymbol(symbol);
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-6">
-      <h1 className="text-2xl font-bold">Orders</h1>
+      <h1 className="text-2xl font-bold">{t('title')}</h1>
+
+      {selectedExchange && selectedSymbol && (
+        <Card>
+          <CardContent className="pt-4">
+            <CandleChart exchange={selectedExchange} symbol={selectedSymbol} height={300} />
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
@@ -506,6 +550,7 @@ export default function OrdersPage() {
             keys={keys}
             tickers={tickers}
             onSuccess={() => queryClient.invalidateQueries({ queryKey: ['orders'] })}
+            onSelectionChange={handleSelectionChange}
           />
         </div>
         <div className="lg:col-span-2">

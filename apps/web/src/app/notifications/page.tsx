@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useTranslations } from 'next-intl';
 import { getNotificationSettings, updateNotificationSettings } from '@/lib/api-client';
 
 function Toggle({
@@ -38,6 +39,7 @@ function Toggle({
 }
 
 export default function NotificationsPage() {
+  const t = useTranslations('notifications');
   const queryClient = useQueryClient();
   const [chatId, setChatId] = useState('');
   const [saved, setSaved] = useState(false);
@@ -66,22 +68,22 @@ export default function NotificationsPage() {
 
   return (
     <div className="max-w-2xl mx-auto p-4 space-y-6">
-      <h1 className="text-2xl font-bold">Notification Settings</h1>
+      <h1 className="text-2xl font-bold">{t('title')}</h1>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Telegram</CardTitle>
+          <CardTitle className="text-lg">{t('telegram')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="text-sm text-muted-foreground">
-            <p>1. Telegram에서 봇을 검색하고 /start를 보내세요</p>
-            <p>2. 봇이 알려주는 Chat ID를 아래에 입력하세요</p>
+            <p>{t('telegramStep1')}</p>
+            <p>{t('telegramStep2')}</p>
           </div>
           <div className="flex gap-2">
             <Input
               value={chatId || settings?.telegramChatId || ''}
               onChange={(e) => setChatId(e.target.value)}
-              placeholder="Chat ID (예: 123456789)"
+              placeholder={t('chatIdPlaceholder')}
             />
             <Button
               onClick={() =>
@@ -92,36 +94,38 @@ export default function NotificationsPage() {
               disabled={mutation.isPending}
               size="sm"
             >
-              {mutation.isPending ? 'Saving...' : 'Save'}
+              {mutation.isPending ? t('saving') : t('save')}
             </Button>
           </div>
           {settings?.telegramChatId && (
-            <p className="text-xs text-green-600">Connected: {settings.telegramChatId}</p>
+            <p className="text-xs text-green-600">
+              {t('connected', { chatId: settings.telegramChatId })}
+            </p>
           )}
         </CardContent>
       </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Notification Types</CardTitle>
+          <CardTitle className="text-lg">{t('types')}</CardTitle>
         </CardHeader>
         <CardContent>
           <Toggle
-            label="Order Filled / Failed"
+            label={t('orderFilled')}
             checked={settings?.notifyOrders ?? true}
             onChange={(v) => mutation.mutate({ notifyOrders: v })}
           />
           <Toggle
-            label="Strategy Signals"
+            label={t('strategySignals')}
             checked={settings?.notifySignals ?? true}
             onChange={(v) => mutation.mutate({ notifySignals: v })}
           />
           <Toggle
-            label="Risk Blocked"
+            label={t('riskBlocked')}
             checked={settings?.notifyRisks ?? false}
             onChange={(v) => mutation.mutate({ notifyRisks: v })}
           />
-          {saved && <p className="text-xs text-green-600 mt-2">Settings saved</p>}
+          {saved && <p className="text-xs text-green-600 mt-2">{t('saved')}</p>}
         </CardContent>
       </Card>
     </div>

@@ -1,5 +1,12 @@
 import { createHmac } from 'crypto';
-import { ExchangeCredentials, Balance, OrderRequest, OrderResult, Market } from '@coin/types';
+import {
+  ExchangeCredentials,
+  Balance,
+  OrderRequest,
+  OrderResult,
+  Market,
+  Candle,
+} from '@coin/types';
 import { IExchangeRest } from '../interfaces/exchange-rest';
 
 const BASE_URL = 'https://api.bybit.com';
@@ -164,6 +171,47 @@ export class BybitRest implements IExchangeRest {
         baseAsset: item.baseCoin,
         quoteAsset: item.quoteCoin,
       }));
+  }
+
+  async getCandles(symbol: string, interval: string, limit = 200): Promise<Candle[]> {
+    const INTERVAL_MAP: Record<string, string> = {
+      '1m': '1',
+      '5m': '5',
+      '15m': '15',
+      '1h': '60',
+      '4h': '240',
+      '1d': 'D',
+    };
+    const bybitInterval = INTERVAL_MAP[interval] || '1';
+    const res = await fetch(
+      `${BASE_URL}/v5/market/kline?category=spot&symbol=${symbol}&interval=${bybitInterval}&limit=${limit}`,
+    );
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Bybit API error ${res.status}: ${body}`);
+    }
+    const data = (await res.json()) as {
+      retCode: number;
+      retMsg: string;
+      result: {
+        list: Array<[string, string, string, string, string, string, string]>;
+      };
+    };
+    if (data.retCode !== 0) {
+      throw new Error(`Bybit API error: ${data.retMsg}`);
+    }
+    // Bybit returns newest first, reverse to chronological order
+    return (data.result?.list ?? []).reverse().map((k) => ({
+      exchange: this.exchangeId,
+      symbol,
+      interval,
+      open: k[1],
+      high: k[2],
+      low: k[3],
+      close: k[4],
+      volume: k[5],
+      timestamp: Number(k[0]),
+    }));
   }
 
   private mapOrder(o: BybitOrder): OrderResult {

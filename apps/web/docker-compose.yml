@@ -15,8 +15,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 384M
-          cpus: '0.5'
+          memory: 1024M
+          cpus: '1.0'
     healthcheck:
       test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3001']
       interval: 30s

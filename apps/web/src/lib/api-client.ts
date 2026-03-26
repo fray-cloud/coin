@@ -387,8 +387,49 @@ export interface PortfolioSummary {
   dailyPnl: Array<{ date: string; pnl: number }>;
 }
 
-export async function getPortfolioSummary(): Promise<PortfolioSummary> {
-  const res = await apiFetch('/portfolio/summary');
+export async function getPortfolioSummary(
+  mode?: 'paper' | 'real' | 'all',
+): Promise<PortfolioSummary> {
+  const params = mode ? `?mode=${mode}` : '';
+  const res = await apiFetch(`/portfolio/summary${params}`);
   if (!res.ok) throw new Error('Failed to fetch portfolio');
+  return res.json();
+}
+
+// Exchange rate
+export interface ExchangeRate {
+  krwPerUsd: number;
+  updatedAt: string | null;
+}
+
+// Candles
+export interface CandleData {
+  exchange: string;
+  symbol: string;
+  interval: string;
+  open: string;
+  high: string;
+  low: string;
+  close: string;
+  volume: string;
+  timestamp: number;
+}
+
+export async function getCandles(
+  exchange: string,
+  symbol: string,
+  interval: string,
+  limit = 200,
+): Promise<CandleData[]> {
+  const res = await apiFetch(
+    `/markets/candles/${exchange}/${encodeURIComponent(symbol)}?interval=${interval}&limit=${limit}`,
+  );
+  if (!res.ok) throw new Error('Failed to fetch candles');
+  return res.json();
+}
+
+export async function getExchangeRate(): Promise<ExchangeRate> {
+  const res = await apiFetch('/markets/exchange-rate');
+  if (!res.ok) throw new Error('Failed to fetch exchange rate');
   return res.json();
 }

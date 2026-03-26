@@ -56,59 +56,92 @@ export class PortfolioService {
     });
   }
 
-  async getSummary(userId: string) {
+  async getSummary(userId: string, mode?: 'paper' | 'real' | 'all') {
+    const effectiveMode = mode || 'all';
     const masterKey = this.config.getOrThrow<string>('ENCRYPTION_MASTER_KEY');
 
-    // Prefetch all filled orders once for avg cost + P&L calculations
+    // Prefetch filled orders, optionally filtered by mode
+    const orderWhere: { userId: string; status: string; mode?: string } = {
+      userId,
+      status: 'filled',
+    };
+    if (effectiveMode !== 'all') {
+      orderWhere.mode = effectiveMode;
+    }
+
     const allFilledOrders = await this.prisma.order.findMany({
-      where: { userId, status: 'filled' },
+      where: orderWhere,
       orderBy: { createdAt: 'asc' },
     });
 
     // Build avg cost map: key = "exchange|currency"
     const avgCostMap = this.buildAvgCostMap(allFilledOrders);
 
-    // 1. Fetch balances from all exchange keys
-    const keys = await this.prisma.exchangeKey.findMany({
-      where: { userId },
-    });
-
     const assets: PortfolioAsset[] = [];
 
-    for (const key of keys) {
-      try {
-        const credentials: ExchangeCredentials = {
-          apiKey: decrypt(key.apiKey, masterKey),
-          secretKey: decrypt(key.secretKey, masterKey),
-        };
-        const adapter = REST_ADAPTERS[key.exchange as ExchangeId]();
-        const balances = await adapter.getBalances(credentials);
+    if (effectiveMode === 'paper') {
+      // Paper mode: compute virtual balances from order history
+      const virtualBalances = this.computePaperBalances(allFilledOrders);
+      for (const [key, qty] of virtualBalances.entries()) {
+        const [exchange, currency] = key.split('|');
+        if (qty <= 0) continue;
 
-        for (const bal of balances) {
-          const free = parseFloat(bal.free);
-          const locked = parseFloat(bal.locked);
-          const total = free + locked;
-          if (total <= 0) continue;
+        const currentPrice = await this.getTickerPrice(exchange, currency);
+        const avgCost = avgCostMap.get(key) ?? 0;
+        const valueKrw = currentPrice * qty;
+        const pnl = avgCost > 0 ? (currentPrice - avgCost) * qty : 0;
 
-          const currentPrice = await this.getTickerPrice(key.exchange, bal.currency);
-          const costKey = `${key.exchange}|${bal.currency}`;
-          const avgCost = avgCostMap.get(costKey) ?? 0;
+        assets.push({
+          exchange,
+          currency,
+          quantity: qty.toString(),
+          avgCost,
+          currentPrice,
+          valueKrw,
+          pnl,
+        });
+      }
+    } else {
+      // Real or All mode: fetch from exchange APIs
+      const keys = await this.prisma.exchangeKey.findMany({
+        where: { userId },
+      });
 
-          const valueKrw = currentPrice * total;
-          const pnl = avgCost > 0 ? (currentPrice - avgCost) * total : 0;
+      for (const key of keys) {
+        try {
+          const credentials: ExchangeCredentials = {
+            apiKey: decrypt(key.apiKey, masterKey),
+            secretKey: decrypt(key.secretKey, masterKey),
+          };
+          const adapter = REST_ADAPTERS[key.exchange as ExchangeId]();
+          const balances = await adapter.getBalances(credentials);
 
-          assets.push({
-            exchange: key.exchange,
-            currency: bal.currency,
-            quantity: total.toString(),
-            avgCost,
-            currentPrice,
-            valueKrw,
-            pnl,
-          });
+          for (const bal of balances) {
+            const free = parseFloat(bal.free);
+            const locked = parseFloat(bal.locked);
+            const total = free + locked;
+            if (total <= 0) continue;
+
+            const currentPrice = await this.getTickerPrice(key.exchange, bal.currency);
+            const costKey = `${key.exchange}|${bal.currency}`;
+            const avgCost = avgCostMap.get(costKey) ?? 0;
+
+            const valueKrw = currentPrice * total;
+            const pnl = avgCost > 0 ? (currentPrice - avgCost) * total : 0;
+
+            assets.push({
+              exchange: key.exchange,
+              currency: bal.currency,
+              quantity: total.toString(),
+              avgCost,
+              currentPrice,
+              valueKrw,
+              pnl,
+            });
+          }
+        } catch (err) {
+          this.logger.warn(`Failed to fetch balances for ${key.exchange}: ${err}`);
         }
-      } catch (err) {
-        this.logger.warn(`Failed to fetch balances for ${key.exchange}: ${err}`);
       }
     }
 
@@ -121,7 +154,35 @@ export class PortfolioService {
     const totalValueKrw = assets.reduce((sum, a) => sum + a.valueKrw, 0);
     const unrealizedPnl = assets.reduce((sum, a) => sum + a.pnl, 0);
 
-    return { totalValueKrw, realizedPnl, unrealizedPnl, assets, dailyPnl };
+    return { totalValueKrw, realizedPnl, unrealizedPnl, assets, dailyPnl, mode: effectiveMode };
+  }
+
+  private computePaperBalances(
+    orders: Array<{
+      exchange: string;
+      symbol: string;
+      side: string;
+      filledQuantity: string;
+      filledPrice: string;
+    }>,
+  ): Map<string, number> {
+    const balances = new Map<string, number>();
+
+    for (const order of orders) {
+      const currency = parseBaseCurrency(order.exchange, order.symbol);
+      const key = `${order.exchange}|${currency}`;
+      const qty = parseFloat(order.filledQuantity);
+      if (!Number.isFinite(qty) || qty <= 0) continue;
+
+      const current = balances.get(key) ?? 0;
+      if (order.side === 'buy') {
+        balances.set(key, current + qty);
+      } else {
+        balances.set(key, current - qty);
+      }
+    }
+
+    return balances;
   }
 
   private buildAvgCostMap(

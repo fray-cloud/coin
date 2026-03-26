@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { useTranslations } from 'next-intl';
+import { ExchangeIcon } from '@/components/icons';
 import {
   getExchangeKeys,
   createExchangeKey,
@@ -23,13 +25,15 @@ const EXCHANGES = [
 
 function ExchangeLabel({ exchange }: { exchange: string }) {
   return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-medium bg-primary/10 text-primary">
+      <ExchangeIcon exchange={exchange} size={14} />
       {exchange.charAt(0).toUpperCase() + exchange.slice(1)}
     </span>
   );
 }
 
 function BalanceTable({ keyItem }: { keyItem: ExchangeKeyItem }) {
+  const t = useTranslations('accounts');
   const [showAll, setShowAll] = useState(false);
 
   const {
@@ -64,15 +68,15 @@ function BalanceTable({ keyItem }: { keyItem: ExchangeKeyItem }) {
               onChange={(e) => setShowAll(e.target.checked)}
               className="rounded"
             />
-            모든 코인 표시
+            {t('showAll')}
           </label>
           <Button variant="ghost" size="sm" onClick={() => refetch()}>
-            Refresh
+            {t('refresh')}
           </Button>
         </div>
       </div>
 
-      {isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}
+      {isLoading && <p className="text-sm text-muted-foreground">{t('loading')}</p>}
       {error && (
         <p className="text-sm text-destructive">
           {error instanceof Error ? error.message : 'Failed to load balances'}
@@ -84,9 +88,9 @@ function BalanceTable({ keyItem }: { keyItem: ExchangeKeyItem }) {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
-                <th className="pb-2 font-medium">Currency</th>
-                <th className="pb-2 font-medium text-right">Available</th>
-                <th className="pb-2 font-medium text-right">Locked</th>
+                <th className="pb-2 font-medium">{t('currency')}</th>
+                <th className="pb-2 font-medium text-right">{t('available')}</th>
+                <th className="pb-2 font-medium text-right">{t('locked')}</th>
               </tr>
             </thead>
             <tbody>
@@ -105,13 +109,14 @@ function BalanceTable({ keyItem }: { keyItem: ExchangeKeyItem }) {
       )}
 
       {filtered && filtered.length === 0 && !isLoading && (
-        <p className="text-sm text-muted-foreground">No balances found</p>
+        <p className="text-sm text-muted-foreground">{t('noBalances')}</p>
       )}
     </div>
   );
 }
 
 export default function AccountsPage() {
+  const t = useTranslations('accounts');
   const queryClient = useQueryClient();
   const [exchange, setExchange] = useState('upbit');
   const [apiKey, setApiKey] = useState('');
@@ -151,17 +156,17 @@ export default function AccountsPage() {
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
-      <h1 className="text-2xl font-bold">Accounts</h1>
+      <h1 className="text-2xl font-bold">{t('title')}</h1>
 
       {/* Add Key Form */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Register Exchange API Key</CardTitle>
+          <CardTitle className="text-lg">{t('registerKey')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="exchange">Exchange</Label>
+              <Label htmlFor="exchange">{t('exchange')}</Label>
               <select
                 id="exchange"
                 value={exchange}
@@ -174,43 +179,43 @@ export default function AccountsPage() {
                     value={ex.value}
                     disabled={registeredExchanges.has(ex.value)}
                   >
-                    {ex.label} {registeredExchanges.has(ex.value) ? '(registered)' : ''}
+                    {ex.label} {registeredExchanges.has(ex.value) ? `(${t('registered')})` : ''}
                   </option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="apiKey">API Key</Label>
+              <Label htmlFor="apiKey">{t('apiKey')}</Label>
               <Input
                 id="apiKey"
                 type="password"
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Enter your API key"
+                placeholder={t('enterApiKey')}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="secretKey">Secret Key</Label>
+              <Label htmlFor="secretKey">{t('secretKey')}</Label>
               <Input
                 id="secretKey"
                 type="password"
                 value={secretKey}
                 onChange={(e) => setSecretKey(e.target.value)}
-                placeholder="Enter your secret key"
+                placeholder={t('enterSecretKey')}
                 required
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" disabled={createMutation.isPending}>
-              {createMutation.isPending ? 'Validating...' : 'Register Key'}
+              {createMutation.isPending ? t('validating') : t('register')}
             </Button>
           </form>
         </CardContent>
       </Card>
 
       {/* Exchange Keys + Balances */}
-      {keysLoading && <p className="text-muted-foreground">Loading keys...</p>}
+      {keysLoading && <p className="text-muted-foreground">{t('loadingKeys')}</p>}
 
       {keys.map((keyItem) => (
         <Card key={keyItem.id}>
@@ -222,12 +227,12 @@ export default function AccountsPage() {
                 size="sm"
                 className="text-destructive shrink-0 ml-4"
                 onClick={() => {
-                  if (confirm(`Delete ${keyItem.exchange} key?`)) {
+                  if (confirm(t('deleteConfirm', { exchange: keyItem.exchange }))) {
                     deleteMutation.mutate(keyItem.id);
                   }
                 }}
               >
-                Delete
+                {t('delete')}
               </Button>
             </div>
           </CardContent>
@@ -235,9 +240,7 @@ export default function AccountsPage() {
       ))}
 
       {!keysLoading && keys.length === 0 && (
-        <p className="text-center text-muted-foreground py-8">
-          No exchange keys registered yet. Add one above to view your balances.
-        </p>
+        <p className="text-center text-muted-foreground py-8">{t('noKeys')}</p>
       )}
     </div>
   );

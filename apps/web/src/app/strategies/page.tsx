@@ -15,7 +15,9 @@ import {
   getExchangeKeys,
   type ExchangeKeyItem,
 } from '@/lib/api-client';
+import { useTranslations } from 'next-intl';
 import { useTickers } from '@/hooks/use-tickers';
+import { ExchangeIcon, CoinIcon } from '@/components/icons';
 
 const STRATEGY_TYPES = [
   { value: 'rsi', label: 'RSI' },
@@ -70,8 +72,12 @@ function StrategyCard({
                 {strategy.type.toUpperCase()}
               </span>
             </div>
-            <div className="text-sm text-muted-foreground">
-              {strategy.exchange.toUpperCase()} : {strategy.symbol}
+            <div className="text-sm text-muted-foreground flex items-center gap-1.5">
+              <ExchangeIcon exchange={strategy.exchange} size={14} />
+              {strategy.exchange.toUpperCase()}
+              <span className="mx-0.5">:</span>
+              <CoinIcon symbol={strategy.symbol} size={14} />
+              {strategy.symbol}
             </div>
             <div className="flex gap-3 text-xs text-muted-foreground">
               <span className={strategy.mode === 'auto' ? 'text-green-600' : 'text-blue-600'}>
@@ -121,6 +127,7 @@ function CreateStrategyForm({
   keys: ExchangeKeyItem[];
   onSuccess: () => void;
 }) {
+  const t = useTranslations('strategies');
   const { tickers } = useTickers();
   const [name, setName] = useState('');
   const [type, setType] = useState('rsi');
@@ -181,22 +188,22 @@ function CreateStrategyForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">New Strategy</CardTitle>
+        <CardTitle className="text-lg">{t('newStrategy')}</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label>Name</Label>
+            <Label>{t('name')}</Label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="My RSI Strategy"
+              placeholder={t('namePlaceholder')}
               required
             />
           </div>
 
           <div className="space-y-2">
-            <Label>Type</Label>
+            <Label>{t('type')}</Label>
             <div className="flex gap-2">
               {STRATEGY_TYPES.map((st) => (
                 <Button
@@ -213,7 +220,7 @@ function CreateStrategyForm({
           </div>
 
           <div className="space-y-2">
-            <Label>Exchange</Label>
+            <Label>{t('exchange')}</Label>
             <div className="flex gap-2">
               {activeExchanges.map((ex) => (
                 <Button
@@ -226,7 +233,10 @@ function CreateStrategyForm({
                     setSymbol('');
                   }}
                 >
-                  {ex.charAt(0).toUpperCase() + ex.slice(1)}
+                  <span className="flex items-center gap-1.5">
+                    <ExchangeIcon exchange={ex} size={16} />
+                    {ex.charAt(0).toUpperCase() + ex.slice(1)}
+                  </span>
                 </Button>
               ))}
             </div>
@@ -234,7 +244,7 @@ function CreateStrategyForm({
 
           {exchange && (
             <div className="space-y-2">
-              <Label>Symbol</Label>
+              <Label>{t('symbol')}</Label>
               <div className="flex gap-2 flex-wrap">
                 {activeSymbols.map((t) => (
                   <Button
@@ -244,7 +254,10 @@ function CreateStrategyForm({
                     size="sm"
                     onClick={() => setSymbol(t.symbol)}
                   >
-                    {t.symbol}
+                    <span className="flex items-center gap-1.5">
+                      <CoinIcon symbol={t.symbol} size={16} />
+                      {t.symbol}
+                    </span>
                   </Button>
                 ))}
               </div>
@@ -253,7 +266,7 @@ function CreateStrategyForm({
 
           {/* Strategy config */}
           <div className="space-y-2">
-            <Label>Strategy Parameters</Label>
+            <Label>{t('params')}</Label>
             <div className="grid grid-cols-2 gap-2">
               {Object.entries(config).map(([key, val]) => (
                 <div key={key}>
@@ -276,10 +289,10 @@ function CreateStrategyForm({
 
           {/* Risk config */}
           <div className="space-y-2">
-            <Label>Risk Management (optional)</Label>
+            <Label>{t('risk')}</Label>
             <div className="grid grid-cols-3 gap-2">
               <div>
-                <Label className="text-xs text-muted-foreground">Stop Loss %</Label>
+                <Label className="text-xs text-muted-foreground">{t('stopLoss')}</Label>
                 <Input
                   value={riskStopLoss}
                   onChange={(e) => setRiskStopLoss(e.target.value)}
@@ -287,7 +300,7 @@ function CreateStrategyForm({
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Daily Max Loss ($)</Label>
+                <Label className="text-xs text-muted-foreground">{t('dailyMaxLoss')}</Label>
                 <Input
                   value={riskDailyMax}
                   onChange={(e) => setRiskDailyMax(e.target.value)}
@@ -295,7 +308,7 @@ function CreateStrategyForm({
                 />
               </div>
               <div>
-                <Label className="text-xs text-muted-foreground">Max Position</Label>
+                <Label className="text-xs text-muted-foreground">{t('maxPosition')}</Label>
                 <Input
                   value={riskMaxPosition}
                   onChange={(e) => setRiskMaxPosition(e.target.value)}
@@ -308,7 +321,7 @@ function CreateStrategyForm({
           {/* Mode toggles */}
           <div className="flex gap-4">
             <div className="space-y-2">
-              <Label>Mode</Label>
+              <Label>{t('mode')}</Label>
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -316,7 +329,7 @@ function CreateStrategyForm({
                   size="sm"
                   onClick={() => setMode('signal')}
                 >
-                  Signal
+                  {t('signal')}
                 </Button>
                 <Button
                   type="button"
@@ -324,12 +337,12 @@ function CreateStrategyForm({
                   size="sm"
                   onClick={() => setMode('auto')}
                 >
-                  Auto
+                  {t('auto')}
                 </Button>
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Trading</Label>
+              <Label>{t('trading')}</Label>
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -337,7 +350,7 @@ function CreateStrategyForm({
                   size="sm"
                   onClick={() => setTradingMode('paper')}
                 >
-                  Paper
+                  {t('paper')}
                 </Button>
                 <Button
                   type="button"
@@ -345,14 +358,14 @@ function CreateStrategyForm({
                   size="sm"
                   onClick={() => setTradingMode('real')}
                 >
-                  Real
+                  {t('real')}
                 </Button>
               </div>
             </div>
           </div>
 
           <div className="space-y-2">
-            <Label>Interval (seconds)</Label>
+            <Label>{t('interval')}</Label>
             <Input
               value={intervalSeconds}
               onChange={(e) => setIntervalSeconds(e.target.value)}
@@ -368,7 +381,7 @@ function CreateStrategyForm({
             className="w-full"
             disabled={mutation.isPending || !exchange || !symbol || !name}
           >
-            {mutation.isPending ? 'Creating...' : 'Create Strategy'}
+            {mutation.isPending ? t('creating') : t('create')}
           </Button>
         </form>
       </CardContent>
@@ -377,6 +390,7 @@ function CreateStrategyForm({
 }
 
 export default function StrategiesPage() {
+  const t = useTranslations('strategies');
   const queryClient = useQueryClient();
 
   const { data: strategies = [], isLoading } = useQuery({
@@ -401,7 +415,7 @@ export default function StrategiesPage() {
 
   return (
     <div className="max-w-6xl mx-auto p-4 space-y-6">
-      <h1 className="text-2xl font-bold">Strategies</h1>
+      <h1 className="text-2xl font-bold">{t('title')}</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-1">
@@ -413,9 +427,7 @@ export default function StrategiesPage() {
         <div className="lg:col-span-2 space-y-4">
           {isLoading && <p className="text-sm text-muted-foreground">Loading...</p>}
           {!isLoading && strategies.length === 0 && (
-            <p className="text-center text-muted-foreground py-8">
-              No strategies yet. Create one to get started.
-            </p>
+            <p className="text-center text-muted-foreground py-8">{t('noStrategies')}</p>
           )}
           {strategies.map((s) => (
             <StrategyCard

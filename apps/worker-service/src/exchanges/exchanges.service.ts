@@ -35,9 +35,15 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
+  private exchangeRateInterval: ReturnType<typeof setInterval> | null = null;
+
   async onModuleInit() {
     await this.producer.connect();
     this.logger.log('Kafka producer connected');
+
+    // Fetch exchange rate immediately and every 5 minutes
+    this.fetchExchangeRate();
+    this.exchangeRateInterval = setInterval(() => this.fetchExchangeRate(), 5 * 60 * 1000);
 
     const upbit = new UpbitWebSocket({
       onConnected: () => this.logger.log('Upbit WebSocket connected'),
@@ -75,12 +81,35 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
+    if (this.exchangeRateInterval) clearInterval(this.exchangeRateInterval);
     for (const adapter of this.adapters) {
       adapter.disconnect();
     }
     await this.producer.disconnect();
     this.redis.disconnect();
     this.logger.log('All connections closed');
+  }
+
+  private async fetchExchangeRate() {
+    try {
+      const res = await fetch(
+        'https://quotation-api-cdn.dunamu.com/v1/forex/recent?codes=FRX.KRWUSD',
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = (await res.json()) as Array<{ basePrice: number }>;
+      const rate = data?.[0]?.basePrice;
+      if (rate && typeof rate === 'number') {
+        await this.redis.set(
+          'exchange-rate:KRW-USD',
+          JSON.stringify({ krwPerUsd: rate, updatedAt: new Date().toISOString() }),
+          'EX',
+          600,
+        );
+        this.logger.log(`Exchange rate updated: 1 USD = ${rate} KRW`);
+      }
+    } catch (err) {
+      this.logger.warn(`Failed to fetch exchange rate: ${err}`);
+    }
   }
 
   private async handleTicker(ticker: Ticker) {

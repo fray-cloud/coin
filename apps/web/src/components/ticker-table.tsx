@@ -1,6 +1,11 @@
 'use client';
 
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { Ticker } from '@coin/types';
+import { CoinIcon, ExchangeIcon } from '@/components/icons';
+import { useExchangeRate } from '@/hooks/use-exchange-rate';
+import { MiniChart } from '@/components/mini-chart';
 
 interface TickerTableProps {
   tickers: Ticker[];
@@ -20,7 +25,23 @@ function formatVolume(volume: string): string {
   return num.toFixed(2);
 }
 
+function convertedPrice(price: string, exchange: string, krwPerUsd: number): string | null {
+  if (!krwPerUsd) return null;
+  const num = Number(price);
+  if (exchange === 'upbit') {
+    // KRW → USD
+    const usd = num / krwPerUsd;
+    return `$${usd >= 1 ? usd.toLocaleString('en-US', { maximumFractionDigits: 2 }) : usd.toLocaleString('en-US', { maximumFractionDigits: 6 })}`;
+  }
+  // USDT → KRW
+  const krw = num * krwPerUsd;
+  return `₩${krw.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
+}
+
 export function TickerTable({ tickers }: TickerTableProps) {
+  const t = useTranslations('ticker');
+  const { krwPerUsd } = useExchangeRate();
+
   const sorted = [...tickers].sort((a, b) => {
     if (a.symbol < b.symbol) return -1;
     if (a.symbol > b.symbol) return 1;
@@ -29,44 +50,82 @@ export function TickerTable({ tickers }: TickerTableProps) {
 
   return (
     <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontFamily: 'monospace', fontSize: '14px' }}>
+      <table
+        style={{
+          width: '100%',
+          borderCollapse: 'collapse',
+          fontFamily: 'monospace',
+          fontSize: '14px',
+        }}
+      >
         <thead>
           <tr style={{ borderBottom: '2px solid #333', textAlign: 'left' }}>
-            <th style={{ padding: '8px' }}>Exchange</th>
-            <th style={{ padding: '8px' }}>Symbol</th>
-            <th style={{ padding: '8px', textAlign: 'right' }}>Price</th>
-            <th style={{ padding: '8px', textAlign: 'right' }}>24h Change</th>
-            <th style={{ padding: '8px', textAlign: 'right' }}>24h High</th>
-            <th style={{ padding: '8px', textAlign: 'right' }}>24h Low</th>
-            <th style={{ padding: '8px', textAlign: 'right' }}>Volume</th>
+            <th style={{ padding: '8px' }}>{t('exchange')}</th>
+            <th style={{ padding: '8px' }}>{t('symbol')}</th>
+            <th style={{ padding: '8px', textAlign: 'right' }}>{t('price')}</th>
+            <th style={{ padding: '8px', textAlign: 'right' }}>{t('change24h')}</th>
+            <th style={{ padding: '8px', textAlign: 'right' }}>{t('high24h')}</th>
+            <th style={{ padding: '8px', textAlign: 'right' }}>{t('low24h')}</th>
+            <th style={{ padding: '8px', textAlign: 'right' }}>{t('volume')}</th>
+            <th style={{ padding: '8px', textAlign: 'center', width: '110px' }}>Chart</th>
           </tr>
         </thead>
         <tbody>
           {sorted.length === 0 ? (
             <tr>
-              <td colSpan={7} style={{ padding: '24px', textAlign: 'center', color: '#888' }}>
-                Waiting for ticker data...
+              <td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: '#888' }}>
+                {t('waiting')}
               </td>
             </tr>
           ) : (
-            sorted.map((t) => {
-              const changeNum = Number(t.changePercent24h);
+            sorted.map((tick) => {
+              const changeNum = Number(tick.changePercent24h);
               const changeColor = changeNum > 0 ? '#22c55e' : changeNum < 0 ? '#ef4444' : '#888';
+              const converted = convertedPrice(tick.price, tick.exchange, krwPerUsd);
               return (
-                <tr key={`${t.exchange}:${t.symbol}`} style={{ borderBottom: '1px solid #222' }}>
-                  <td style={{ padding: '8px', textTransform: 'uppercase', fontWeight: 600 }}>
-                    {t.exchange}
+                <tr
+                  key={`${tick.exchange}:${tick.symbol}`}
+                  style={{ borderBottom: '1px solid #222', cursor: 'pointer' }}
+                >
+                  <td style={{ padding: '8px', fontWeight: 600 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <ExchangeIcon exchange={tick.exchange} size={18} />
+                      {tick.exchange.charAt(0).toUpperCase() + tick.exchange.slice(1)}
+                    </span>
                   </td>
-                  <td style={{ padding: '8px' }}>{t.symbol}</td>
-                  <td style={{ padding: '8px', textAlign: 'right', fontWeight: 700 }}>
-                    {formatPrice(t.price)}
+                  <td style={{ padding: '8px' }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                      <CoinIcon symbol={tick.symbol} size={18} />
+                      {tick.symbol}
+                    </span>
+                  </td>
+                  <td style={{ padding: '8px', textAlign: 'right' }}>
+                    <div style={{ fontWeight: 700 }}>{formatPrice(tick.price)}</div>
+                    {converted && (
+                      <div style={{ fontSize: '11px', color: '#888' }}>{converted}</div>
+                    )}
                   </td>
                   <td style={{ padding: '8px', textAlign: 'right', color: changeColor }}>
-                    {changeNum > 0 ? '+' : ''}{Number(t.changePercent24h).toFixed(2)}%
+                    {changeNum > 0 ? '+' : ''}
+                    {Number(tick.changePercent24h).toFixed(2)}%
                   </td>
-                  <td style={{ padding: '8px', textAlign: 'right' }}>{formatPrice(t.high24h)}</td>
-                  <td style={{ padding: '8px', textAlign: 'right' }}>{formatPrice(t.low24h)}</td>
-                  <td style={{ padding: '8px', textAlign: 'right' }}>{formatVolume(t.volume24h)}</td>
+                  <td style={{ padding: '8px', textAlign: 'right' }}>
+                    {formatPrice(tick.high24h)}
+                  </td>
+                  <td style={{ padding: '8px', textAlign: 'right' }}>{formatPrice(tick.low24h)}</td>
+                  <td style={{ padding: '8px', textAlign: 'right' }}>
+                    {formatVolume(tick.volume24h)}
+                  </td>
+                  <td style={{ padding: '8px', textAlign: 'center' }}>
+                    <Link href={`/markets/${tick.exchange}/${encodeURIComponent(tick.symbol)}`}>
+                      <MiniChart
+                        exchange={tick.exchange}
+                        symbol={tick.symbol}
+                        width={100}
+                        height={36}
+                      />
+                    </Link>
+                  </td>
                 </tr>
               );
             })
