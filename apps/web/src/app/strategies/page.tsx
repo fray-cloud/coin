@@ -13,6 +13,7 @@ import {
   toggleStrategy,
   deleteStrategy,
   getExchangeKeys,
+  getBalances,
   type ExchangeKeyItem,
 } from '@/lib/api-client';
 import { useTranslations } from 'next-intl';
@@ -166,10 +167,22 @@ function CreateStrategyForm({
   const [riskStopLoss, setRiskStopLoss] = useState('');
   const [riskDailyMax, setRiskDailyMax] = useState('');
   const [riskMaxPosition, setRiskMaxPosition] = useState('');
+  const [paperCapital, setPaperCapital] = useState('100000000');
   const [error, setError] = useState('');
 
   const activeExchanges = [...new Set(tickers.map((t) => t.exchange))];
   const activeSymbols = tickers.filter((t) => t.exchange === exchange);
+
+  // Fetch balance for real mode
+  const exchangeKey = keys.find((k) => k.exchange === exchange);
+  const { data: balances } = useQuery({
+    queryKey: ['balances', exchangeKey?.id],
+    queryFn: () => getBalances(exchangeKey!.id),
+    enabled: !!exchangeKey && tradingMode === 'real',
+    staleTime: 30_000,
+  });
+  const quoteCurrency = exchange === 'upbit' ? 'KRW' : 'USDT';
+  const quoteBalance = balances?.find((b) => b.currency === quoteCurrency);
 
   const mutation = useMutation({
     mutationFn: createStrategy,
@@ -205,7 +218,10 @@ function CreateStrategyForm({
       mode,
       tradingMode,
       ...(tradingMode === 'real' && exchangeKey ? { exchangeKeyId: exchangeKey.id } : {}),
-      config,
+      config: {
+        ...config,
+        ...(tradingMode === 'paper' && paperCapital ? { paperCapital: Number(paperCapital) } : {}),
+      },
       riskConfig: Object.keys(riskConfig).length > 0 ? riskConfig : undefined,
       intervalSeconds: Number(intervalSeconds),
     });
@@ -431,6 +447,49 @@ function CreateStrategyForm({
               </div>
             </div>
           </div>
+
+          {/* Capital / Balance */}
+          {exchange && (
+            <div className="space-y-2">
+              <Label className="flex items-center gap-1">
+                {tradingMode === 'paper' ? '가상 자본' : '거래소 잔고'}
+                {PARAM_TOOLTIPS.quantity && (
+                  <span className="relative group cursor-help">
+                    <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
+                      ?
+                    </span>
+                    <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-xs bg-popover text-popover-foreground border rounded shadow-md w-48 hidden group-hover:block z-10">
+                      {tradingMode === 'paper'
+                        ? '모의 거래에 사용할 가상 초기 자본. 수익/손실 추적의 기준이 됨'
+                        : '등록된 거래소에서 자동 조회된 잔고'}
+                    </span>
+                  </span>
+                )}
+              </Label>
+              {tradingMode === 'paper' ? (
+                <Input
+                  value={paperCapital}
+                  onChange={(e) => setPaperCapital(e.target.value)}
+                  type="number"
+                  placeholder={exchange === 'upbit' ? '100,000,000 KRW' : '100,000 USDT'}
+                />
+              ) : quoteBalance ? (
+                <div className="rounded-lg bg-muted/50 p-2.5 flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">{quoteCurrency}</span>
+                  <span className="text-sm font-bold tabular-nums">
+                    {parseFloat(quoteBalance.free).toLocaleString('ko-KR', {
+                      maximumFractionDigits: 2,
+                    })}{' '}
+                    {quoteCurrency}
+                  </span>
+                </div>
+              ) : exchangeKey ? (
+                <p className="text-xs text-muted-foreground">잔고 조회 중...</p>
+              ) : (
+                <p className="text-xs text-yellow-600">해당 거래소 API 키가 등록되지 않았습니다</p>
+              )}
+            </div>
+          )}
 
           <div className="space-y-2">
             <Label>{t('interval')}</Label>

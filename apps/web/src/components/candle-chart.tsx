@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { createChart, ColorType, type IChartApi } from 'lightweight-charts';
+import { createChart, ColorType, type IChartApi, type ISeriesApi } from 'lightweight-charts';
 import { useCandles } from '@/hooks/use-candles';
+import { useTickersStore } from '@/stores/use-tickers-store';
 
 const INTERVALS = ['1m', '5m', '15m', '1h', '4h', '1d'] as const;
 
@@ -16,15 +17,20 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
   const [selectedInterval, setSelectedInterval] = useState('1h');
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<IChartApi | null>(null);
+  const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const { data: candles, isLoading } = useCandles(exchange, symbol, selectedInterval);
+
+  // Real-time ticker price
+  const tickerKey = `${exchange}:${symbol}`;
+  const ticker = useTickersStore((s) => s.tickers.get(tickerKey));
 
   useEffect(() => {
     if (!chartRef.current || !candles || candles.length === 0) return;
 
-    // Clean up previous chart
     if (chartInstance.current) {
       chartInstance.current.remove();
       chartInstance.current = null;
+      candleSeriesRef.current = null;
     }
 
     const chart = createChart(chartRef.current, {
@@ -83,6 +89,7 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
     chart.timeScale().fitContent();
 
     chartInstance.current = chart;
+    candleSeriesRef.current = candleSeries;
 
     const handleResize = () => {
       if (chartRef.current) {
@@ -95,26 +102,55 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
       window.removeEventListener('resize', handleResize);
       chart.remove();
       chartInstance.current = null;
+      candleSeriesRef.current = null;
     };
   }, [candles, height]);
 
+  // Update last candle with real-time ticker price
+  useEffect(() => {
+    if (!candleSeriesRef.current || !ticker || !candles || candles.length === 0) return;
+
+    const lastCandle = candles[candles.length - 1];
+    const price = Number(ticker.price);
+    const lastTime = (lastCandle.timestamp / 1000) as any;
+
+    candleSeriesRef.current.update({
+      time: lastTime,
+      open: Number(lastCandle.open),
+      high: Math.max(Number(lastCandle.high), price),
+      low: Math.min(Number(lastCandle.low), price),
+      close: price,
+    });
+  }, [ticker, candles]);
+
   return (
     <div>
-      <div className="flex gap-1 mb-3">
-        {INTERVALS.map((iv) => (
-          <button
-            key={iv}
-            type="button"
-            onClick={() => setSelectedInterval(iv)}
-            className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
-              selectedInterval === iv
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:bg-muted'
-            }`}
+      <div className="flex items-center gap-3 mb-3">
+        <div className="flex gap-1">
+          {INTERVALS.map((iv) => (
+            <button
+              key={iv}
+              type="button"
+              onClick={() => setSelectedInterval(iv)}
+              className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
+                selectedInterval === iv
+                  ? 'bg-primary text-primary-foreground'
+                  : 'text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {iv}
+            </button>
+          ))}
+        </div>
+        {ticker && (
+          <span
+            className={`text-sm font-bold tabular-nums ${Number(ticker.changePercent24h) >= 0 ? 'text-green-500' : 'text-red-500'}`}
           >
-            {iv}
-          </button>
-        ))}
+            {Number(ticker.price).toLocaleString()} (
+            {Number(ticker.changePercent24h) > 0 ? '+' : ''}
+            {Number(ticker.changePercent24h).toFixed(2)}%)
+          </span>
+        )}
       </div>
       {isLoading ? (
         <div

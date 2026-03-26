@@ -11,7 +11,9 @@ import {
   getOrders,
   createOrder,
   cancelOrder,
+  getBalances,
   type ExchangeKeyItem,
+  type BalanceItem,
 } from '@/lib/api-client';
 import { useTickers } from '@/hooks/use-tickers';
 import { useOrderUpdates } from '@/hooks/use-order-updates';
@@ -170,6 +172,18 @@ function OrderForm({
     setSymbol('');
   }, [exchange, keys]);
 
+  // Fetch balances for selected exchange
+  const { data: balances } = useQuery({
+    queryKey: ['balances', exchangeKeyId],
+    queryFn: () => getBalances(exchangeKeyId),
+    enabled: !!exchangeKeyId && mode === 'real',
+    staleTime: 30_000,
+  });
+
+  // Get quote currency balance (KRW for upbit, USDT for binance/bybit)
+  const quoteCurrency = exchange === 'upbit' ? 'KRW' : 'USDT';
+  const quoteBalance = balances?.find((b) => b.currency === quoteCurrency);
+
   const mutation = useMutation({
     mutationFn: createOrder,
     onSuccess: () => {
@@ -222,6 +236,19 @@ function OrderForm({
               {t('real')}
             </Button>
           </div>
+
+          {/* Balance display */}
+          {mode === 'real' && exchange && quoteBalance && (
+            <div className="rounded-lg bg-muted/50 p-2.5 flex items-center justify-between">
+              <span className="text-xs text-muted-foreground">{quoteCurrency} 잔고</span>
+              <span className="text-sm font-bold tabular-nums">
+                {parseFloat(quoteBalance.free).toLocaleString('ko-KR', {
+                  maximumFractionDigits: 2,
+                })}{' '}
+                {quoteCurrency}
+              </span>
+            </div>
+          )}
 
           {/* Exchange */}
           <div className="space-y-2">

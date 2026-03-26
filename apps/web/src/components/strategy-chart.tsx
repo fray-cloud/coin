@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { createChart, ColorType, type IChartApi } from 'lightweight-charts';
+import { createChart, ColorType, type IChartApi, type ISeriesApi } from 'lightweight-charts';
 import { useCandles } from '@/hooks/use-candles';
+import { useTickersStore } from '@/stores/use-tickers-store';
 import { calcRSI, calcMACD, calcBollinger } from '@/lib/indicators';
 
 const INTERVALS = ['1m', '5m', '15m', '1h', '4h', '1d'] as const;
@@ -20,7 +21,11 @@ export function StrategyChart({ exchange, symbol, strategyType, config }: Strate
   const indicatorRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<IChartApi | null>(null);
   const indicatorInstance = useRef<IChartApi | null>(null);
+  const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const { data: candles, isLoading } = useCandles(exchange, symbol, selectedInterval);
+
+  const tickerKey = `${exchange}:${symbol}`;
+  const ticker = useTickersStore((s) => s.tickers.get(tickerKey));
 
   useEffect(() => {
     if (!chartRef.current || !candles || candles.length === 0) return;
@@ -29,6 +34,7 @@ export function StrategyChart({ exchange, symbol, strategyType, config }: Strate
     if (chartInstance.current) {
       chartInstance.current.remove();
       chartInstance.current = null;
+      candleSeriesRef.current = null;
     }
     if (indicatorInstance.current) {
       indicatorInstance.current.remove();
@@ -115,6 +121,7 @@ export function StrategyChart({ exchange, symbol, strategyType, config }: Strate
 
     chart.timeScale().fitContent();
     chartInstance.current = chart;
+    candleSeriesRef.current = candleSeries;
 
     // --- Sub-chart for RSI / MACD ---
     if (needsSubChart && indicatorRef.current) {
@@ -247,6 +254,20 @@ export function StrategyChart({ exchange, symbol, strategyType, config }: Strate
       }
     };
   }, [candles, strategyType, config]);
+
+  // Real-time ticker update on last candle
+  useEffect(() => {
+    if (!candleSeriesRef.current || !ticker || !candles || candles.length === 0) return;
+    const lastCandle = candles[candles.length - 1];
+    const price = Number(ticker.price);
+    candleSeriesRef.current.update({
+      time: (lastCandle.timestamp / 1000) as any,
+      open: Number(lastCandle.open),
+      high: Math.max(Number(lastCandle.high), price),
+      low: Math.min(Number(lastCandle.low), price),
+      close: price,
+    });
+  }, [ticker, candles]);
 
   const needsSubChart = strategyType === 'rsi' || strategyType === 'macd';
   const indicatorLabel =
