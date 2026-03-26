@@ -279,7 +279,14 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
       {/* Performance */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Performance</CardTitle>
+          <CardTitle className="text-lg flex items-center gap-2">
+            Performance
+            {strategy.mode === 'signal' && (
+              <span className="text-xs font-normal text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
+                시뮬레이션
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {performance && performance.totalTrades > 0 ? (
