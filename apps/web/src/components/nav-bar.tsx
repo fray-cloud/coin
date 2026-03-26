@@ -9,6 +9,7 @@ import {
   PieChart,
   KeyRound,
   Bell,
+  Activity,
   LogOut,
   LogIn,
   UserPlus,
@@ -67,6 +68,13 @@ export function NavBar() {
               >
                 <KeyRound size={15} />
                 {t('accounts')}
+              </Link>
+              <Link
+                href="/activity"
+                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+              >
+                <Activity size={15} />
+                {t('activity')}
               </Link>
               <Link
                 href="/notifications"

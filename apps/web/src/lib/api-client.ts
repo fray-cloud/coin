@@ -450,3 +450,29 @@ export async function getExchangeRate(): Promise<ExchangeRate> {
   if (!res.ok) throw new Error('Failed to fetch exchange rate');
   return res.json();
 }
+
+// Activity
+export interface ActivityItem {
+  id: string;
+  type: 'order' | 'strategy_signal' | 'strategy_order' | 'risk_blocked' | 'login';
+  title: string;
+  description: string;
+  exchange?: string;
+  symbol?: string;
+  status?: string;
+  side?: string;
+  link?: string;
+  createdAt: string;
+}
+
+export interface ActivityResponse {
+  items: ActivityItem[];
+  nextCursor: string | null;
+}
+
+export async function getActivity(cursor?: string): Promise<ActivityResponse> {
+  const params = cursor ? `?cursor=${cursor}&limit=20` : '?limit=20';
+  const res = await apiFetch(`/activity${params}`);
+  if (!res.ok) throw new Error('Failed to fetch activity');
+  return res.json();
+}

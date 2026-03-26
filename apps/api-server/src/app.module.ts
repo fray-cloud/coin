@@ -13,6 +13,7 @@ import { OrdersModule } from './orders/orders.module';
 import { StrategiesModule } from './strategies/strategies.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
+import { ActivityModule } from './activity/activity.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -44,6 +45,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     StrategiesModule,
     NotificationsModule,
     PortfolioModule,
+    ActivityModule,
   ],
   controllers: [AppController],
   providers: [
