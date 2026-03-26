@@ -310,34 +310,49 @@ function CreateStrategyForm({
           <div className="space-y-2">
             <Label>{t('params')}</Label>
             <div className="grid grid-cols-2 gap-2">
-              {Object.entries(config).map(([key, val]) => (
-                <div key={key}>
-                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                    {key}
-                    {PARAM_TOOLTIPS[key] && (
-                      <span className="relative group cursor-help">
-                        <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
-                          ?
+              {Object.entries(config).map(([key, val]) => {
+                const selectedTicker = tickers.find(
+                  (tk) => tk.exchange === exchange && tk.symbol === symbol,
+                );
+                const isQuantity = key === 'quantity';
+                const estimatedCost =
+                  isQuantity && selectedTicker ? Number(val) * Number(selectedTicker.price) : null;
+
+                return (
+                  <div key={key}>
+                    <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                      {key}
+                      {PARAM_TOOLTIPS[key] && (
+                        <span className="relative group cursor-help">
+                          <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded-full bg-muted text-[10px] font-bold text-muted-foreground">
+                            ?
+                          </span>
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-xs bg-popover text-popover-foreground border rounded shadow-md w-48 hidden group-hover:block z-10">
+                            {PARAM_TOOLTIPS[key]}
+                          </span>
                         </span>
-                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 px-2 py-1 text-xs bg-popover text-popover-foreground border rounded shadow-md w-48 hidden group-hover:block z-10">
-                          {PARAM_TOOLTIPS[key]}
-                        </span>
-                      </span>
+                      )}
+                    </Label>
+                    <Input
+                      value={String(val)}
+                      onChange={(e) =>
+                        setConfig((prev) => ({
+                          ...prev,
+                          [key]: isNaN(Number(e.target.value))
+                            ? e.target.value
+                            : Number(e.target.value),
+                        }))
+                      }
+                    />
+                    {estimatedCost !== null && estimatedCost > 0 && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        ≈ {estimatedCost.toLocaleString('ko-KR', { maximumFractionDigits: 2 })}{' '}
+                        {exchange === 'upbit' ? 'KRW' : 'USDT'}
+                      </p>
                     )}
-                  </Label>
-                  <Input
-                    value={String(val)}
-                    onChange={(e) =>
-                      setConfig((prev) => ({
-                        ...prev,
-                        [key]: isNaN(Number(e.target.value))
-                          ? e.target.value
-                          : Number(e.target.value),
-                      }))
-                    }
-                  />
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
