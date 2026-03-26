@@ -367,6 +367,15 @@ function OrderForm({
                   placeholder="0.001"
                   required
                 />
+                {quantity && selectedTicker && Number(quantity) > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    ≈{' '}
+                    {(Number(quantity) * Number(selectedTicker.price)).toLocaleString('ko-KR', {
+                      maximumFractionDigits: 2,
+                    })}{' '}
+                    {exchange === 'upbit' ? 'KRW' : 'USDT'}
+                  </p>
+                )}
               </div>
 
               {/* Price (limit only) */}

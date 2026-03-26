@@ -535,6 +535,7 @@ function CreateStrategyForm({
               symbol={symbol}
               strategyType={type}
               config={config}
+              intervalSeconds={Number(intervalSeconds)}
             />
           </div>
         )}

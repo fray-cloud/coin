@@ -13,6 +13,27 @@ interface TickersState {
   getTickersArray: () => Ticker[];
 }
 
+// Buffer incoming tickers and flush every 500ms to avoid excessive re-renders
+let tickerBuffer: Map<string, Ticker> = new Map();
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleFlush(set: (fn: (prev: TickersState) => Partial<TickersState>) => void) {
+  if (flushTimer) return;
+  flushTimer = setTimeout(() => {
+    flushTimer = null;
+    if (tickerBuffer.size === 0) return;
+    const batch = tickerBuffer;
+    tickerBuffer = new Map();
+    set((prev) => {
+      const next = new Map(prev.tickers);
+      for (const [key, ticker] of batch) {
+        next.set(key, ticker);
+      }
+      return { tickers: next };
+    });
+  }, 500);
+}
+
 export const useTickersStore = create<TickersState>((set, get) => ({
   tickers: new Map(),
   connected: false,
@@ -42,11 +63,8 @@ export const useTickersStore = create<TickersState>((set, get) => ({
     socket.on('disconnect', () => set({ connected: false }));
 
     socket.on('ticker', (ticker: Ticker) => {
-      set((prev) => {
-        const next = new Map(prev.tickers);
-        next.set(`${ticker.exchange}:${ticker.symbol}`, ticker);
-        return { tickers: next };
-      });
+      tickerBuffer.set(`${ticker.exchange}:${ticker.symbol}`, ticker);
+      scheduleFlush(set);
     });
 
     set({ _socket: socket });

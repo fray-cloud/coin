@@ -13,10 +13,29 @@ interface StrategyChartProps {
   symbol: string;
   strategyType: string;
   config: Record<string, unknown>;
+  intervalSeconds?: number;
 }
 
-export function StrategyChart({ exchange, symbol, strategyType, config }: StrategyChartProps) {
-  const [selectedInterval, setSelectedInterval] = useState('1h');
+function mapIntervalSecondsToCandle(seconds?: number): string {
+  if (!seconds) return '1h';
+  if (seconds <= 60) return '1m';
+  if (seconds <= 300) return '5m';
+  if (seconds <= 900) return '15m';
+  if (seconds <= 3600) return '1h';
+  if (seconds <= 14400) return '4h';
+  return '1d';
+}
+
+export function StrategyChart({
+  exchange,
+  symbol,
+  strategyType,
+  config,
+  intervalSeconds,
+}: StrategyChartProps) {
+  const [selectedInterval, setSelectedInterval] = useState(() =>
+    mapIntervalSecondsToCandle(intervalSeconds),
+  );
   const chartRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<IChartApi | null>(null);
@@ -50,7 +69,11 @@ export function StrategyChart({ exchange, symbol, strategyType, config }: Strate
     const chart = createChart(chartRef.current, {
       width: chartRef.current.clientWidth,
       height: candleHeight,
-      layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: '#9ca3af' },
+      layout: {
+        attributionLogo: false,
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: '#9ca3af',
+      },
       grid: {
         vertLines: { color: 'rgba(243,244,246,0.1)' },
         horzLines: { color: 'rgba(243,244,246,0.1)' },

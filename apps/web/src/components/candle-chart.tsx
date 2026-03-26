@@ -37,6 +37,7 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
       width: chartRef.current.clientWidth,
       height,
       layout: {
+        attributionLogo: false,
         background: { type: ColorType.Solid, color: 'transparent' },
         textColor: '#9ca3af',
       },

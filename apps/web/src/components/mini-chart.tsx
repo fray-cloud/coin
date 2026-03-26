@@ -28,6 +28,7 @@ export function MiniChart({ exchange, symbol, width = 100, height = 40 }: MiniCh
       width,
       height,
       layout: {
+        attributionLogo: false,
         background: { type: ColorType.Solid, color: 'transparent' },
       },
       grid: { vertLines: { visible: false }, horzLines: { visible: false } },

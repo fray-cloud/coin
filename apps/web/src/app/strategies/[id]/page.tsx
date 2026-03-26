@@ -54,14 +54,20 @@ function PnlMiniChart({ data }: { data: Array<{ date: string; pnl: number }> }) 
   useEffect(() => {
     if (!chartRef.current || data.length === 0) return;
     if (chartInstance.current) {
-      chartInstance.current.remove();
+      try {
+        chartInstance.current.remove();
+      } catch {}
       chartInstance.current = null;
     }
 
     const chart = createChart(chartRef.current, {
       width: chartRef.current.clientWidth,
       height: 150,
-      layout: { background: { type: ColorType.Solid, color: 'transparent' }, textColor: '#9ca3af' },
+      layout: {
+        attributionLogo: false,
+        background: { type: ColorType.Solid, color: 'transparent' },
+        textColor: '#9ca3af',
+      },
       grid: {
         vertLines: { color: 'rgba(243,244,246,0.1)' },
         horzLines: { color: 'rgba(243,244,246,0.1)' },
@@ -87,7 +93,10 @@ function PnlMiniChart({ data }: { data: Array<{ date: string; pnl: number }> }) 
     window.addEventListener('resize', handleResize);
     return () => {
       window.removeEventListener('resize', handleResize);
-      chart.remove();
+      try {
+        chart.remove();
+      } catch {}
+      chartInstance.current = null;
     };
   }, [data]);
 
@@ -342,6 +351,7 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
             symbol={strategy.symbol}
             strategyType={strategy.type}
             config={config}
+            intervalSeconds={strategy.intervalSeconds}
           />
         </CardContent>
       </Card>

@@ -39,6 +39,7 @@ function PnlChart({ data }: { data: Array<{ date: string; pnl: number }> }) {
       width: chartRef.current.clientWidth,
       height: 250,
       layout: {
+        attributionLogo: false,
         background: { type: ColorType.Solid, color: 'transparent' },
         textColor: '#9ca3af',
       },
