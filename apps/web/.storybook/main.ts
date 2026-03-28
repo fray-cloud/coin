@@ -22,6 +22,10 @@ const config: StorybookConfig = {
       ...config.resolve.alias,
       '@': resolve(__dirname, '../src'),
     };
+    config.esbuild = {
+      ...config.esbuild,
+      jsx: 'automatic',
+    };
     return config;
   },
 };
