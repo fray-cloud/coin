@@ -23,6 +23,7 @@ import {
   GetStrategyQuery,
   GetStrategyLogsQuery,
   GetStrategyPerformanceQuery,
+  GetStrategySignalsQuery,
 } from './queries';
 import { CreateStrategyDto } from './dto/create-strategy.dto';
 import { UpdateStrategyDto } from './dto/update-strategy.dto';
@@ -69,6 +70,11 @@ export class StrategiesController {
   @Get(':id/performance')
   async getPerformance(@CurrentUser() user: User, @Param('id') id: string) {
     return this.queryBus.execute(new GetStrategyPerformanceQuery(user.id, id));
+  }
+
+  @Get(':id/signals')
+  async getSignals(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.queryBus.execute(new GetStrategySignalsQuery(user.id, id));
   }
 
   @Get(':id/logs')

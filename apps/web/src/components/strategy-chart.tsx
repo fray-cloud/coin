@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from 'react';
 import { createChart, ColorType, type IChartApi, type ISeriesApi } from 'lightweight-charts';
 import { useCandles } from '@/hooks/use-candles';
 import { useTickersStore } from '@/stores/use-tickers-store';
+import { useStrategySignals } from '@/hooks/use-strategy-signals';
 import { calcRSI, calcMACD, calcBollinger } from '@/lib/indicators';
+import type { SeriesMarker, Time } from 'lightweight-charts';
 
 const INTERVALS = ['1m', '5m', '15m', '1h', '4h', '1d'] as const;
 
@@ -14,6 +16,7 @@ interface StrategyChartProps {
   strategyType: string;
   config: Record<string, unknown>;
   candleInterval?: string;
+  strategyId?: string;
 }
 
 export function StrategyChart({
@@ -22,6 +25,7 @@ export function StrategyChart({
   strategyType,
   config,
   candleInterval,
+  strategyId,
 }: StrategyChartProps) {
   const [selectedInterval, setSelectedInterval] = useState(candleInterval || '1h');
   const chartRef = useRef<HTMLDivElement>(null);
@@ -30,6 +34,7 @@ export function StrategyChart({
   const indicatorInstance = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const { data: candles, isLoading } = useCandles(exchange, symbol, selectedInterval);
+  const { data: signals } = useStrategySignals(strategyId);
 
   const tickerKey = `${exchange}:${symbol}`;
   const ticker = useTickersStore((s) => s.tickers.get(tickerKey));
@@ -140,6 +145,56 @@ export function StrategyChart({
       upperSeries.setData(upperData);
       middleSeries.setData(middleData);
       lowerSeries.setData(lowerData);
+    }
+
+    // Add buy/sell markers from strategy signals
+    if (signals && signals.length > 0) {
+      const markers: SeriesMarker<Time>[] = signals
+        .map((s) => {
+          const time = (new Date(s.createdAt).getTime() / 1000) as Time;
+          const isOrder = s.action === 'order_placed';
+          if (s.signal === 'buy') {
+            return {
+              time,
+              position: 'belowBar' as const,
+              shape: 'arrowUp' as const,
+              color: isOrder ? '#16a34a' : '#22c55e',
+              text: 'BUY',
+            };
+          }
+          return {
+            time,
+            position: 'aboveBar' as const,
+            shape: 'arrowDown' as const,
+            color: isOrder ? '#dc2626' : '#ef4444',
+            text: 'SELL',
+          };
+        })
+        .sort((a, b) => (a.time as number) - (b.time as number));
+      candleSeries.setMarkers(markers);
+
+      // Hover price line for markers
+      let activePriceLine: ReturnType<typeof candleSeries.createPriceLine> | null = null;
+      chart.subscribeCrosshairMove((param) => {
+        if (activePriceLine) {
+          candleSeries.removePriceLine(activePriceLine);
+          activePriceLine = null;
+        }
+        if (!param.time) return;
+        const hoveredSignal = signals.find((s) => {
+          const sTime = Math.floor(new Date(s.createdAt).getTime() / 1000);
+          return Math.abs(sTime - (param.time as number)) < 60 && s.price > 0;
+        });
+        if (hoveredSignal) {
+          activePriceLine = candleSeries.createPriceLine({
+            price: hoveredSignal.price,
+            color: hoveredSignal.signal === 'buy' ? '#22c55e' : '#ef4444',
+            lineWidth: 1,
+            lineStyle: 2,
+            axisLabelVisible: true,
+          });
+        }
+      });
     }
 
     chart.timeScale().fitContent();
@@ -287,7 +342,7 @@ export function StrategyChart({
         indicatorInstance.current = null;
       }
     };
-  }, [candles, strategyType, config]);
+  }, [candles, strategyType, config, signals]);
 
   // Real-time ticker update on last candle
   useEffect(() => {

@@ -99,6 +99,7 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
             strategyType={strategy.type}
             config={config}
             candleInterval={strategy.candleInterval}
+            strategyId={id}
           />
         </CardContent>
       </Card>

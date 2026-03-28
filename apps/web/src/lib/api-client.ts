@@ -359,6 +359,20 @@ export async function getStrategyLogs(
   return res.json();
 }
 
+// Strategy signals (for chart markers)
+export interface StrategySignal {
+  signal: 'buy' | 'sell';
+  action: string;
+  price: number;
+  createdAt: string;
+}
+
+export async function getStrategySignals(id: string): Promise<StrategySignal[]> {
+  const res = await apiFetch(`/strategies/${id}/signals`);
+  if (!res.ok) throw new Error('Failed to fetch strategy signals');
+  return res.json();
+}
+
 // --- Notifications ---
 
 export interface NotificationSettingItem {
