@@ -185,64 +185,63 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
     }
   }, [candles, selectedInterval]);
 
-  // Compare mode overlay
+  // Create/remove compare series on mode/exchange change only
   useEffect(() => {
     const chart = chartInstance.current;
     if (!chart) return;
 
-    // Remove previous compare line
     if (compareSeriesRef.current) {
       chart.removeSeries(compareSeriesRef.current);
       compareSeriesRef.current = null;
     }
 
-    // Add new compare line — snap timestamps to main candle times
-    if (
-      compareMode &&
-      compareExchange &&
-      compareLines.length > 0 &&
-      candles &&
-      candles.length > 0
-    ) {
-      const line = compareLines.find((l) => l.exchange === compareExchange);
-      if (line && line.data.length > 0) {
-        const tzOff = -new Date().getTimezoneOffset() * 60;
-        const mainTimes = candles.map((c) => c.timestamp / 1000 + tzOff);
-
-        // Snap each compare point to nearest main candle time
-        const snappedData = line.data
-          .map((d) => {
-            const compareTime = d.time + tzOff; // compare data already in UTC seconds
-            let closest = mainTimes[0];
-            let minDiff = Math.abs(compareTime - closest);
-            for (const mt of mainTimes) {
-              const diff = Math.abs(compareTime - mt);
-              if (diff < minDiff) {
-                minDiff = diff;
-                closest = mt;
-              }
-            }
-            return { time: closest as any, value: d.value };
-          })
-          // Deduplicate same time (keep last)
-          .reduce((acc, item) => {
-            acc.set(item.time, item);
-            return acc;
-          }, new Map<number, { time: any; value: number }>());
-
-        const color = EXCHANGE_COLORS[line.exchange] || '#888';
-        const lineSeries = chart.addLineSeries({
-          color,
-          lineWidth: 2,
-          priceLineVisible: false,
-          lastValueVisible: true,
-          title: line.exchange,
-        });
-        lineSeries.setData(Array.from(snappedData.values()).sort((a, b) => a.time - b.time));
-        compareSeriesRef.current = lineSeries;
-      }
+    if (compareMode && compareExchange) {
+      const color = EXCHANGE_COLORS[compareExchange] || '#888';
+      const lineSeries = chart.addLineSeries({
+        color,
+        lineWidth: 2,
+        priceLineVisible: false,
+        lastValueVisible: true,
+        title: compareExchange,
+      });
+      compareSeriesRef.current = lineSeries;
     }
-  }, [compareMode, compareExchange, compareLines, candles]);
+  }, [compareMode, compareExchange]);
+
+  // Update compare line data without recreating series
+  useEffect(() => {
+    if (!compareSeriesRef.current || !candles || candles.length === 0 || compareLines.length === 0)
+      return;
+
+    const line = compareLines.find((l) => l.exchange === compareExchange);
+    if (!line || line.data.length === 0) return;
+
+    const tzOff = -new Date().getTimezoneOffset() * 60;
+    const mainTimes = candles.map((c) => c.timestamp / 1000 + tzOff);
+
+    const snappedData = line.data
+      .map((d) => {
+        const compareTime = d.time + tzOff;
+        let closest = mainTimes[0];
+        let minDiff = Math.abs(compareTime - closest);
+        for (const mt of mainTimes) {
+          const diff = Math.abs(compareTime - mt);
+          if (diff < minDiff) {
+            minDiff = diff;
+            closest = mt;
+          }
+        }
+        return { time: closest as any, value: d.value };
+      })
+      .reduce((acc, item) => {
+        acc.set(item.time, item);
+        return acc;
+      }, new Map<number, { time: any; value: number }>());
+
+    compareSeriesRef.current.setData(
+      Array.from(snappedData.values()).sort((a, b) => a.time - b.time),
+    );
+  }, [compareLines, candles, compareExchange]);
 
   // Real-time compare line update — update last point instead of adding new time
   useEffect(() => {
