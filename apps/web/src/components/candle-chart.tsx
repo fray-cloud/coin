@@ -95,14 +95,13 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
       timeScale: { borderVisible: false, timeVisible: true },
       localization: {
         timeFormatter: (t: number) => {
+          // timestamp already has tz offset applied, use UTC methods to avoid double conversion
           const d = new Date(t * 1000);
-          return d.toLocaleString('ko-KR', {
-            month: 'numeric',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          });
+          const month = d.getUTCMonth() + 1;
+          const day = d.getUTCDate();
+          const hours = String(d.getUTCHours()).padStart(2, '0');
+          const mins = String(d.getUTCMinutes()).padStart(2, '0');
+          return `${month}. ${day}. ${hours}:${mins}`;
         },
       },
       crosshair: {
@@ -154,8 +153,11 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
     if (!candleSeriesRef.current || !volumeSeriesRef.current || !candles || candles.length === 0)
       return;
 
+    // Apply local timezone offset so time axis labels show local time
+    const tzOffset = -new Date().getTimezoneOffset() * 60; // seconds (KST = +32400)
+
     const candleData = candles.map((c) => ({
-      time: (c.timestamp / 1000) as any,
+      time: (c.timestamp / 1000 + tzOffset) as any,
       open: Number(c.open),
       high: Number(c.high),
       low: Number(c.low),
@@ -163,7 +165,7 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
     }));
 
     const volumeData = candles.map((c) => ({
-      time: (c.timestamp / 1000) as any,
+      time: (c.timestamp / 1000 + tzOffset) as any,
       value: Number(c.volume),
       color: Number(c.close) >= Number(c.open) ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)',
     }));
@@ -231,7 +233,8 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
     }
 
     // Use last candle's time to keep within chart range
-    const lastTime = (candles[candles.length - 1].timestamp / 1000) as any;
+    const tzOff = -new Date().getTimezoneOffset() * 60;
+    const lastTime = (candles[candles.length - 1].timestamp / 1000 + tzOff) as any;
     compareSeriesRef.current.update({ time: lastTime, value: price });
   }, [compareTicker, compareMode, compareExchange, exchange, krwPerUsd, candles]);
 
@@ -241,7 +244,8 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
 
     const lastCandle = candles[candles.length - 1];
     const price = Number(ticker.price);
-    const lastTime = (lastCandle.timestamp / 1000) as any;
+    const tzOff = -new Date().getTimezoneOffset() * 60;
+    const lastTime = (lastCandle.timestamp / 1000 + tzOff) as any;
 
     candleSeriesRef.current.update({
       time: lastTime,

@@ -55,7 +55,8 @@ export function StrategyChart({
     }
 
     const closes = candles.map((c) => Number(c.close));
-    const times = candles.map((c) => (c.timestamp / 1000) as any);
+    const tzOffset = -new Date().getTimezoneOffset() * 60;
+    const times = candles.map((c) => (c.timestamp / 1000 + tzOffset) as any);
     const needsSubChart = strategyType === 'rsi' || strategyType === 'macd';
     const candleHeight = needsSubChart ? 300 : 400;
 
@@ -77,13 +78,11 @@ export function StrategyChart({
       localization: {
         timeFormatter: (t: number) => {
           const d = new Date(t * 1000);
-          return d.toLocaleString('ko-KR', {
-            month: 'numeric',
-            day: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          });
+          const month = d.getUTCMonth() + 1;
+          const day = d.getUTCDate();
+          const hours = String(d.getUTCHours()).padStart(2, '0');
+          const mins = String(d.getUTCMinutes()).padStart(2, '0');
+          return `${month}. ${day}. ${hours}:${mins}`;
         },
       },
     });
@@ -99,7 +98,7 @@ export function StrategyChart({
 
     candleSeries.setData(
       candles.map((c) => ({
-        time: (c.timestamp / 1000) as any,
+        time: (c.timestamp / 1000 + tzOffset) as any,
         open: Number(c.open),
         high: Number(c.high),
         low: Number(c.low),
@@ -152,7 +151,8 @@ export function StrategyChart({
     if (signals && signals.length > 0) {
       const markers: SeriesMarker<Time>[] = signals
         .map((s) => {
-          const time = (new Date(s.createdAt).getTime() / 1000) as Time;
+          const markerTzOffset = -new Date().getTimezoneOffset() * 60;
+          const time = (new Date(s.createdAt).getTime() / 1000 + markerTzOffset) as Time;
           const isOrder = s.action === 'order_placed';
           if (s.signal === 'buy') {
             return {
@@ -353,8 +353,9 @@ export function StrategyChart({
     if (!candleSeriesRef.current || !ticker || !candles || candles.length === 0) return;
     const lastCandle = candles[candles.length - 1];
     const price = Number(ticker.price);
+    const tzOff = -new Date().getTimezoneOffset() * 60;
     candleSeriesRef.current.update({
-      time: (lastCandle.timestamp / 1000) as any,
+      time: (lastCandle.timestamp / 1000 + tzOff) as any,
       open: Number(lastCandle.open),
       high: Math.max(Number(lastCandle.high), price),
       low: Math.min(Number(lastCandle.low), price),
