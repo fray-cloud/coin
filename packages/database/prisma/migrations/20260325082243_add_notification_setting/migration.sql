@@ -1,0 +1,19 @@
+-- CreateTable
+CREATE TABLE "NotificationSetting" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "telegramChatId" TEXT,
+    "notifyOrders" BOOLEAN NOT NULL DEFAULT true,
+    "notifySignals" BOOLEAN NOT NULL DEFAULT true,
+    "notifyRisks" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "NotificationSetting_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateIndex
+CREATE UNIQUE INDEX "NotificationSetting_userId_key" ON "NotificationSetting"("userId");
+
+-- AddForeignKey
+ALTER TABLE "NotificationSetting" ADD CONSTRAINT "NotificationSetting_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

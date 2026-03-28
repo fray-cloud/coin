@@ -35,9 +35,15 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
+  private exchangeRateInterval: ReturnType<typeof setInterval> | null = null;
+
   async onModuleInit() {
     await this.producer.connect();
     this.logger.log('Kafka producer connected');
+
+    // Fetch exchange rate immediately and every 5 minutes
+    await this.fetchExchangeRate();
+    this.exchangeRateInterval = setInterval(() => this.fetchExchangeRate(), 5 * 60 * 1000);
 
     const upbit = new UpbitWebSocket({
       onConnected: () => this.logger.log('Upbit WebSocket connected'),
@@ -75,6 +81,7 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
+    if (this.exchangeRateInterval) clearInterval(this.exchangeRateInterval);
     for (const adapter of this.adapters) {
       adapter.disconnect();
     }
@@ -83,10 +90,57 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('All connections closed');
   }
 
+  private async fetchExchangeRate() {
+    console.log(`[ExchangesService] Fetching exchange rate...`);
+    const sources = [
+      {
+        name: 'fawazahmed0',
+        url: 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json',
+        parse: (data: unknown) => (data as { usd: { krw: number } })?.usd?.krw,
+      },
+      {
+        name: 'dunamu',
+        url: 'https://quotation-api-cdn.dunamu.com/v1/forex/recent?codes=FRX.KRWUSD',
+        parse: (data: unknown) => (data as Array<{ basePrice: number }>)?.[0]?.basePrice,
+      },
+    ];
+
+    for (const source of sources) {
+      try {
+        const res = await fetch(source.url, { signal: AbortSignal.timeout(10000) });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const rate = source.parse(data);
+        if (rate && typeof rate === 'number' && rate > 0) {
+          await this.redis.set(
+            'exchange-rate:KRW-USD',
+            JSON.stringify({
+              krwPerUsd: rate,
+              source: source.name,
+              updatedAt: new Date().toISOString(),
+            }),
+            'EX',
+            600,
+          );
+          console.log(
+            `[ExchangesService] Exchange rate updated (${source.name}): 1 USD = ${rate} KRW`,
+          );
+          return;
+        }
+      } catch (err) {
+        console.warn(`[ExchangesService] Exchange rate fetch failed (${source.name}): ${err}`);
+      }
+    }
+    console.error('[ExchangesService] All exchange rate sources failed');
+  }
+
   private async handleTicker(ticker: Ticker) {
     try {
       const key = `ticker:${ticker.exchange}:${ticker.symbol}`;
       const tickerJson = JSON.stringify(ticker);
+
+      const priceKey = `prices:${ticker.exchange}:${ticker.symbol}`;
+      const now = Date.now();
 
       await Promise.all([
         this.redis.set(key, tickerJson, 'EX', 5),
@@ -99,6 +153,12 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
             },
           ],
         }),
+        this.redis
+          .multi()
+          .zadd(priceKey, now, `${now}:${ticker.price}`)
+          .zremrangebyrank(priceKey, 0, -501)
+          .expire(priceKey, 3600)
+          .exec(),
       ]);
 
       // 페이퍼 지정가 주문 체결 체크

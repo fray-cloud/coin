@@ -1,5 +1,12 @@
 import { createHmac } from 'crypto';
-import { ExchangeCredentials, Balance, OrderRequest, OrderResult, Market } from '@coin/types';
+import {
+  ExchangeCredentials,
+  Balance,
+  OrderRequest,
+  OrderResult,
+  Market,
+  Candle,
+} from '@coin/types';
 import { IExchangeRest } from '../interfaces/exchange-rest';
 
 const BASE_URL = 'https://api.binance.com';
@@ -122,6 +129,43 @@ export class BinanceRest implements IExchangeRest {
         baseAsset: s.baseAsset,
         quoteAsset: s.quoteAsset,
       }));
+  }
+
+  async getCandles(symbol: string, interval: string, limit = 200): Promise<Candle[]> {
+    const res = await fetch(
+      `${BASE_URL}/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`,
+    );
+    if (!res.ok) {
+      const body = await res.text();
+      throw new Error(`Binance API error ${res.status}: ${body}`);
+    }
+    const data = (await res.json()) as Array<
+      [
+        number,
+        string,
+        string,
+        string,
+        string,
+        string,
+        number,
+        string,
+        number,
+        string,
+        string,
+        string,
+      ]
+    >;
+    return data.map((k) => ({
+      exchange: this.exchangeId,
+      symbol,
+      interval,
+      open: k[1],
+      high: k[2],
+      low: k[3],
+      close: k[4],
+      volume: k[5],
+      timestamp: k[0],
+    }));
   }
 
   private mapOrderResult(o: BinanceOrderResponse): OrderResult {

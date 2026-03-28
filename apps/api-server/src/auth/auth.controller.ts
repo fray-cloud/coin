@@ -10,10 +10,12 @@ import {
   HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { KakaoAuthGuard } from './guards/kakao-auth.guard';
@@ -29,9 +31,24 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly tokenService: TokenService,
     private readonly config: ConfigService,
+    private readonly prisma: PrismaService,
   ) {}
 
+  private async recordLogin(userId: string, req: Request, method: string) {
+    try {
+      await this.prisma.loginHistory.create({
+        data: {
+          userId,
+          ip: req.ip || req.headers['x-forwarded-for']?.toString() || null,
+          userAgent: req.headers['user-agent'] || null,
+          method,
+        },
+      });
+    } catch {}
+  }
+
   @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('signup')
   async signup(@Body() dto: SignupDto, @Res({ passthrough: true }) res: Response) {
     const user = await this.authService.signup(dto);
@@ -41,6 +58,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
@@ -48,12 +66,19 @@ export class AuthController {
     const user = req.user as User;
     const tokens = await this.tokenService.issueTokenPair(user);
     this.tokenService.setCookies(res, tokens);
+    this.recordLogin(user.id, req, 'email');
     return { id: user.id, email: user.email, nickname: user.nickname };
   }
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Req() req: Request & { user?: { id: string } },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    if (req.user?.id) {
+      await this.recordLogin(req.user.id, req, 'logout');
+    }
     const refreshToken = req.cookies?.refresh_token;
     if (refreshToken) {
       await this.tokenService.revokeRefreshToken(refreshToken);
@@ -99,6 +124,7 @@ export class AuthController {
     const user = req.user as User;
     const tokens = await this.tokenService.issueTokenPair(user);
     this.tokenService.setCookies(res, tokens);
+    this.recordLogin(user.id, req, 'google');
     res.redirect(this.config.get('OAUTH_REDIRECT_URL', '/markets'));
   }
 
@@ -115,6 +141,7 @@ export class AuthController {
     const user = req.user as User;
     const tokens = await this.tokenService.issueTokenPair(user);
     this.tokenService.setCookies(res, tokens);
+    this.recordLogin(user.id, req, 'kakao');
     res.redirect(this.config.get('OAUTH_REDIRECT_URL', '/markets'));
   }
 
@@ -131,6 +158,7 @@ export class AuthController {
     const user = req.user as User;
     const tokens = await this.tokenService.issueTokenPair(user);
     this.tokenService.setCookies(res, tokens);
+    this.recordLogin(user.id, req, 'naver');
     res.redirect(this.config.get('OAUTH_REDIRECT_URL', '/markets'));
   }
 }

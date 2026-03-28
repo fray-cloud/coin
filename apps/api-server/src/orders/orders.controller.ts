@@ -9,18 +9,23 @@ import {
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
+import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { OrdersService } from './orders.service';
+import { CreateOrderCommand, CancelOrderCommand } from './commands';
+import { GetOrdersQuery, GetOrderQuery } from './queries';
 import { CreateOrderDto } from './dto/create-order.dto';
 import type { User } from '@coin/database';
 
 @Controller('orders')
 export class OrdersController {
-  constructor(private readonly service: OrdersService) {}
+  constructor(
+    private readonly commandBus: CommandBus,
+    private readonly queryBus: QueryBus,
+  ) {}
 
   @Post()
   async create(@CurrentUser() user: User, @Body() dto: CreateOrderDto) {
-    return this.service.createOrder(user.id, dto);
+    return this.commandBus.execute(new CreateOrderCommand(user.id, dto));
   }
 
   @Get()
@@ -28,18 +33,34 @@ export class OrdersController {
     @CurrentUser() user: User,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
+    @Query('status') status?: string,
+    @Query('exchange') exchange?: string,
+    @Query('symbol') symbol?: string,
+    @Query('mode') mode?: string,
+    @Query('side') side?: string,
   ) {
-    return this.service.getOrders(user.id, cursor, limit ? parseInt(limit, 10) : undefined);
+    return this.queryBus.execute(
+      new GetOrdersQuery(
+        user.id,
+        cursor,
+        limit ? parseInt(limit, 10) : undefined,
+        status,
+        exchange,
+        symbol,
+        mode,
+        side,
+      ),
+    );
   }
 
   @Get(':id')
   async findOne(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.service.getOrder(user.id, id);
+    return this.queryBus.execute(new GetOrderQuery(user.id, id));
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
   async cancel(@CurrentUser() user: User, @Param('id') id: string) {
-    return this.service.cancelOrder(user.id, id);
+    return this.commandBus.execute(new CancelOrderCommand(user.id, id));
   }
 }

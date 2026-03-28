@@ -1,7 +1,11 @@
 import type { Metadata } from 'next';
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import { NavBar } from '@/components/nav-bar';
+import { MobileTabBar } from '@/components/mobile-tab-bar';
 import { AuthDebug } from '@/components/auth-debug';
+import { ToastContainer } from '@/components/toast';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
@@ -27,17 +31,23 @@ function parseExpiresIn(value: string): number {
   }
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const accessTtl = parseExpiresIn(process.env.JWT_ACCESS_EXPIRES_IN || '15m');
+  const locale = await getLocale();
+  const messages = await getMessages();
 
   return (
-    <html lang="ko">
+    <html lang={locale}>
       <body>
-        <Providers>
-          <NavBar />
-          <main>{children}</main>
-          <AuthDebug accessTtl={accessTtl} />
-        </Providers>
+        <NextIntlClientProvider messages={messages}>
+          <Providers>
+            <NavBar />
+            <main className="pb-16 md:pb-0">{children}</main>
+            <MobileTabBar />
+            <ToastContainer />
+            <AuthDebug accessTtl={accessTtl} />
+          </Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
