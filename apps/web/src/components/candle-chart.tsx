@@ -53,6 +53,8 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
 
   const { data: candles, isLoading } = useCandles(exchange, symbol, selectedInterval);
 
+  const compareSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
+
   const tickerKey = `${exchange}:${symbol}`;
   const ticker = useTickersStore((s) => s.tickers.get(tickerKey));
 
@@ -165,10 +167,28 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
     const chart = chartInstance.current;
     if (!chart) return;
 
-    // Remove existing compare series (lightweight-charts doesn't have a clean way,
-    // so we track them separately)
-    // For simplicity, we skip compare line cleanup and rely on chart recreation
-    // when compare mode changes significantly
+    // Remove previous compare line
+    if (compareSeriesRef.current) {
+      chart.removeSeries(compareSeriesRef.current);
+      compareSeriesRef.current = null;
+    }
+
+    // Add new compare line
+    if (compareMode && compareExchange && compareLines.length > 0) {
+      const line = compareLines.find((l) => l.exchange === compareExchange);
+      if (line && line.data.length > 0) {
+        const color = EXCHANGE_COLORS[line.exchange] || '#888';
+        const lineSeries = chart.addLineSeries({
+          color,
+          lineWidth: 2,
+          priceLineVisible: false,
+          lastValueVisible: true,
+          title: line.exchange,
+        });
+        lineSeries.setData(line.data.map((d) => ({ time: d.time as any, value: d.value })));
+        compareSeriesRef.current = lineSeries;
+      }
+    }
   }, [compareMode, compareExchange, compareLines]);
 
   // Real-time ticker update
