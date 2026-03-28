@@ -3,31 +3,31 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateOrderDto {
   @ApiProperty({
-    description: 'Target exchange',
+    description: '대상 거래소',
     example: 'binance',
     enum: ['upbit', 'binance', 'bybit'],
   })
   @IsIn(['upbit', 'binance', 'bybit'])
   exchange!: string;
 
-  @ApiProperty({ description: 'Trading symbol', example: 'BTC/USDT' })
+  @ApiProperty({ description: '트레이딩 심볼', example: 'BTC/USDT' })
   @IsString()
   symbol!: string;
 
-  @ApiProperty({ description: 'Order side', example: 'buy', enum: ['buy', 'sell'] })
+  @ApiProperty({ description: '주문 방향', example: 'buy', enum: ['buy', 'sell'] })
   @IsIn(['buy', 'sell'])
   side!: string;
 
-  @ApiProperty({ description: 'Order type', example: 'limit', enum: ['limit', 'market'] })
+  @ApiProperty({ description: '주문 유형', example: 'limit', enum: ['limit', 'market'] })
   @IsIn(['limit', 'market'])
   type!: string;
 
-  @ApiProperty({ description: 'Order quantity', example: '0.001' })
+  @ApiProperty({ description: '주문 수량', example: '0.001' })
   @IsString()
   quantity!: string;
 
   @ApiPropertyOptional({
-    description: 'Limit price (required for limit orders)',
+    description: '지정가 (지정가 주문 시 필수)',
     example: '65000.00',
   })
   @IsOptional()
@@ -35,7 +35,7 @@ export class CreateOrderDto {
   price?: string;
 
   @ApiProperty({
-    description: 'Trading mode (paper or real)',
+    description: '거래 모드 (모의 또는 실전)',
     example: 'paper',
     enum: ['paper', 'real'],
   })
@@ -43,7 +43,7 @@ export class CreateOrderDto {
   mode!: string;
 
   @ApiPropertyOptional({
-    description: 'Exchange API key ID for real trading',
+    description: '실전 거래용 거래소 API 키 ID',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @IsOptional()

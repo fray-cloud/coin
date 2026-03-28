@@ -2,13 +2,13 @@ import { IsString, IsIn, IsOptional, IsObject, IsInt, Min } from 'class-validato
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UpdateStrategyDto {
-  @ApiPropertyOptional({ description: 'Strategy name', example: 'BTC RSI Oversold Strategy v2' })
+  @ApiPropertyOptional({ description: '전략 이름', example: 'BTC RSI Oversold Strategy v2' })
   @IsOptional()
   @IsString()
   name?: string;
 
   @ApiPropertyOptional({
-    description: 'Execution mode',
+    description: '실행 모드',
     example: 'signal',
     enum: ['auto', 'signal'],
   })
@@ -17,7 +17,7 @@ export class UpdateStrategyDto {
   mode?: string;
 
   @ApiPropertyOptional({
-    description: 'Trading mode (paper or real)',
+    description: '거래 모드 (모의 또는 실전)',
     example: 'real',
     enum: ['paper', 'real'],
   })
@@ -26,7 +26,7 @@ export class UpdateStrategyDto {
   tradingMode?: string;
 
   @ApiPropertyOptional({
-    description: 'Exchange API key ID for real trading',
+    description: '실전 거래용 거래소 API 키 ID',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
   @IsOptional()
@@ -34,7 +34,7 @@ export class UpdateStrategyDto {
   exchangeKeyId?: string;
 
   @ApiPropertyOptional({
-    description: 'Strategy-specific configuration parameters',
+    description: '전략별 설정 파라미터',
     example: { period: 14, overbought: 75, oversold: 25 },
   })
   @IsOptional()
@@ -42,7 +42,7 @@ export class UpdateStrategyDto {
   config?: Record<string, unknown>;
 
   @ApiPropertyOptional({
-    description: 'Risk management configuration',
+    description: '리스크 관리 설정',
     example: { stopLossPercent: 2, takeProfitPercent: 6, maxPositionSize: 0.05 },
   })
   @IsOptional()
@@ -50,7 +50,7 @@ export class UpdateStrategyDto {
   riskConfig?: Record<string, unknown>;
 
   @ApiPropertyOptional({
-    description: 'Strategy evaluation interval in seconds (min 10)',
+    description: '전략 평가 간격 (초 단위, 최소 10)',
     example: 120,
   })
   @IsOptional()
@@ -59,7 +59,7 @@ export class UpdateStrategyDto {
   intervalSeconds?: number;
 
   @ApiPropertyOptional({
-    description: 'Candle interval for analysis',
+    description: '분석용 캔들 간격',
     example: '1h',
     enum: ['1m', '5m', '15m', '1h', '4h', '1d'],
   })

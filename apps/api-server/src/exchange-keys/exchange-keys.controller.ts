@@ -39,46 +39,50 @@ export class ExchangeKeysController {
   ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Register a new exchange API key pair' })
-  @ApiResponse({ status: 201, description: 'Exchange key registered successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiOperation({
+    summary: '새 거래소 API 키 등록',
+    description:
+      '## API 키 등록 플로우\n\n1. 거래소, API 키, 시크릿 키 입력\n2. 서버가 해당 키로 거래소 API 호출하여 유효성 검증\n3. 암호화 후 DB에 저장\n4. 이후 실전 거래 시 해당 키 사용',
+  })
+  @ApiResponse({ status: 201, description: 'API 키 등록 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   async create(@CurrentUser() user: User, @Body() dto: CreateExchangeKeyDto) {
     return this.commandBus.execute(new CreateExchangeKeyCommand(user.id, dto));
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all registered exchange API keys for the current user' })
-  @ApiResponse({ status: 200, description: 'List of exchange keys returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiOperation({ summary: '등록된 거래소 API 키 목록 조회' })
+  @ApiResponse({ status: 200, description: 'API 키 목록 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   async findAll(@CurrentUser() user: User) {
     return this.queryBus.execute(new GetExchangeKeysQuery(user.id));
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete a registered exchange API key' })
-  @ApiResponse({ status: 200, description: 'Exchange key deleted successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiParam({ name: 'id', description: 'Exchange key ID' })
+  @ApiOperation({ summary: '등록된 거래소 API 키 삭제' })
+  @ApiResponse({ status: 200, description: 'API 키 삭제 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiParam({ name: 'id', description: '거래소 키 ID' })
   async delete(@CurrentUser() user: User, @Param('id') id: string) {
     return this.commandBus.execute(new DeleteExchangeKeyCommand(user.id, id));
   }
 
   @Get(':id/balances')
-  @ApiOperation({ summary: 'Fetch account balances from the exchange via stored API key' })
-  @ApiResponse({ status: 200, description: 'Exchange balances returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiParam({ name: 'id', description: 'Exchange key ID' })
+  @ApiOperation({ summary: '저장된 API 키로 거래소 잔고 조회' })
+  @ApiResponse({ status: 200, description: '잔고 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiParam({ name: 'id', description: '거래소 키 ID' })
   async getBalances(@CurrentUser() user: User, @Param('id') id: string) {
     return this.queryBus.execute(new GetBalancesQuery(user.id, id));
   }
 
   @Get(':id/orders')
-  @ApiOperation({ summary: 'Fetch open orders from the exchange, optionally filtered by symbol' })
-  @ApiResponse({ status: 200, description: 'Open orders returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiParam({ name: 'id', description: 'Exchange key ID' })
-  @ApiQuery({ name: 'symbol', required: false, description: 'Filter by trading symbol' })
+  @ApiOperation({ summary: '거래소 미체결 주문 조회 (심볼 필터 지원)' })
+  @ApiResponse({ status: 200, description: '미체결 주문 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiParam({ name: 'id', description: '거래소 키 ID' })
+  @ApiQuery({ name: 'symbol', required: false, description: '심볼 필터' })
   async getOpenOrders(
     @CurrentUser() user: User,
     @Param('id') id: string,
@@ -88,10 +92,10 @@ export class ExchangeKeysController {
   }
 
   @Get(':id/markets')
-  @ApiOperation({ summary: 'Fetch available markets from the exchange' })
-  @ApiResponse({ status: 200, description: 'Exchange markets returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiParam({ name: 'id', description: 'Exchange key ID' })
+  @ApiOperation({ summary: '거래소 이용 가능 마켓 조회' })
+  @ApiResponse({ status: 200, description: '마켓 목록 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiParam({ name: 'id', description: '거래소 키 ID' })
   async getMarkets(@CurrentUser() user: User, @Param('id') id: string) {
     return this.queryBus.execute(new GetMarketsQuery(user.id, id));
   }

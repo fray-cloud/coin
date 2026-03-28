@@ -18,35 +18,35 @@ export class MarketsController {
   constructor(private readonly marketsService: MarketsService) {}
 
   @Get('tickers')
-  @ApiOperation({ summary: 'Retrieve all cached tickers across exchanges' })
-  @ApiResponse({ status: 200, description: 'Ticker list returned' })
+  @ApiOperation({ summary: '모든 거래소의 캐시된 티커 조회' })
+  @ApiResponse({ status: 200, description: '티커 목록 반환' })
   async getAllTickers() {
     return this.marketsService.getAllTickers();
   }
 
   @Get('exchange-rate')
-  @ApiOperation({ summary: 'Get the current KRW/USD exchange rate' })
-  @ApiResponse({ status: 200, description: 'Exchange rate returned' })
+  @ApiOperation({ summary: '현재 KRW/USD 환율 조회' })
+  @ApiResponse({ status: 200, description: '환율 반환' })
   async getExchangeRate() {
     const rate = await this.marketsService.getExchangeRate();
     return rate ?? { krwPerUsd: 0, updatedAt: null };
   }
 
   @Get('candles/:exchange/:symbol')
-  @ApiOperation({ summary: 'Fetch candlestick (OHLCV) data for a symbol on an exchange' })
-  @ApiResponse({ status: 200, description: 'Candle data returned' })
-  @ApiResponse({ status: 404, description: 'Exchange not found' })
-  @ApiParam({ name: 'exchange', description: 'Exchange identifier (upbit, binance, bybit)' })
-  @ApiParam({ name: 'symbol', description: 'Trading symbol (e.g., BTC/KRW)' })
+  @ApiOperation({ summary: '거래소의 심볼에 대한 캔들스틱(OHLCV) 데이터 조회' })
+  @ApiResponse({ status: 200, description: '캔들 데이터 반환' })
+  @ApiResponse({ status: 404, description: '거래소를 찾을 수 없음' })
+  @ApiParam({ name: 'exchange', description: '거래소 식별자 (upbit, binance, bybit)' })
+  @ApiParam({ name: 'symbol', description: '트레이딩 심볼 (예: BTC/KRW)' })
   @ApiQuery({
     name: 'interval',
     required: false,
-    description: 'Candle interval (e.g., 1m, 5m, 1h, 1d). Defaults to 1h',
+    description: '캔들 간격 (예: 1m, 5m, 1h, 1d). 기본값: 1h',
   })
   @ApiQuery({
     name: 'limit',
     required: false,
-    description: 'Number of candles to return (max 500). Defaults to 200',
+    description: '반환할 캔들 수 (최대 500). 기본값: 200',
   })
   async getCandles(
     @Param('exchange') exchange: string,
@@ -63,11 +63,11 @@ export class MarketsController {
   }
 
   @Get('ticker/:exchange/:symbol')
-  @ApiOperation({ summary: 'Get the latest ticker for a specific symbol on an exchange' })
-  @ApiResponse({ status: 200, description: 'Ticker data returned' })
-  @ApiResponse({ status: 404, description: 'Ticker not found' })
-  @ApiParam({ name: 'exchange', description: 'Exchange identifier (upbit, binance, bybit)' })
-  @ApiParam({ name: 'symbol', description: 'Trading symbol (e.g., BTC/KRW)' })
+  @ApiOperation({ summary: '거래소의 특정 심볼 최신 티커 조회' })
+  @ApiResponse({ status: 200, description: '티커 데이터 반환' })
+  @ApiResponse({ status: 404, description: '티커를 찾을 수 없음' })
+  @ApiParam({ name: 'exchange', description: '거래소 식별자 (upbit, binance, bybit)' })
+  @ApiParam({ name: 'symbol', description: '트레이딩 심볼 (예: BTC/KRW)' })
   async getTicker(@Param('exchange') exchange: string, @Param('symbol') symbol: string) {
     const ticker = await this.marketsService.getLatestTicker(exchange, symbol);
     if (!ticker) {

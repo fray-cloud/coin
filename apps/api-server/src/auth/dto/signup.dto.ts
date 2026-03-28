@@ -4,13 +4,12 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 const isProd = process.env.NODE_ENV === 'production';
 
 export class SignupDto {
-  @ApiProperty({ description: 'User email address', example: 'user@example.com' })
+  @ApiProperty({ description: '사용자 이메일 주소', example: 'user@example.com' })
   @IsEmail()
   email!: string;
 
   @ApiProperty({
-    description:
-      'User password (min 8 chars in production with uppercase, lowercase, number, and special character)',
+    description: '사용자 비밀번호 (프로덕션 환경: 8자 이상, 대소문자/숫자/특수문자 포함)',
     example: 'P@ssw0rd!',
   })
   @IsString()
@@ -22,7 +21,7 @@ export class SignupDto {
   })
   password!: string;
 
-  @ApiPropertyOptional({ description: 'User display nickname', example: 'trader_kim' })
+  @ApiPropertyOptional({ description: '사용자 표시 닉네임', example: 'trader_kim' })
   @IsString()
   @IsOptional()
   nickname?: string;

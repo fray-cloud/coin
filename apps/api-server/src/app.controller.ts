@@ -15,8 +15,8 @@ export class AppController {
 
   @Public()
   @Get('health')
-  @ApiOperation({ summary: 'Basic health check returning service status' })
-  @ApiResponse({ status: 200, description: 'Service is healthy' })
+  @ApiOperation({ summary: '서비스 상태를 반환하는 기본 헬스 체크' })
+  @ApiResponse({ status: 200, description: '서비스 정상' })
   healthCheck() {
     return {
       status: 'ok',
@@ -28,9 +28,9 @@ export class AppController {
   @Public()
   @Get('ready')
   @HealthCheck()
-  @ApiOperation({ summary: 'Readiness check verifying database connectivity' })
-  @ApiResponse({ status: 200, description: 'Service is ready and database is reachable' })
-  @ApiResponse({ status: 503, description: 'Service is not ready' })
+  @ApiOperation({ summary: '데이터베이스 연결을 확인하는 준비 상태 체크' })
+  @ApiResponse({ status: 200, description: '서비스 준비 완료, DB 연결 정상' })
+  @ApiResponse({ status: 503, description: '서비스 미준비 상태' })
   readyCheck() {
     return this.health.check([() => this.prismaHealth.pingCheck('database', this.prisma)]);
   }

@@ -52,9 +52,9 @@ export class AuthController {
   @Public()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('signup')
-  @ApiOperation({ summary: 'Register a new user account with email and password' })
-  @ApiResponse({ status: 201, description: 'User created successfully' })
-  @ApiResponse({ status: 400, description: 'Validation error or email already exists' })
+  @ApiOperation({ summary: '이메일과 비밀번호로 새 계정 등록' })
+  @ApiResponse({ status: 201, description: '계정 생성 성공' })
+  @ApiResponse({ status: 400, description: '유효성 검사 오류 또는 이미 존재하는 이메일' })
   async signup(@Body() dto: SignupDto, @Res({ passthrough: true }) res: Response) {
     const user = await this.authService.signup(dto);
     const tokens = await this.tokenService.issueTokenPair(user);
@@ -68,24 +68,24 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Log in with email and password credentials',
+    summary: '이메일/비밀번호로 로그인',
     description:
-      '## Auth Flow\n\n' +
+      '## 인증 플로우\n\n' +
       '```mermaid\n' +
       'sequenceDiagram\n' +
-      '  participant C as Client\n' +
-      '  participant A as API Server\n' +
-      '  participant DB as Database\n' +
+      '  participant C as 클라이언트\n' +
+      '  participant A as API 서버\n' +
+      '  participant DB as 데이터베이스\n' +
       '  C->>A: POST /auth/login {email, password}\n' +
-      '  A->>DB: Verify credentials\n' +
-      '  DB-->>A: User found\n' +
-      '  A->>A: Generate JWT access + refresh tokens\n' +
-      '  A->>DB: Store refresh token\n' +
-      '  A-->>C: Set cookies (access_token, refresh_token)\n' +
+      '  A->>DB: 자격증명 검증\n' +
+      '  DB-->>A: 사용자 확인\n' +
+      '  A->>A: JWT 액세스 + 리프레시 토큰 생성\n' +
+      '  A->>DB: 리프레시 토큰 저장\n' +
+      '  A-->>C: 쿠키 설정 (access_token, refresh_token)\n' +
       '```\n',
   })
-  @ApiResponse({ status: 200, description: 'Login successful, tokens set in cookies' })
-  @ApiResponse({ status: 401, description: 'Invalid credentials' })
+  @ApiResponse({ status: 200, description: '로그인 성공, 쿠키에 토큰 설정됨' })
+  @ApiResponse({ status: 401, description: '잘못된 자격증명' })
   async login(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = req.user as User;
     const tokens = await this.tokenService.issueTokenPair(user);
@@ -97,9 +97,9 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Log out and revoke the current refresh token' })
-  @ApiResponse({ status: 200, description: 'Logged out successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiOperation({ summary: '로그아웃 및 리프레시 토큰 폐기' })
+  @ApiResponse({ status: 200, description: '로그아웃 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   async logout(
     @Req() req: Request & { user?: { id: string } },
     @Res({ passthrough: true }) res: Response,
@@ -118,9 +118,9 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Rotate the refresh token and issue new access and refresh tokens' })
-  @ApiResponse({ status: 200, description: 'Tokens refreshed successfully' })
-  @ApiResponse({ status: 401, description: 'Invalid or missing refresh token' })
+  @ApiOperation({ summary: '리프레시 토큰 갱신 및 새 토큰 발급' })
+  @ApiResponse({ status: 200, description: '토큰 갱신 성공' })
+  @ApiResponse({ status: 401, description: '유효하지 않거나 누락된 리프레시 토큰' })
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.refresh_token;
     if (!refreshToken) {
@@ -134,9 +134,9 @@ export class AuthController {
 
   @Get('me')
   @ApiBearerAuth('access-token')
-  @ApiOperation({ summary: 'Retrieve the currently authenticated user profile' })
-  @ApiResponse({ status: 200, description: 'Current user profile returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiOperation({ summary: '현재 인증된 사용자 프로필 조회' })
+  @ApiResponse({ status: 200, description: '사용자 프로필 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   async me(@CurrentUser() user: User) {
     return {
       id: user.id,
@@ -150,15 +150,15 @@ export class AuthController {
   @Public()
   @UseGuards(GoogleAuthGuard)
   @Get('google')
-  @ApiOperation({ summary: 'Initiate Google OAuth login flow' })
-  @ApiResponse({ status: 302, description: 'Redirects to Google consent screen' })
+  @ApiOperation({ summary: 'Google OAuth 로그인 시작' })
+  @ApiResponse({ status: 302, description: 'Google 동의 화면으로 리다이렉트' })
   google() {}
 
   @Public()
   @UseGuards(GoogleAuthGuard)
   @Get('google/callback')
-  @ApiOperation({ summary: 'Handle Google OAuth callback and issue tokens' })
-  @ApiResponse({ status: 302, description: 'Redirects to the app after successful login' })
+  @ApiOperation({ summary: 'Google OAuth 콜백 처리 및 토큰 발급' })
+  @ApiResponse({ status: 302, description: '로그인 성공 후 앱으로 리다이렉트' })
   async googleCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
     const tokens = await this.tokenService.issueTokenPair(user);
@@ -171,15 +171,15 @@ export class AuthController {
   @Public()
   @UseGuards(KakaoAuthGuard)
   @Get('kakao')
-  @ApiOperation({ summary: 'Initiate Kakao OAuth login flow' })
-  @ApiResponse({ status: 302, description: 'Redirects to Kakao consent screen' })
+  @ApiOperation({ summary: 'Kakao OAuth 로그인 시작' })
+  @ApiResponse({ status: 302, description: 'Kakao 동의 화면으로 리다이렉트' })
   kakao() {}
 
   @Public()
   @UseGuards(KakaoAuthGuard)
   @Get('kakao/callback')
-  @ApiOperation({ summary: 'Handle Kakao OAuth callback and issue tokens' })
-  @ApiResponse({ status: 302, description: 'Redirects to the app after successful login' })
+  @ApiOperation({ summary: 'Kakao OAuth 콜백 처리 및 토큰 발급' })
+  @ApiResponse({ status: 302, description: '로그인 성공 후 앱으로 리다이렉트' })
   async kakaoCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
     const tokens = await this.tokenService.issueTokenPair(user);
@@ -192,15 +192,15 @@ export class AuthController {
   @Public()
   @UseGuards(NaverAuthGuard)
   @Get('naver')
-  @ApiOperation({ summary: 'Initiate Naver OAuth login flow' })
-  @ApiResponse({ status: 302, description: 'Redirects to Naver consent screen' })
+  @ApiOperation({ summary: 'Naver OAuth 로그인 시작' })
+  @ApiResponse({ status: 302, description: 'Naver 동의 화면으로 리다이렉트' })
   naver() {}
 
   @Public()
   @UseGuards(NaverAuthGuard)
   @Get('naver/callback')
-  @ApiOperation({ summary: 'Handle Naver OAuth callback and issue tokens' })
-  @ApiResponse({ status: 302, description: 'Redirects to the app after successful login' })
+  @ApiOperation({ summary: 'Naver OAuth 콜백 처리 및 토큰 발급' })
+  @ApiResponse({ status: 302, description: '로그인 성공 후 앱으로 리다이렉트' })
   async naverCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
     const tokens = await this.tokenService.issueTokenPair(user);

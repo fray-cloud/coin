@@ -35,50 +35,50 @@ export class OrdersController {
 
   @Post()
   @ApiOperation({
-    summary: 'Create a new order on the specified exchange',
+    summary: '지정된 거래소에 새 주문 생성',
     description:
-      '## Order Execution Flow\n\n' +
+      '## 주문 실행 플로우\n\n' +
       '```mermaid\n' +
       'sequenceDiagram\n' +
-      '  participant C as Client\n' +
-      '  participant A as API Server\n' +
+      '  participant C as 클라이언트\n' +
+      '  participant A as API 서버\n' +
       '  participant K as Kafka\n' +
       '  participant W as Worker\n' +
-      '  participant E as Exchange\n' +
+      '  participant E as 거래소\n' +
       '  C->>A: POST /orders {exchange, symbol, side, type}\n' +
-      '  A->>A: Create order (status: pending)\n' +
-      '  A->>K: Publish OrderRequestedEvent\n' +
-      '  A-->>C: 201 Order created\n' +
-      '  K->>W: Consume order request\n' +
-      '  W->>E: Place order via exchange API\n' +
-      '  E-->>W: Order result\n' +
-      '  W->>K: Publish OrderResultEvent\n' +
-      '  K->>A: Consume result\n' +
-      '  A->>A: Update order status\n' +
-      '  A-->>C: WebSocket notification\n' +
+      '  A->>A: 주문 생성 (상태: pending)\n' +
+      '  A->>K: OrderRequestedEvent 발행\n' +
+      '  A-->>C: 201 주문 생성 완료\n' +
+      '  K->>W: 주문 요청 소비\n' +
+      '  W->>E: 거래소 API로 주문 실행\n' +
+      '  E-->>W: 주문 결과\n' +
+      '  W->>K: OrderResultEvent 발행\n' +
+      '  K->>A: 결과 소비\n' +
+      '  A->>A: 주문 상태 업데이트\n' +
+      '  A-->>C: WebSocket 알림\n' +
       '```\n',
   })
-  @ApiResponse({ status: 201, description: 'Order created successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 201, description: '주문 생성 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   async create(@CurrentUser() user: User, @Body() dto: CreateOrderDto) {
     return this.commandBus.execute(new CreateOrderCommand(user.id, dto));
   }
 
   @Get()
-  @ApiOperation({ summary: 'List orders with optional filtering and cursor pagination' })
-  @ApiResponse({ status: 200, description: 'Paginated list of orders returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Number of items per page' })
-  @ApiQuery({ name: 'status', required: false, description: 'Filter by order status' })
-  @ApiQuery({ name: 'exchange', required: false, description: 'Filter by exchange' })
-  @ApiQuery({ name: 'symbol', required: false, description: 'Filter by trading symbol' })
+  @ApiOperation({ summary: '주문 목록 조회 (필터링 및 커서 페이지네이션 지원)' })
+  @ApiResponse({ status: 200, description: '주문 목록 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiQuery({ name: 'cursor', required: false, description: '페이지네이션 커서' })
+  @ApiQuery({ name: 'limit', required: false, description: '페이지당 항목 수' })
+  @ApiQuery({ name: 'status', required: false, description: '주문 상태 필터' })
+  @ApiQuery({ name: 'exchange', required: false, description: '거래소 필터' })
+  @ApiQuery({ name: 'symbol', required: false, description: '심볼 필터' })
   @ApiQuery({
     name: 'mode',
     required: false,
-    description: 'Filter by trading mode (paper or real)',
+    description: '거래 모드 필터 (모의/실전)',
   })
-  @ApiQuery({ name: 'side', required: false, description: 'Filter by order side (buy or sell)' })
+  @ApiQuery({ name: 'side', required: false, description: '주문 방향 필터 (매수/매도)' })
   async findAll(
     @CurrentUser() user: User,
     @Query('cursor') cursor?: string,
@@ -104,20 +104,20 @@ export class OrdersController {
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Retrieve a specific order by its ID' })
-  @ApiResponse({ status: 200, description: 'Order details returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiParam({ name: 'id', description: 'Order ID' })
+  @ApiOperation({ summary: 'ID로 특정 주문 조회' })
+  @ApiResponse({ status: 200, description: '주문 상세 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiParam({ name: 'id', description: '주문 ID' })
   async findOne(@CurrentUser() user: User, @Param('id') id: string) {
     return this.queryBus.execute(new GetOrderQuery(user.id, id));
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Cancel a pending order by its ID' })
-  @ApiResponse({ status: 200, description: 'Order cancelled successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiParam({ name: 'id', description: 'Order ID' })
+  @ApiOperation({ summary: 'ID로 대기 중인 주문 취소' })
+  @ApiResponse({ status: 200, description: '주문 취소 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiParam({ name: 'id', description: '주문 ID' })
   async cancel(@CurrentUser() user: User, @Param('id') id: string) {
     return this.commandBus.execute(new CancelOrderCommand(user.id, id));
   }

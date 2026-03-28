@@ -11,11 +11,11 @@ export class ActivityController {
   constructor(private readonly activityService: ActivityService) {}
 
   @Get()
-  @ApiOperation({ summary: 'Retrieve the activity feed with cursor-based pagination' })
-  @ApiResponse({ status: 200, description: 'Paginated activity feed returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Number of items per page' })
+  @ApiOperation({ summary: '커서 기반 페이지네이션으로 활동 피드 조회' })
+  @ApiResponse({ status: 200, description: '활동 피드 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiQuery({ name: 'cursor', required: false, description: '페이지네이션 커서' })
+  @ApiQuery({ name: 'limit', required: false, description: '페이지당 항목 수' })
   async getActivity(
     @CurrentUser() user: User,
     @Query('cursor') cursor?: string,

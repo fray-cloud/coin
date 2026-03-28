@@ -17,17 +17,17 @@ export class NotificationsController {
   ) {}
 
   @Get('settings')
-  @ApiOperation({ summary: 'Retrieve the current notification settings for the user' })
-  @ApiResponse({ status: 200, description: 'Notification settings returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiOperation({ summary: '사용자 알림 설정 조회' })
+  @ApiResponse({ status: 200, description: '알림 설정 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   async getSettings(@CurrentUser() user: User) {
     return this.queryBus.execute(new GetNotificationSettingsQuery(user.id));
   }
 
   @Patch('settings')
-  @ApiOperation({ summary: 'Update notification preferences for the user' })
-  @ApiResponse({ status: 200, description: 'Notification settings updated successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiOperation({ summary: '사용자 알림 설정 변경' })
+  @ApiResponse({ status: 200, description: '알림 설정 변경 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   async updateSettings(@CurrentUser() user: User, @Body() dto: UpdateNotificationSettingDto) {
     return this.commandBus.execute(new UpdateNotificationSettingCommand(user.id, dto));
   }

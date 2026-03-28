@@ -48,109 +48,109 @@ export class StrategiesController {
 
   @Post()
   @ApiOperation({
-    summary: 'Create a new trading strategy',
+    summary: '새 트레이딩 전략 생성',
     description:
-      '## Strategy Execution Flow\n\n' +
+      '## 전략 실행 사이클\n\n' +
       '```mermaid\n' +
       'sequenceDiagram\n' +
       '  participant W as Worker\n' +
       '  participant R as Redis\n' +
-      '  participant E as Exchange API\n' +
+      '  participant E as 거래소 API\n' +
       '  participant K as Kafka\n' +
-      '  loop Every intervalSeconds\n' +
+      '  loop 매 intervalSeconds 마다\n' +
       '    W->>E: getCandles(symbol, candleInterval)\n' +
-      '    E-->>W: OHLCV data\n' +
-      '    W->>R: Cache candles\n' +
-      '    W->>W: Evaluate strategy (RSI/MACD/Bollinger)\n' +
-      '    alt Signal Mode\n' +
-      '      W->>K: Publish StrategySignalEvent\n' +
-      '      K->>W: Send notification\n' +
-      '    else Auto Mode\n' +
-      '      W->>W: Risk check\n' +
-      '      W->>K: Publish OrderRequestedEvent\n' +
-      '      K->>W: Execute order\n' +
+      '    E-->>W: OHLCV 데이터\n' +
+      '    W->>R: 캔들 캐시\n' +
+      '    W->>W: 지표 계산 (RSI/MACD/Bollinger)\n' +
+      '    alt Signal 모드\n' +
+      '      W->>K: StrategySignalEvent 발행\n' +
+      '      K->>W: 알림 전송\n' +
+      '    else Auto 모드\n' +
+      '      W->>W: 리스크 체크\n' +
+      '      W->>K: OrderRequestedEvent 발행\n' +
+      '      K->>W: 주문 실행\n' +
       '    end\n' +
       '  end\n' +
       '```\n',
   })
-  @ApiResponse({ status: 201, description: 'Strategy created successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 201, description: '전략 생성 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   async create(@CurrentUser() user: User, @Body() dto: CreateStrategyDto) {
     return this.commandBus.execute(new CreateStrategyCommand(user.id, dto));
   }
 
   @Get()
-  @ApiOperation({ summary: 'List all strategies for the current user' })
-  @ApiResponse({ status: 200, description: 'List of strategies returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiOperation({ summary: '현재 사용자의 모든 전략 조회' })
+  @ApiResponse({ status: 200, description: '전략 목록 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
   async findAll(@CurrentUser() user: User) {
     return this.queryBus.execute(new GetStrategiesQuery(user.id));
   }
 
   @Get(':id')
-  @ApiOperation({ summary: 'Retrieve a specific strategy by its ID' })
-  @ApiResponse({ status: 200, description: 'Strategy details returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiParam({ name: 'id', description: 'Strategy ID' })
+  @ApiOperation({ summary: 'ID로 특정 전략 조회' })
+  @ApiResponse({ status: 200, description: '전략 상세 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiParam({ name: 'id', description: '전략 ID' })
   async findOne(@CurrentUser() user: User, @Param('id') id: string) {
     return this.queryBus.execute(new GetStrategyQuery(user.id, id));
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Update an existing strategy configuration' })
-  @ApiResponse({ status: 200, description: 'Strategy updated successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiParam({ name: 'id', description: 'Strategy ID' })
+  @ApiOperation({ summary: '기존 전략 설정 수정' })
+  @ApiResponse({ status: 200, description: '전략 수정 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiParam({ name: 'id', description: '전략 ID' })
   async update(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: UpdateStrategyDto) {
     return this.commandBus.execute(new UpdateStrategyCommand(user.id, id, dto));
   }
 
   @Patch(':id/toggle')
-  @ApiOperation({ summary: 'Toggle a strategy between active and paused states' })
-  @ApiResponse({ status: 200, description: 'Strategy toggled successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiParam({ name: 'id', description: 'Strategy ID' })
+  @ApiOperation({ summary: '전략 활성/비활성 전환' })
+  @ApiResponse({ status: 200, description: '전략 전환 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiParam({ name: 'id', description: '전략 ID' })
   async toggle(@CurrentUser() user: User, @Param('id') id: string) {
     return this.commandBus.execute(new ToggleStrategyCommand(user.id, id));
   }
 
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Delete a strategy permanently' })
-  @ApiResponse({ status: 200, description: 'Strategy deleted successfully' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiParam({ name: 'id', description: 'Strategy ID' })
+  @ApiOperation({ summary: '전략 영구 삭제' })
+  @ApiResponse({ status: 200, description: '전략 삭제 성공' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiParam({ name: 'id', description: '전략 ID' })
   async remove(@CurrentUser() user: User, @Param('id') id: string) {
     return this.commandBus.execute(new DeleteStrategyCommand(user.id, id));
   }
 
   @Get(':id/performance')
-  @ApiOperation({ summary: 'Retrieve performance metrics for a strategy' })
-  @ApiResponse({ status: 200, description: 'Strategy performance data returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiParam({ name: 'id', description: 'Strategy ID' })
+  @ApiOperation({ summary: '전략 성과 지표 조회' })
+  @ApiResponse({ status: 200, description: '전략 성과 데이터 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiParam({ name: 'id', description: '전략 ID' })
   async getPerformance(@CurrentUser() user: User, @Param('id') id: string) {
     return this.queryBus.execute(new GetStrategyPerformanceQuery(user.id, id));
   }
 
   @Get(':id/signals')
-  @ApiOperation({ summary: 'List trading signals generated by a strategy' })
-  @ApiResponse({ status: 200, description: 'Strategy signals returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiParam({ name: 'id', description: 'Strategy ID' })
+  @ApiOperation({ summary: '전략이 생성한 트레이딩 시그널 목록' })
+  @ApiResponse({ status: 200, description: '전략 시그널 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiParam({ name: 'id', description: '전략 ID' })
   async getSignals(@CurrentUser() user: User, @Param('id') id: string) {
     return this.queryBus.execute(new GetStrategySignalsQuery(user.id, id));
   }
 
   @Get(':id/logs')
-  @ApiOperation({ summary: 'List execution logs for a strategy with optional filters' })
-  @ApiResponse({ status: 200, description: 'Paginated strategy logs returned' })
-  @ApiResponse({ status: 401, description: 'Unauthorized' })
-  @ApiParam({ name: 'id', description: 'Strategy ID' })
-  @ApiQuery({ name: 'cursor', required: false, description: 'Cursor for pagination' })
-  @ApiQuery({ name: 'limit', required: false, description: 'Number of items per page' })
-  @ApiQuery({ name: 'action', required: false, description: 'Filter by log action type' })
-  @ApiQuery({ name: 'signal', required: false, description: 'Filter by signal type' })
+  @ApiOperation({ summary: '전략 실행 로그 조회 (필터 지원)' })
+  @ApiResponse({ status: 200, description: '전략 로그 반환' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiParam({ name: 'id', description: '전략 ID' })
+  @ApiQuery({ name: 'cursor', required: false, description: '페이지네이션 커서' })
+  @ApiQuery({ name: 'limit', required: false, description: '페이지당 항목 수' })
+  @ApiQuery({ name: 'action', required: false, description: '로그 액션 유형 필터' })
+  @ApiQuery({ name: 'signal', required: false, description: '시그널 유형 필터' })
   async getLogs(
     @CurrentUser() user: User,
     @Param('id') id: string,

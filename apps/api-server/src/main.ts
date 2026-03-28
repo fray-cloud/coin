@@ -15,24 +15,24 @@ async function bootstrap() {
   // API Documentation — dev only
   if (process.env.NODE_ENV !== 'production') {
     const config = new DocumentBuilder()
-      .setTitle('Coin Trading Platform API')
+      .setTitle('코인 트레이딩 플랫폼 API')
       .setDescription(
-        'Cryptocurrency monitoring, trading, and strategy automation API\n\n' +
-          '## Architecture\n\n' +
+        '암호화폐 모니터링, 거래, 전략 자동화 API\n\n' +
+          '## 아키텍처\n\n' +
           '```mermaid\n' +
           'graph LR\n' +
-          '  Client[Web Client] --> Nginx\n' +
+          '  Client[웹 클라이언트] --> Nginx\n' +
           '  Nginx --> API[API Server]\n' +
           '  Nginx --> Web[Next.js]\n' +
           '  API --> DB[(PostgreSQL)]\n' +
           '  API --> Redis[(Redis)]\n' +
           '  API --> Kafka[Kafka]\n' +
           '  Kafka --> Worker[Worker Service]\n' +
-          '  Worker --> Exchanges[Exchange APIs]\n' +
+          '  Worker --> Exchanges[거래소 API]\n' +
           '```\n',
       )
       .setVersion('1.0')
-      .addServer('/api', 'API via Nginx reverse proxy')
+      .addServer('/api', 'Nginx 리버스 프록시를 통한 API 접근')
       .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'access-token')
       .build();
     const document = SwaggerModule.createDocument(app, config);
