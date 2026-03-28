@@ -125,7 +125,10 @@
     "creating": "Creating...",
     "create": "Create Strategy",
     "noStrategies": "No strategies yet. Create one to get started.",
-    "delete": "Delete"
+    "delete": "Delete",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel"
   },
   "notifications": {
     "title": "Notification Settings",
