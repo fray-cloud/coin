@@ -43,7 +43,7 @@ async function bootstrap() {
     app.use(
       '/docs',
       apiReference({
-        url: '/docs/openapi.json',
+        content: document,
         theme: 'deepSpace',
       }),
     );
