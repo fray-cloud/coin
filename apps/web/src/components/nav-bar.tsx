@@ -18,6 +18,7 @@ import {
 import { Button, buttonVariants } from '@/components/ui/button';
 import { useUser, useLogout } from '@/hooks/use-user';
 import { LanguageSwitcher } from '@/components/language-switcher';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 export function NavBar() {
   const { user } = useUser();
@@ -87,6 +88,7 @@ export function NavBar() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <LanguageSwitcher />
           {user ? (
             <>
