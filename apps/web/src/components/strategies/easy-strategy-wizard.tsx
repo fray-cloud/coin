@@ -11,6 +11,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ExchangeIcon, CoinIcon } from '@/components/icons';
 import { createStrategy, type ExchangeKeyItem } from '@/lib/api-client';
 import { useTickers } from '@/hooks/use-tickers';
+import { useExchangeRate } from '@/hooks/use-exchange-rate';
+import { useBaseCurrency } from '@/hooks/use-base-currency';
 import { getPreset, TENDENCIES, GOALS, type Tendency, type Goal } from '@/lib/strategy-presets';
 
 interface EasyStrategyWizardProps {
@@ -22,6 +24,8 @@ export function EasyStrategyWizard({ keys, onSuccess }: EasyStrategyWizardProps)
   const t = useTranslations('strategies');
   const queryClient = useQueryClient();
   const { tickers } = useTickers();
+  const { krwPerUsd } = useExchangeRate();
+  const { currency: baseCurrency } = useBaseCurrency();
   const [step, setStep] = useState(0);
 
   const [tendency, setTendency] = useState<Tendency | null>(null);
@@ -213,19 +217,39 @@ export function EasyStrategyWizard({ keys, onSuccess }: EasyStrategyWizardProps)
                 min="0.0001"
                 placeholder="0.001"
               />
-              {symbol && preset && (
-                <p className="text-xs text-muted-foreground">
-                  ≈{' '}
-                  {(
-                    Number(quantity) *
-                    Number(
-                      tickers.find((tk) => tk.exchange === exchange && tk.symbol === symbol)
-                        ?.price || 0,
-                    )
-                  ).toLocaleString('ko-KR', { maximumFractionDigits: 2 })}{' '}
-                  {exchange === 'upbit' ? 'KRW' : 'USDT'}
-                </p>
-              )}
+              {symbol &&
+                preset &&
+                (() => {
+                  const tickerPrice = Number(
+                    tickers.find((tk) => tk.exchange === exchange && tk.symbol === symbol)?.price ||
+                      0,
+                  );
+                  const rawCost = Number(quantity) * tickerPrice;
+                  if (rawCost <= 0) return null;
+                  const isKrw = exchange === 'upbit';
+                  const needsConversion =
+                    (baseCurrency === 'KRW' && !isKrw) || (baseCurrency === 'USD' && isKrw);
+                  let displayCost = rawCost;
+                  if (needsConversion && krwPerUsd > 0) {
+                    displayCost = isKrw ? rawCost / krwPerUsd : rawCost * krwPerUsd;
+                  }
+                  const baseSym = baseCurrency === 'KRW' ? '₩' : '$';
+                  const origSym = isKrw ? '₩' : '$';
+                  const origCurrency = isKrw ? 'KRW' : 'USDT';
+                  return (
+                    <p className="text-xs text-muted-foreground">
+                      ≈ {baseSym}
+                      {displayCost.toLocaleString('ko-KR', { maximumFractionDigits: 2 })}
+                      {needsConversion && (
+                        <span className="ml-1 opacity-60">
+                          ({origSym}
+                          {rawCost.toLocaleString('ko-KR', { maximumFractionDigits: 2 })}{' '}
+                          {origCurrency})
+                        </span>
+                      )}
+                    </p>
+                  );
+                })()}
             </div>
 
             {/* Paper Capital */}

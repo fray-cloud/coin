@@ -13,6 +13,8 @@ import { useTickers } from '@/hooks/use-tickers';
 import { useStrategyForm } from '@/hooks/use-strategy-form';
 import { createStrategy, type ExchangeKeyItem } from '@/lib/api-client';
 import { STRATEGY_TYPES, DEFAULT_CONFIGS, PARAM_TOOLTIPS } from '@/lib/constants';
+import { useExchangeRate } from '@/hooks/use-exchange-rate';
+import { useBaseCurrency } from '@/hooks/use-base-currency';
 
 export interface CreateStrategyFormProps {
   keys: ExchangeKeyItem[];
@@ -40,6 +42,8 @@ export function CreateStrategyForm({ keys, onSuccess }: CreateStrategyFormProps)
   const activeExchanges = [...new Set(tickers.map((t) => t.exchange))];
   const activeSymbols = tickers.filter((t) => t.exchange === exchange);
 
+  const { krwPerUsd } = useExchangeRate();
+  const { currency: baseCurrency } = useBaseCurrency();
   const { exchangeKey, quoteBalance, quoteCurrency } = useStrategyForm({
     exchange,
     tradingMode,
@@ -207,12 +211,37 @@ export function CreateStrategyForm({ keys, onSuccess }: CreateStrategyFormProps)
                         }))
                       }
                     />
-                    {estimatedCost !== null && estimatedCost > 0 && (
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        ≈ {estimatedCost.toLocaleString('ko-KR', { maximumFractionDigits: 2 })}{' '}
-                        {exchange === 'upbit' ? 'KRW' : 'USDT'}
-                      </p>
-                    )}
+                    {estimatedCost !== null &&
+                      estimatedCost > 0 &&
+                      (() => {
+                        const isKrw = exchange === 'upbit';
+                        const originalCurrency = isKrw ? 'KRW' : 'USDT';
+                        const needsConversion =
+                          (baseCurrency === 'KRW' && !isKrw) || (baseCurrency === 'USD' && isKrw);
+                        let convertedCost = estimatedCost;
+                        if (needsConversion && krwPerUsd > 0) {
+                          convertedCost = isKrw
+                            ? estimatedCost / krwPerUsd
+                            : estimatedCost * krwPerUsd;
+                        }
+                        const baseSym = baseCurrency === 'KRW' ? '₩' : '$';
+                        const origSym = isKrw ? '₩' : '$';
+                        return (
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            ≈ {baseSym}
+                            {convertedCost.toLocaleString('ko-KR', { maximumFractionDigits: 2 })}
+                            {needsConversion && (
+                              <span className="ml-1 opacity-60">
+                                ({origSym}
+                                {estimatedCost.toLocaleString('ko-KR', {
+                                  maximumFractionDigits: 2,
+                                })}{' '}
+                                {originalCurrency})
+                              </span>
+                            )}
+                          </p>
+                        );
+                      })()}
                   </div>
                 );
               })}
