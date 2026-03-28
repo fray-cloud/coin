@@ -32,6 +32,7 @@ async function bootstrap() {
           '```\n',
       )
       .setVersion('1.0')
+      .addServer('/api', 'API via Nginx reverse proxy')
       .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'JWT' }, 'access-token')
       .build();
     const document = SwaggerModule.createDocument(app, config);
