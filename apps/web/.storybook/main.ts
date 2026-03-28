@@ -25,7 +25,10 @@ const config: StorybookConfig = {
       ...config.resolve.alias,
       '@': resolve(__dirname, '../src'),
     };
-    config.base = process.env.STORYBOOK_BASE_PATH || '/';
+    // base path only needed for static build behind sub-path proxy
+    if (process.env.STORYBOOK_BASE_PATH) {
+      config.base = process.env.STORYBOOK_BASE_PATH;
+    }
     return config;
   },
 };
