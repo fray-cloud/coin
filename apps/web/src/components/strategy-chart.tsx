@@ -163,14 +163,6 @@ export function StrategyChart({
         timeScale: { visible: false },
       });
 
-      // Add invisible anchor series with same timestamps as candle chart to align time axes
-      const anchorSeries = subChart.addLineSeries({
-        visible: false,
-        priceLineVisible: false,
-        lastValueVisible: false,
-      });
-      anchorSeries.setData(candles.map((c) => ({ time: (c.timestamp / 1000) as any, value: 0 })));
-
       if (strategyType === 'rsi') {
         const period = Number(config.period) || 14;
         const overbought = Number(config.overbought) || 70;
