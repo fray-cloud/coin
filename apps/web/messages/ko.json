@@ -98,6 +98,7 @@
     "locked": "잠김",
     "showAll": "모든 코인 표시",
     "refresh": "새로고침",
+    "loading": "로딩 중...",
     "noBalances": "잔고가 없습니다"
   },
   "strategies": {
