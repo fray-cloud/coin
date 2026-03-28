@@ -148,8 +148,16 @@ export function StrategyChart({
           horzLines: { color: 'rgba(243,244,246,0.1)' },
         },
         rightPriceScale: { borderVisible: false, minimumWidth: 80 },
-        timeScale: { borderVisible: false, timeVisible: true },
+        timeScale: { borderVisible: false, timeVisible: false },
       });
+
+      // Add invisible anchor series with same timestamps as candle chart to align time axes
+      const anchorSeries = subChart.addLineSeries({
+        visible: false,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      });
+      anchorSeries.setData(candles.map((c) => ({ time: (c.timestamp / 1000) as any, value: 0 })));
 
       if (strategyType === 'rsi') {
         const period = Number(config.period) || 14;
@@ -239,11 +247,20 @@ export function StrategyChart({
       indicatorInstance.current = subChart;
 
       // Sync time scales
-      chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
-        if (range) subChart.timeScale().setVisibleLogicalRange(range);
+      let syncing = false;
+      chart.timeScale().subscribeVisibleTimeRangeChange(() => {
+        if (syncing) return;
+        syncing = true;
+        const logicalRange = chart.timeScale().getVisibleLogicalRange();
+        if (logicalRange) subChart.timeScale().setVisibleLogicalRange(logicalRange);
+        syncing = false;
       });
-      subChart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
-        if (range) chart.timeScale().setVisibleLogicalRange(range);
+      subChart.timeScale().subscribeVisibleTimeRangeChange(() => {
+        if (syncing) return;
+        syncing = true;
+        const logicalRange = subChart.timeScale().getVisibleLogicalRange();
+        if (logicalRange) chart.timeScale().setVisibleLogicalRange(logicalRange);
+        syncing = false;
       });
     }
 
