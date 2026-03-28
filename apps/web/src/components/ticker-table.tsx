@@ -7,6 +7,7 @@ import { ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
 import { Ticker } from '@coin/types';
 import { CoinIcon, ExchangeIcon } from '@/components/icons';
 import { useExchangeRate } from '@/hooks/use-exchange-rate';
+import { useBaseCurrency } from '@/hooks/use-base-currency';
 import { MiniChart } from '@/components/mini-chart';
 import { formatPrice, formatVolume } from '@/lib/utils';
 import { cn } from '@/lib/utils';
@@ -18,15 +19,44 @@ interface TickerTableProps {
 type SortKey = 'exchange' | 'symbol' | 'price' | 'change' | 'volume' | null;
 type SortDir = 'asc' | 'desc';
 
-function convertedPrice(price: string, exchange: string, krwPerUsd: number): string | null {
-  if (!krwPerUsd) return null;
+function getDisplayPrices(
+  price: string,
+  exchange: string,
+  krwPerUsd: number,
+  baseCurrency: 'KRW' | 'USD',
+): { main: string; sub: string | null } {
   const num = Number(price);
-  if (exchange === 'upbit') {
+  if (!krwPerUsd) return { main: formatPrice(price), sub: null };
+
+  const isKrwExchange = exchange === 'upbit';
+  const isBaseKrw = baseCurrency === 'KRW';
+
+  if (isKrwExchange && isBaseKrw) {
+    // Upbit + KRW base: KRW is main, USD is sub
     const usd = num / krwPerUsd;
-    return `$${usd >= 1 ? usd.toLocaleString('en-US', { maximumFractionDigits: 2 }) : usd.toLocaleString('en-US', { maximumFractionDigits: 6 })}`;
+    return {
+      main: `₩${formatPrice(price)}`,
+      sub: `$${usd >= 1 ? usd.toLocaleString('en-US', { maximumFractionDigits: 2 }) : usd.toLocaleString('en-US', { maximumFractionDigits: 6 })}`,
+    };
   }
-  const krw = num * krwPerUsd;
-  return `₩${krw.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
+  if (isKrwExchange && !isBaseKrw) {
+    // Upbit + USD base: USD is main, KRW is sub
+    const usd = num / krwPerUsd;
+    return {
+      main: `$${usd >= 1 ? usd.toLocaleString('en-US', { maximumFractionDigits: 2 }) : usd.toLocaleString('en-US', { maximumFractionDigits: 6 })}`,
+      sub: `₩${formatPrice(price)}`,
+    };
+  }
+  if (!isKrwExchange && isBaseKrw) {
+    // Binance/Bybit + KRW base: KRW is main, USDT is sub
+    const krw = num * krwPerUsd;
+    return {
+      main: `₩${krw.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`,
+      sub: `$${formatPrice(price)}`,
+    };
+  }
+  // Binance/Bybit + USD base: USDT is main, no sub needed
+  return { main: `$${formatPrice(price)}`, sub: null };
 }
 
 const SORT_FNS: Record<string, (a: Ticker, b: Ticker) => number> = {
@@ -49,6 +79,7 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
 export function TickerTable({ tickers }: TickerTableProps) {
   const t = useTranslations('ticker');
   const { krwPerUsd } = useExchangeRate();
+  const { currency: baseCurrency } = useBaseCurrency();
   const [sortKey, setSortKey] = useState<SortKey>('symbol');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [filter, setFilter] = useState('');
@@ -148,7 +179,12 @@ export function TickerTable({ tickers }: TickerTableProps) {
                     : changeNum < 0
                       ? 'text-red-500'
                       : 'text-muted-foreground';
-                const converted = convertedPrice(tick.price, tick.exchange, krwPerUsd);
+                const { main: mainPrice, sub: subPrice } = getDisplayPrices(
+                  tick.price,
+                  tick.exchange,
+                  krwPerUsd,
+                  baseCurrency,
+                );
                 return (
                   <tr
                     key={`${tick.exchange}:${tick.symbol}`}
@@ -167,10 +203,8 @@ export function TickerTable({ tickers }: TickerTableProps) {
                       </span>
                     </td>
                     <td className="p-2 text-right">
-                      <div className="font-bold">{formatPrice(tick.price)}</div>
-                      {converted && (
-                        <div className="text-xs text-muted-foreground">{converted}</div>
-                      )}
+                      <div className="font-bold">{mainPrice}</div>
+                      {subPrice && <div className="text-xs text-muted-foreground">{subPrice}</div>}
                     </td>
                     <td className={`p-2 text-right ${changeColor}`}>
                       {changeNum > 0 ? '+' : ''}
