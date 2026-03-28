@@ -31,6 +31,7 @@ export function StrategyChart({
   const chartRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<IChartApi | null>(null);
+  const isFirstRender = useRef(true);
   const indicatorInstance = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
   const { data: candles, isLoading } = useCandles(exchange, symbol, selectedInterval);
@@ -197,7 +198,10 @@ export function StrategyChart({
       });
     }
 
-    chart.timeScale().fitContent();
+    if (isFirstRender.current) {
+      chart.timeScale().fitContent();
+      isFirstRender.current = false;
+    }
     chartInstance.current = chart;
     candleSeriesRef.current = candleSeries;
 
@@ -376,7 +380,10 @@ export function StrategyChart({
             <button
               key={iv}
               type="button"
-              onClick={() => setSelectedInterval(iv)}
+              onClick={() => {
+                setSelectedInterval(iv);
+                isFirstRender.current = true;
+              }}
               className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
                 selectedInterval === iv
                   ? 'bg-primary text-primary-foreground'

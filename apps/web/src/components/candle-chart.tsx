@@ -50,6 +50,7 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+  const isFirstRender = useRef(true);
   const { data: candles, isLoading } = useCandles(exchange, symbol, selectedInterval);
 
   // Real-time ticker price
@@ -147,7 +148,10 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
       }
     }
 
-    chart.timeScale().fitContent();
+    if (isFirstRender.current) {
+      chart.timeScale().fitContent();
+      isFirstRender.current = false;
+    }
 
     chartInstance.current = chart;
     candleSeriesRef.current = candleSeries;
@@ -192,7 +196,10 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
             <button
               key={iv}
               type="button"
-              onClick={() => setSelectedInterval(iv)}
+              onClick={() => {
+                setSelectedInterval(iv);
+                isFirstRender.current = true;
+              }}
               className={`px-2.5 py-1 text-xs font-medium rounded transition-colors ${
                 selectedInterval === iv
                   ? 'bg-primary text-primary-foreground'
