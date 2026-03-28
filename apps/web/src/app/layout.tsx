@@ -3,6 +3,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
 import { NavBar } from '@/components/nav-bar';
+import { MobileTabBar } from '@/components/mobile-tab-bar';
 import { AuthDebug } from '@/components/auth-debug';
 import { ToastContainer } from '@/components/toast';
 import { Providers } from './providers';
@@ -41,7 +42,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <NextIntlClientProvider messages={messages}>
           <Providers>
             <NavBar />
-            <main>{children}</main>
+            <main className="pb-16 md:pb-0">{children}</main>
+            <MobileTabBar />
             <ToastContainer />
             <AuthDebug accessTtl={accessTtl} />
           </Providers>
