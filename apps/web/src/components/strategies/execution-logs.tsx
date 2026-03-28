@@ -1,6 +1,8 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { useInfiniteQuery } from '@tanstack/react-query';
+import { ArrowUp, ArrowDown } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -19,6 +21,10 @@ interface ExecutionLogsProps {
 }
 
 export function ExecutionLogs({ strategyId }: ExecutionLogsProps) {
+  const [actionFilter, setActionFilter] = useState<string>('all');
+  const [signalFilter, setSignalFilter] = useState<string>('all');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
   const {
     data: logsData,
     fetchNextPage,
@@ -34,25 +40,88 @@ export function ExecutionLogs({ strategyId }: ExecutionLogsProps) {
 
   const logs = logsData?.pages.flatMap((p) => p.items) ?? [];
 
+  const filteredLogs = useMemo(() => {
+    let result = logs;
+    if (actionFilter !== 'all') result = result.filter((l) => l.action === actionFilter);
+    if (signalFilter !== 'all') result = result.filter((l) => l.signal === signalFilter);
+    result = [...result].sort((a, b) => {
+      const cmp = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      return sortDir === 'asc' ? cmp : -cmp;
+    });
+    return result;
+  }, [logs, actionFilter, signalFilter, sortDir]);
+
+  const actionOptions = [
+    'all',
+    'signal_generated',
+    'order_placed',
+    'risk_blocked',
+    'error',
+  ] as const;
+  const signalOptions = ['all', 'buy', 'sell'] as const;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-lg">Execution Logs</CardTitle>
       </CardHeader>
       <CardContent>
-        {logs.length > 0 ? (
+        <div className="space-y-2 mb-4">
+          <div>
+            <span className="text-xs text-muted-foreground mr-2">Action:</span>
+            <div className="flex gap-1 flex-wrap mb-3">
+              {actionOptions.map((a) => (
+                <Button
+                  key={a}
+                  variant={actionFilter === a ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setActionFilter(a)}
+                >
+                  {a === 'all' ? 'All' : a.replace('_', ' ')}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className="text-xs text-muted-foreground mr-2">Signal:</span>
+            <div className="flex gap-1 flex-wrap mb-3">
+              {signalOptions.map((s) => (
+                <Button
+                  key={s}
+                  variant={signalFilter === s ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSignalFilter(s)}
+                >
+                  {s === 'all' ? 'All' : s}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {filteredLogs.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
-                  <th className="pb-2 font-medium">Time</th>
+                  <th
+                    className="pb-2 font-medium cursor-pointer select-none"
+                    onClick={() => setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))}
+                  >
+                    Time
+                    {sortDir === 'asc' ? (
+                      <ArrowUp size={14} className="inline ml-1" />
+                    ) : (
+                      <ArrowDown size={14} className="inline ml-1" />
+                    )}
+                  </th>
                   <th className="pb-2 font-medium">Action</th>
                   <th className="pb-2 font-medium">Signal</th>
                   <th className="pb-2 font-medium">Details</th>
                 </tr>
               </thead>
               <tbody>
-                {logs.map((log) => {
+                {filteredLogs.map((log) => {
                   const details = log.details as Record<string, unknown>;
                   return (
                     <tr key={log.id} className="border-b last:border-0">

@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -122,6 +123,7 @@ function ActivityRow({ item }: { item: ActivityItem }) {
 
 export default function ActivityPage() {
   const t = useTranslations('nav');
+  const [typeFilter, setTypeFilter] = useState<string>('all');
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useInfiniteQuery({
     queryKey: ['activity'],
@@ -132,6 +134,9 @@ export default function ActivityPage() {
   });
 
   const items = data?.pages.flatMap((p) => p.items) ?? [];
+  const filteredItems = typeFilter === 'all' ? items : items.filter((i) => i.type === typeFilter);
+
+  const typeOptions = ['all', 'order', 'strategy_signal', 'risk_blocked', 'login'] as const;
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-4">
@@ -139,14 +144,29 @@ export default function ActivityPage() {
 
       <Card>
         <CardContent className="p-0">
+          <div className="px-4 pt-4">
+            <div className="flex gap-1 flex-wrap mb-3">
+              {typeOptions.map((tp) => (
+                <Button
+                  key={tp}
+                  variant={typeFilter === tp ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setTypeFilter(tp)}
+                >
+                  {tp === 'all' ? 'All' : tp.replace('_', ' ')}
+                </Button>
+              ))}
+            </div>
+          </div>
+
           {isLoading && <p className="text-center text-muted-foreground py-8">로딩 중...</p>}
 
-          {!isLoading && items.length === 0 && (
+          {!isLoading && filteredItems.length === 0 && (
             <p className="text-center text-muted-foreground py-8">아직 활동 기록이 없습니다.</p>
           )}
 
           <div className="divide-y">
-            {items.map((item) => (
+            {filteredItems.map((item) => (
               <ActivityRow key={item.id} item={item} />
             ))}
           </div>

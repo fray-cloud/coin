@@ -1,6 +1,8 @@
 'use client';
 
+import { useState, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -8,6 +10,26 @@ import { cancelOrder } from '@/lib/api-client';
 import { useOrders } from '@/hooks/use-orders';
 import { useTranslations } from 'next-intl';
 import { ExchangeIcon, CoinIcon } from '@/components/icons';
+
+type SortKey = 'createdAt' | 'exchange' | 'symbol' | 'status';
+type SortDir = 'asc' | 'desc';
+
+function SortIcon({
+  column,
+  sortKey,
+  sortDir,
+}: {
+  column: SortKey;
+  sortKey: SortKey | null;
+  sortDir: SortDir;
+}) {
+  if (sortKey !== column) return <ArrowUpDown size={14} className="inline ml-1 opacity-40" />;
+  return sortDir === 'asc' ? (
+    <ArrowUp size={14} className="inline ml-1" />
+  ) : (
+    <ArrowDown size={14} className="inline ml-1" />
+  );
+}
 
 const STATUS_VARIANT: Record<string, 'warning' | 'info' | 'success' | 'cyan' | 'muted' | 'error'> =
   {
@@ -23,6 +45,11 @@ export function OrdersTable() {
   const t = useTranslations('orders');
   const queryClient = useQueryClient();
 
+  const [sortKey, setSortKey] = useState<SortKey | null>(null);
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [modeFilter, setModeFilter] = useState<string>('all');
+
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useOrders();
 
   const cancelMutation = useMutation({
@@ -34,34 +61,118 @@ export function OrdersTable() {
 
   const orders = data?.pages.flatMap((p) => p.items) ?? [];
 
+  const filteredOrders = useMemo(() => {
+    let result = orders;
+    if (statusFilter !== 'all') result = result.filter((o) => o.status === statusFilter);
+    if (modeFilter !== 'all') result = result.filter((o) => o.mode === modeFilter);
+    if (sortKey) {
+      result = [...result].sort((a, b) => {
+        const av = a[sortKey] ?? '';
+        const bv = b[sortKey] ?? '';
+        const cmp = String(av).localeCompare(String(bv));
+        return sortDir === 'asc' ? cmp : -cmp;
+      });
+    }
+    return result;
+  }, [orders, statusFilter, modeFilter, sortKey, sortDir]);
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDir('desc');
+    }
+  };
+
+  const statusOptions = ['all', 'pending', 'filled', 'failed', 'cancelled'] as const;
+  const modeOptions = ['all', 'paper', 'real'] as const;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="text-lg">{t('history')}</CardTitle>
       </CardHeader>
       <CardContent>
+        <div className="space-y-2 mb-4">
+          <div>
+            <span className="text-xs text-muted-foreground mr-2">{t('status')}:</span>
+            <div className="flex gap-1 flex-wrap mb-3">
+              {statusOptions.map((s) => (
+                <Button
+                  key={s}
+                  variant={statusFilter === s ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setStatusFilter(s)}
+                >
+                  {s === 'all' ? 'All' : s}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <span className="text-xs text-muted-foreground mr-2">{t('mode')}:</span>
+            <div className="flex gap-1 flex-wrap mb-3">
+              {modeOptions.map((m) => (
+                <Button
+                  key={m}
+                  variant={modeFilter === m ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setModeFilter(m)}
+                >
+                  {m === 'all' ? 'All' : m}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+
         {isLoading && <p className="text-sm text-muted-foreground">{t('loading')}</p>}
 
-        {orders.length > 0 && (
+        {filteredOrders.length > 0 && (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
-                  <th className="pb-2 font-medium">{t('time')}</th>
-                  <th className="pb-2 font-medium">{t('exchange')}</th>
-                  <th className="pb-2 font-medium">{t('symbol')}</th>
+                  <th
+                    className="pb-2 font-medium cursor-pointer select-none"
+                    onClick={() => toggleSort('createdAt')}
+                  >
+                    {t('time')}
+                    <SortIcon column="createdAt" sortKey={sortKey} sortDir={sortDir} />
+                  </th>
+                  <th
+                    className="pb-2 font-medium cursor-pointer select-none"
+                    onClick={() => toggleSort('exchange')}
+                  >
+                    {t('exchange')}
+                    <SortIcon column="exchange" sortKey={sortKey} sortDir={sortDir} />
+                  </th>
+                  <th
+                    className="pb-2 font-medium cursor-pointer select-none"
+                    onClick={() => toggleSort('symbol')}
+                  >
+                    {t('symbol')}
+                    <SortIcon column="symbol" sortKey={sortKey} sortDir={sortDir} />
+                  </th>
                   <th className="pb-2 font-medium">{t('side')}</th>
                   <th className="pb-2 font-medium">{t('type')}</th>
                   <th className="pb-2 font-medium text-right">{t('qty')}</th>
                   <th className="pb-2 font-medium text-right">{t('priceLabel')}</th>
                   <th className="pb-2 font-medium text-right">{t('filled')}</th>
                   <th className="pb-2 font-medium">{t('mode')}</th>
-                  <th className="pb-2 font-medium">{t('status')}</th>
+                  <th
+                    className="pb-2 font-medium cursor-pointer select-none"
+                    onClick={() => toggleSort('status')}
+                  >
+                    {t('status')}
+                    <SortIcon column="status" sortKey={sortKey} sortDir={sortDir} />
+                  </th>
                   <th className="pb-2 font-medium"></th>
                 </tr>
               </thead>
               <tbody>
-                {orders.map((order) => (
+                {filteredOrders.map((order) => (
                   <tr key={order.id} className="border-b last:border-0">
                     <td className="py-2 text-xs text-muted-foreground whitespace-nowrap">
                       {new Date(order.createdAt).toLocaleString()}
@@ -125,7 +236,7 @@ export function OrdersTable() {
           </div>
         )}
 
-        {!isLoading && orders.length === 0 && (
+        {!isLoading && filteredOrders.length === 0 && (
           <p className="text-center text-muted-foreground py-8">{t('noOrders')}</p>
         )}
 
