@@ -16,11 +16,9 @@ function convertedPrice(price: string, exchange: string, krwPerUsd: number): str
   if (!krwPerUsd) return null;
   const num = Number(price);
   if (exchange === 'upbit') {
-    // KRW → USD
     const usd = num / krwPerUsd;
     return `$${usd >= 1 ? usd.toLocaleString('en-US', { maximumFractionDigits: 2 }) : usd.toLocaleString('en-US', { maximumFractionDigits: 6 })}`;
   }
-  // USDT → KRW
   const krw = num * krwPerUsd;
   return `₩${krw.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`;
 }
@@ -36,74 +34,66 @@ export function TickerTable({ tickers }: TickerTableProps) {
   });
 
   return (
-    <div style={{ overflowX: 'auto' }}>
-      <table
-        style={{
-          width: '100%',
-          borderCollapse: 'collapse',
-          fontFamily: 'monospace',
-          fontSize: '14px',
-        }}
-      >
+    <div className="overflow-x-auto">
+      <table className="w-full font-mono text-sm border-collapse">
         <thead>
-          <tr style={{ borderBottom: '2px solid #333', textAlign: 'left' }}>
-            <th style={{ padding: '8px' }}>{t('exchange')}</th>
-            <th style={{ padding: '8px' }}>{t('symbol')}</th>
-            <th style={{ padding: '8px', textAlign: 'right' }}>{t('price')}</th>
-            <th style={{ padding: '8px', textAlign: 'right' }}>{t('change24h')}</th>
-            <th style={{ padding: '8px', textAlign: 'right' }}>{t('high24h')}</th>
-            <th style={{ padding: '8px', textAlign: 'right' }}>{t('low24h')}</th>
-            <th style={{ padding: '8px', textAlign: 'right' }}>{t('volume')}</th>
-            <th style={{ padding: '8px', textAlign: 'center', width: '110px' }}>Chart</th>
+          <tr className="border-b-2 border-border text-left">
+            <th className="p-2">{t('exchange')}</th>
+            <th className="p-2">{t('symbol')}</th>
+            <th className="p-2 text-right">{t('price')}</th>
+            <th className="p-2 text-right">{t('change24h')}</th>
+            <th className="p-2 text-right">{t('high24h')}</th>
+            <th className="p-2 text-right">{t('low24h')}</th>
+            <th className="p-2 text-right">{t('volume')}</th>
+            <th className="p-2 text-center w-28">Chart</th>
           </tr>
         </thead>
         <tbody>
           {sorted.length === 0 ? (
             <tr>
-              <td colSpan={8} style={{ padding: '24px', textAlign: 'center', color: '#888' }}>
+              <td colSpan={8} className="py-6 text-center text-muted-foreground">
                 {t('waiting')}
               </td>
             </tr>
           ) : (
             sorted.map((tick) => {
               const changeNum = Number(tick.changePercent24h);
-              const changeColor = changeNum > 0 ? '#22c55e' : changeNum < 0 ? '#ef4444' : '#888';
+              const changeColor =
+                changeNum > 0
+                  ? 'text-green-500'
+                  : changeNum < 0
+                    ? 'text-red-500'
+                    : 'text-muted-foreground';
               const converted = convertedPrice(tick.price, tick.exchange, krwPerUsd);
               return (
                 <tr
                   key={`${tick.exchange}:${tick.symbol}`}
-                  style={{ borderBottom: '1px solid #222', cursor: 'pointer' }}
+                  className="border-b border-border cursor-pointer hover:bg-muted/50"
                 >
-                  <td style={{ padding: '8px', fontWeight: 600 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <td className="p-2 font-semibold">
+                    <span className="inline-flex items-center gap-1.5">
                       <ExchangeIcon exchange={tick.exchange} size={18} />
                       {tick.exchange.charAt(0).toUpperCase() + tick.exchange.slice(1)}
                     </span>
                   </td>
-                  <td style={{ padding: '8px' }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <td className="p-2">
+                    <span className="inline-flex items-center gap-1.5">
                       <CoinIcon symbol={tick.symbol} size={18} />
                       {tick.symbol}
                     </span>
                   </td>
-                  <td style={{ padding: '8px', textAlign: 'right' }}>
-                    <div style={{ fontWeight: 700 }}>{formatPrice(tick.price)}</div>
-                    {converted && (
-                      <div style={{ fontSize: '11px', color: '#888' }}>{converted}</div>
-                    )}
+                  <td className="p-2 text-right">
+                    <div className="font-bold">{formatPrice(tick.price)}</div>
+                    {converted && <div className="text-xs text-muted-foreground">{converted}</div>}
                   </td>
-                  <td style={{ padding: '8px', textAlign: 'right', color: changeColor }}>
+                  <td className={`p-2 text-right ${changeColor}`}>
                     {changeNum > 0 ? '+' : ''}
                     {Number(tick.changePercent24h).toFixed(2)}%
                   </td>
-                  <td style={{ padding: '8px', textAlign: 'right' }}>
-                    {formatPrice(tick.high24h)}
-                  </td>
-                  <td style={{ padding: '8px', textAlign: 'right' }}>{formatPrice(tick.low24h)}</td>
-                  <td style={{ padding: '8px', textAlign: 'right' }}>
-                    {formatVolume(tick.volume24h)}
-                  </td>
-                  <td style={{ padding: '8px', textAlign: 'center' }}>
+                  <td className="p-2 text-right">{formatPrice(tick.high24h)}</td>
+                  <td className="p-2 text-right">{formatPrice(tick.low24h)}</td>
+                  <td className="p-2 text-right">{formatVolume(tick.volume24h)}</td>
+                  <td className="p-2 text-center">
                     <Link href={`/markets/${tick.exchange}/${encodeURIComponent(tick.symbol)}`}>
                       <MiniChart
                         exchange={tick.exchange}

@@ -10,35 +10,15 @@ export default function MarketsPage() {
   const t = useTranslations('markets');
 
   return (
-    <main style={{ maxWidth: '1200px', margin: '0 auto', padding: '24px' }}>
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '24px',
-        }}
-      >
-        <h1 style={{ fontSize: '24px', fontWeight: 700 }}>{t('title')}</h1>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+    <main className="max-w-6xl mx-auto p-6">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">{t('title')}</h1>
+        <div className="flex items-center gap-4">
           <ExchangeRateBadge />
           <span
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              fontSize: '13px',
-              color: connected ? '#22c55e' : '#ef4444',
-            }}
+            className={`inline-flex items-center gap-1.5 text-xs ${connected ? 'text-green-500' : 'text-red-500'}`}
           >
-            <span
-              style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                backgroundColor: connected ? '#22c55e' : '#ef4444',
-              }}
-            />
+            <span className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500' : 'bg-red-500'}`} />
             {connected ? t('connected') : t('disconnected')}
           </span>
         </div>
