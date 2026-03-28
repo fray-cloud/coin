@@ -22,6 +22,7 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { CreateOrderCommand, CancelOrderCommand } from './commands';
 import { GetOrdersQuery, GetOrderQuery } from './queries';
 import { CreateOrderDto } from './dto/create-order.dto';
+import { OrderResponse, OrderListResponse } from './dto/order-response.dto';
 import type { User } from '@coin/database';
 
 @ApiTags('Orders')
@@ -59,7 +60,7 @@ export class OrdersController {
       '```\n' +
       '\n\n거래소에 새 주문을 생성합니다. 모의(paper) 모드에서는 가상 체결, 실전(real) 모드에서는 실제 거래소 API를 통해 주문이 실행됩니다. 주문 결과는 WebSocket으로 실시간 알림됩니다.',
   })
-  @ApiResponse({ status: 201, description: '주문 생성 성공' })
+  @ApiResponse({ status: 201, description: '주문 생성 성공', type: OrderResponse })
   @ApiResponse({ status: 401, description: '인증 필요' })
   async create(@CurrentUser() user: User, @Body() dto: CreateOrderDto) {
     return this.commandBus.execute(new CreateOrderCommand(user.id, dto));
@@ -71,7 +72,7 @@ export class OrdersController {
     description:
       '사용자의 주문 내역을 조회합니다. 상태(pending/filled/failed), 거래소, 심볼, 모드(모의/실전), 방향(매수/매도)으로 필터링할 수 있습니다. 커서 기반 페이지네이션을 지원합니다.',
   })
-  @ApiResponse({ status: 200, description: '주문 목록 반환' })
+  @ApiResponse({ status: 200, description: '주문 목록 반환', type: OrderListResponse })
   @ApiResponse({ status: 401, description: '인증 필요' })
   @ApiQuery({ name: 'cursor', required: false, description: '페이지네이션 커서' })
   @ApiQuery({ name: 'limit', required: false, description: '페이지당 항목 수' })
@@ -114,7 +115,7 @@ export class OrdersController {
     description:
       '주문 ID로 특정 주문의 상세 정보를 조회합니다. 체결 가격, 수량, 수수료 등을 확인할 수 있습니다.',
   })
-  @ApiResponse({ status: 200, description: '주문 상세 반환' })
+  @ApiResponse({ status: 200, description: '주문 상세 반환', type: OrderResponse })
   @ApiResponse({ status: 401, description: '인증 필요' })
   @ApiParam({ name: 'id', description: '주문 ID' })
   async findOne(@CurrentUser() user: User, @Param('id') id: string) {
@@ -128,7 +129,7 @@ export class OrdersController {
     description:
       '대기 중(pending/placed) 상태의 주문을 취소합니다. 이미 체결된 주문은 취소할 수 없습니다.',
   })
-  @ApiResponse({ status: 200, description: '주문 취소 성공' })
+  @ApiResponse({ status: 200, description: '주문 취소 성공', type: OrderResponse })
   @ApiResponse({ status: 401, description: '인증 필요' })
   @ApiParam({ name: 'id', description: '주문 ID' })
   async cancel(@CurrentUser() user: User, @Param('id') id: string) {

@@ -1,5 +1,6 @@
 import { Controller, Get, Param, Query, NotFoundException } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { TickerResponse, ExchangeRateResponse, CandleResponse } from './dto/market-response.dto';
 import { MarketsService } from './markets.service';
 import { Public } from '../auth/decorators/public.decorator';
 import { UpbitRest, BinanceRest, BybitRest, IExchangeRest } from '@coin/exchange-adapters';
@@ -23,7 +24,7 @@ export class MarketsController {
     description:
       '모든 거래소(Upbit, Binance, Bybit)의 실시간 티커 데이터를 Redis 캐시에서 조회합니다. 가격, 24시간 변동률, 거래량 등을 포함합니다.',
   })
-  @ApiResponse({ status: 200, description: '티커 목록 반환' })
+  @ApiResponse({ status: 200, description: '티커 목록 반환', type: [TickerResponse] })
   async getAllTickers() {
     return this.marketsService.getAllTickers();
   }
@@ -34,7 +35,7 @@ export class MarketsController {
     description:
       '현재 KRW/USD 환율을 반환합니다. Worker 서비스가 5분마다 갱신하며, fawazahmed0 또는 두나무 API에서 가져옵니다.',
   })
-  @ApiResponse({ status: 200, description: '환율 반환' })
+  @ApiResponse({ status: 200, description: '환율 반환', type: ExchangeRateResponse })
   async getExchangeRate() {
     const rate = await this.marketsService.getExchangeRate();
     return rate ?? { krwPerUsd: 0, updatedAt: null };
@@ -46,7 +47,7 @@ export class MarketsController {
     description:
       '거래소별 캔들스틱(OHLCV) 데이터를 조회합니다. 1분~1일 간격을 지원하며, 최대 500개까지 반환합니다. 인증 불필요.',
   })
-  @ApiResponse({ status: 200, description: '캔들 데이터 반환' })
+  @ApiResponse({ status: 200, description: '캔들 데이터 반환', type: [CandleResponse] })
   @ApiResponse({ status: 404, description: '거래소를 찾을 수 없음' })
   @ApiParam({ name: 'exchange', description: '거래소 식별자 (upbit, binance, bybit)' })
   @ApiParam({ name: 'symbol', description: '트레이딩 심볼 (예: BTC/KRW)' })
@@ -79,7 +80,7 @@ export class MarketsController {
     summary: '거래소의 특정 심볼 최신 티커 조회',
     description: '특정 거래소의 특정 심볼 최신 티커를 Redis 캐시에서 조회합니다.',
   })
-  @ApiResponse({ status: 200, description: '티커 데이터 반환' })
+  @ApiResponse({ status: 200, description: '티커 데이터 반환', type: TickerResponse })
   @ApiResponse({ status: 404, description: '티커를 찾을 수 없음' })
   @ApiParam({ name: 'exchange', description: '거래소 식별자 (upbit, binance, bybit)' })
   @ApiParam({ name: 'symbol', description: '트레이딩 심볼 (예: BTC/KRW)' })

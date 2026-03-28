@@ -24,6 +24,7 @@ import { NaverAuthGuard } from './guards/naver-auth.guard';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { SignupDto } from './dto/signup.dto';
+import { UserResponse, AuthMessageResponse } from './dto/auth-response.dto';
 import type { User } from '@coin/database';
 
 @ApiTags('Auth')
@@ -57,7 +58,7 @@ export class AuthController {
     description:
       '이메일, 비밀번호, 닉네임(선택)으로 새 계정을 생성합니다. 프로덕션 환경에서는 비밀번호 강도 검증이 적용됩니다.',
   })
-  @ApiResponse({ status: 201, description: '계정 생성 성공' })
+  @ApiResponse({ status: 201, description: '계정 생성 성공', type: UserResponse })
   @ApiResponse({ status: 400, description: '유효성 검사 오류 또는 이미 존재하는 이메일' })
   async signup(@Body() dto: SignupDto, @Res({ passthrough: true }) res: Response) {
     const user = await this.authService.signup(dto);
@@ -89,7 +90,7 @@ export class AuthController {
       '```\n' +
       '\n\n이메일과 비밀번호로 인증합니다. 성공 시 JWT 액세스 토큰(15분)과 리프레시 토큰(7일)이 HttpOnly 쿠키로 설정됩니다. 로그인 이력(IP, User-Agent)이 기록됩니다.',
   })
-  @ApiResponse({ status: 200, description: '로그인 성공, 쿠키에 토큰 설정됨' })
+  @ApiResponse({ status: 200, description: '로그인 성공, 쿠키에 토큰 설정됨', type: UserResponse })
   @ApiResponse({ status: 401, description: '잘못된 자격증명' })
   async login(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = req.user as User;
@@ -107,7 +108,7 @@ export class AuthController {
     description:
       '현재 세션의 리프레시 토큰을 폐기하고 인증 쿠키를 삭제합니다. 로그아웃 이력이 기록됩니다.',
   })
-  @ApiResponse({ status: 200, description: '로그아웃 성공' })
+  @ApiResponse({ status: 200, description: '로그아웃 성공', type: AuthMessageResponse })
   @ApiResponse({ status: 401, description: '인증 필요' })
   async logout(
     @Req() req: Request & { user?: { id: string } },
@@ -132,7 +133,7 @@ export class AuthController {
     description:
       '만료된 액세스 토큰을 리프레시 토큰으로 갱신합니다. 리프레시 토큰도 함께 로테이션됩니다.',
   })
-  @ApiResponse({ status: 200, description: '토큰 갱신 성공' })
+  @ApiResponse({ status: 200, description: '토큰 갱신 성공', type: AuthMessageResponse })
   @ApiResponse({ status: 401, description: '유효하지 않거나 누락된 리프레시 토큰' })
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.refresh_token;
@@ -151,7 +152,7 @@ export class AuthController {
     summary: '현재 인증된 사용자 프로필 조회',
     description: '현재 JWT 토큰으로 인증된 사용자의 프로필 정보(ID, 이메일, 닉네임)를 반환합니다.',
   })
-  @ApiResponse({ status: 200, description: '사용자 프로필 반환' })
+  @ApiResponse({ status: 200, description: '사용자 프로필 반환', type: UserResponse })
   @ApiResponse({ status: 401, description: '인증 필요' })
   async me(@CurrentUser() user: User) {
     return {

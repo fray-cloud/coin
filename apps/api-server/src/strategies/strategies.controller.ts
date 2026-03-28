@@ -35,6 +35,12 @@ import {
 } from './queries';
 import { CreateStrategyDto } from './dto/create-strategy.dto';
 import { UpdateStrategyDto } from './dto/update-strategy.dto';
+import {
+  StrategyResponse,
+  StrategyPerformanceResponse,
+  StrategySignalResponse,
+  StrategyLogListResponse,
+} from './dto/strategy-response.dto';
 import type { User } from '@coin/database';
 
 @ApiTags('Strategies')
@@ -74,7 +80,7 @@ export class StrategiesController {
       '```\n' +
       '\n\n새 트레이딩 전략을 생성합니다. RSI, MACD, Bollinger Bands 유형을 지원하며, 각 전략은 설정된 캔들 간격과 실행 주기에 따라 자동으로 시그널을 생성합니다.',
   })
-  @ApiResponse({ status: 201, description: '전략 생성 성공' })
+  @ApiResponse({ status: 201, description: '전략 생성 성공', type: StrategyResponse })
   @ApiResponse({ status: 401, description: '인증 필요' })
   async create(@CurrentUser() user: User, @Body() dto: CreateStrategyDto) {
     return this.commandBus.execute(new CreateStrategyCommand(user.id, dto));
@@ -86,7 +92,7 @@ export class StrategiesController {
     description:
       '현재 사용자의 모든 전략 목록을 반환합니다. 활성/비활성 상태, 전략 유형, 설정 등을 포함합니다.',
   })
-  @ApiResponse({ status: 200, description: '전략 목록 반환' })
+  @ApiResponse({ status: 200, description: '전략 목록 반환', type: [StrategyResponse] })
   @ApiResponse({ status: 401, description: '인증 필요' })
   async findAll(@CurrentUser() user: User) {
     return this.queryBus.execute(new GetStrategiesQuery(user.id));
@@ -97,7 +103,7 @@ export class StrategiesController {
     summary: 'ID로 특정 전략 조회',
     description: '전략 ID로 특정 전략의 상세 설정을 조회합니다.',
   })
-  @ApiResponse({ status: 200, description: '전략 상세 반환' })
+  @ApiResponse({ status: 200, description: '전략 상세 반환', type: StrategyResponse })
   @ApiResponse({ status: 401, description: '인증 필요' })
   @ApiParam({ name: 'id', description: '전략 ID' })
   async findOne(@CurrentUser() user: User, @Param('id') id: string) {
@@ -110,7 +116,7 @@ export class StrategiesController {
     description:
       '전략의 이름, 모드, 파라미터, 리스크 설정, 캔들 간격 등을 수정합니다. 전략 유형과 거래소/심볼은 변경할 수 없습니다.',
   })
-  @ApiResponse({ status: 200, description: '전략 수정 성공' })
+  @ApiResponse({ status: 200, description: '전략 수정 성공', type: StrategyResponse })
   @ApiResponse({ status: 401, description: '인증 필요' })
   @ApiParam({ name: 'id', description: '전략 ID' })
   async update(@CurrentUser() user: User, @Param('id') id: string, @Body() dto: UpdateStrategyDto) {
@@ -149,7 +155,11 @@ export class StrategiesController {
     description:
       '전략의 성과 지표를 조회합니다. 총 거래 수, 승률, 실현 손익, 일별 누적 P&L을 반환합니다. Signal 모드에서는 시뮬레이션 기반 성과를 계산합니다.',
   })
-  @ApiResponse({ status: 200, description: '전략 성과 데이터 반환' })
+  @ApiResponse({
+    status: 200,
+    description: '전략 성과 데이터 반환',
+    type: StrategyPerformanceResponse,
+  })
   @ApiResponse({ status: 401, description: '인증 필요' })
   @ApiParam({ name: 'id', description: '전략 ID' })
   async getPerformance(@CurrentUser() user: User, @Param('id') id: string) {
@@ -161,7 +171,7 @@ export class StrategiesController {
     summary: '전략이 생성한 트레이딩 시그널 목록',
     description: '전략이 생성한 매수/매도 시그널 목록을 반환합니다. 차트의 마커 표시에 사용됩니다.',
   })
-  @ApiResponse({ status: 200, description: '전략 시그널 반환' })
+  @ApiResponse({ status: 200, description: '전략 시그널 반환', type: [StrategySignalResponse] })
   @ApiResponse({ status: 401, description: '인증 필요' })
   @ApiParam({ name: 'id', description: '전략 ID' })
   async getSignals(@CurrentUser() user: User, @Param('id') id: string) {
@@ -174,7 +184,7 @@ export class StrategiesController {
     description:
       '전략의 실행 로그를 조회합니다. 액션(signal_generated/order_placed/risk_blocked/error)과 시그널(buy/sell)로 필터링할 수 있습니다.',
   })
-  @ApiResponse({ status: 200, description: '전략 로그 반환' })
+  @ApiResponse({ status: 200, description: '전략 로그 반환', type: StrategyLogListResponse })
   @ApiResponse({ status: 401, description: '인증 필요' })
   @ApiParam({ name: 'id', description: '전략 ID' })
   @ApiQuery({ name: 'cursor', required: false, description: '페이지네이션 커서' })
