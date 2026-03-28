@@ -24,12 +24,22 @@ interface CandleChartProps {
   height?: number;
 }
 
+const ALL_EXCHANGES = ['upbit', 'binance', 'bybit'];
+
 export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps) {
   const [selectedInterval, setSelectedInterval] = useState('1h');
   const [compareMode, setCompareMode] = useState(false);
+  const [compareExchange, setCompareExchange] = useState<string>('');
   const [priceType, setPriceType] = useState<PriceType>('close');
   const { currency: baseCurrency } = useBaseCurrency();
   const baseCoin = parseCoinFromSymbol(symbol);
+
+  // Auto-select first available compare exchange
+  const otherExchanges = ALL_EXCHANGES.filter((ex) => ex !== exchange);
+  if (compareMode && !compareExchange && otherExchanges.length > 0) {
+    setCompareExchange(otherExchanges[0]);
+  }
+
   const { lines: compareLines } = useCompareChart(
     baseCoin,
     selectedInterval,
@@ -109,11 +119,10 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
 
     candleSeries.setData(candleData);
     volumeSeries.setData(volumeData);
-    // Compare mode: add line series for other exchanges
-    if (compareMode && compareLines.length > 0) {
-      for (const line of compareLines) {
-        if (line.exchange === exchange) continue; // Skip current exchange
-        if (line.data.length === 0) continue;
+    // Compare mode: add line series for selected compare exchange only
+    if (compareMode && compareExchange && compareLines.length > 0) {
+      const line = compareLines.find((l) => l.exchange === compareExchange);
+      if (line && line.data.length > 0) {
         const color = EXCHANGE_COLORS[line.exchange] || '#888';
         const lineSeries = chart.addLineSeries({
           color,
@@ -144,7 +153,7 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
       chartInstance.current = null;
       candleSeriesRef.current = null;
     };
-  }, [candles, height, compareMode, compareLines, exchange]);
+  }, [candles, height, compareMode, compareExchange, compareLines, exchange]);
 
   // Update last candle with real-time ticker price
   useEffect(() => {
@@ -195,27 +204,42 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
           </button>
         </div>
         {compareMode && (
-          <div className="flex gap-1 mb-2">
-            {PRICE_TYPES.map((pt) => (
-              <button
-                key={pt}
-                type="button"
-                onClick={() => setPriceType(pt)}
-                className={`px-2 py-0.5 text-xs rounded transition-colors ${
-                  priceType === pt
-                    ? 'bg-secondary text-secondary-foreground'
-                    : 'text-muted-foreground hover:bg-muted'
-                }`}
-              >
-                {pt === 'high' ? '고가' : pt === 'low' ? '저가' : pt === 'mid' ? '중앙' : '종가'}
-              </button>
-            ))}
-            <div className="ml-auto flex gap-1 items-center text-xs">
-              {Object.entries(EXCHANGE_COLORS).map(([ex, color]) => (
-                <span key={ex} className="flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full" style={{ background: color }} />
+          <div className="flex flex-wrap gap-2 mb-2 items-center">
+            <div className="flex gap-1">
+              {otherExchanges.map((ex) => (
+                <button
+                  key={ex}
+                  type="button"
+                  onClick={() => setCompareExchange(ex)}
+                  className={`px-2 py-0.5 text-xs rounded transition-colors inline-flex items-center gap-1 ${
+                    compareExchange === ex
+                      ? 'bg-secondary text-secondary-foreground'
+                      : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ background: EXCHANGE_COLORS[ex] || '#888' }}
+                  />
                   {ex}
-                </span>
+                </button>
+              ))}
+            </div>
+            <span className="text-muted-foreground text-xs">|</span>
+            <div className="flex gap-1">
+              {PRICE_TYPES.map((pt) => (
+                <button
+                  key={pt}
+                  type="button"
+                  onClick={() => setPriceType(pt)}
+                  className={`px-2 py-0.5 text-xs rounded transition-colors ${
+                    priceType === pt
+                      ? 'bg-secondary text-secondary-foreground'
+                      : 'text-muted-foreground hover:bg-muted'
+                  }`}
+                >
+                  {pt === 'high' ? '고가' : pt === 'low' ? '저가' : pt === 'mid' ? '중앙' : '종가'}
+                </button>
               ))}
             </div>
           </div>
