@@ -94,14 +94,14 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Fetching exchange rate...');
     const sources = [
       {
-        name: 'dunamu',
-        url: 'https://quotation-api-cdn.dunamu.com/v1/forex/recent?codes=FRX.KRWUSD',
-        parse: (data: unknown) => (data as Array<{ basePrice: number }>)?.[0]?.basePrice,
-      },
-      {
         name: 'fawazahmed0',
         url: 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json',
         parse: (data: unknown) => (data as { usd: { krw: number } })?.usd?.krw,
+      },
+      {
+        name: 'dunamu',
+        url: 'https://quotation-api-cdn.dunamu.com/v1/forex/recent?codes=FRX.KRWUSD',
+        parse: (data: unknown) => (data as Array<{ basePrice: number }>)?.[0]?.basePrice,
       },
     ];
 
