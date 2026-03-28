@@ -67,7 +67,7 @@ export function StrategyChart({
         horzLines: { color: 'rgba(243,244,246,0.1)' },
       },
       rightPriceScale: { borderVisible: false, minimumWidth: 80 },
-      timeScale: { borderVisible: false, timeVisible: true, shiftVisibleRangeOnNewBar: true },
+      timeScale: { borderVisible: false, timeVisible: true, rightOffset: 0 },
       localization: {
         timeFormatter: (t: number) => {
           const d = new Date(t * 1000);
@@ -160,7 +160,7 @@ export function StrategyChart({
           horzLines: { color: 'rgba(243,244,246,0.1)' },
         },
         rightPriceScale: { borderVisible: false, minimumWidth: 80 },
-        timeScale: { visible: false },
+        timeScale: { visible: false, rightOffset: 0 },
       });
 
       if (strategyType === 'rsi') {
@@ -245,23 +245,27 @@ export function StrategyChart({
         histogramSeries.setData(histData);
       }
 
-      subChart.timeScale().fitContent();
+      // Sync sub-chart to main chart's visible range (not fitContent — keeps identical alignment)
+      const mainRange = chart.timeScale().getVisibleLogicalRange();
+      if (mainRange) {
+        subChart.timeScale().setVisibleLogicalRange(mainRange);
+      } else {
+        subChart.timeScale().fitContent();
+      }
       indicatorInstance.current = subChart;
 
-      // Sync time scales
+      // Sync time scales on scroll/zoom
       let syncing = false;
-      chart.timeScale().subscribeVisibleTimeRangeChange(() => {
-        if (syncing) return;
+      chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+        if (syncing || !range) return;
         syncing = true;
-        const logicalRange = chart.timeScale().getVisibleLogicalRange();
-        if (logicalRange) subChart.timeScale().setVisibleLogicalRange(logicalRange);
+        subChart.timeScale().setVisibleLogicalRange(range);
         syncing = false;
       });
-      subChart.timeScale().subscribeVisibleTimeRangeChange(() => {
-        if (syncing) return;
+      subChart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+        if (syncing || !range) return;
         syncing = true;
-        const logicalRange = subChart.timeScale().getVisibleLogicalRange();
-        if (logicalRange) chart.timeScale().setVisibleLogicalRange(logicalRange);
+        chart.timeScale().setVisibleLogicalRange(range);
         syncing = false;
       });
     }
