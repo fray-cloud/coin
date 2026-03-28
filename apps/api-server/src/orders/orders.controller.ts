@@ -34,7 +34,30 @@ export class OrdersController {
   ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new order on the specified exchange' })
+  @ApiOperation({
+    summary: 'Create a new order on the specified exchange',
+    description:
+      '## Order Execution Flow\n\n' +
+      '```mermaid\n' +
+      'sequenceDiagram\n' +
+      '  participant C as Client\n' +
+      '  participant A as API Server\n' +
+      '  participant K as Kafka\n' +
+      '  participant W as Worker\n' +
+      '  participant E as Exchange\n' +
+      '  C->>A: POST /orders {exchange, symbol, side, type}\n' +
+      '  A->>A: Create order (status: pending)\n' +
+      '  A->>K: Publish OrderRequestedEvent\n' +
+      '  A-->>C: 201 Order created\n' +
+      '  K->>W: Consume order request\n' +
+      '  W->>E: Place order via exchange API\n' +
+      '  E-->>W: Order result\n' +
+      '  W->>K: Publish OrderResultEvent\n' +
+      '  K->>A: Consume result\n' +
+      '  A->>A: Update order status\n' +
+      '  A-->>C: WebSocket notification\n' +
+      '```\n',
+  })
   @ApiResponse({ status: 201, description: 'Order created successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async create(@CurrentUser() user: User, @Body() dto: CreateOrderDto) {

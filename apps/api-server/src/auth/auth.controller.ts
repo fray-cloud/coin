@@ -67,7 +67,23 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Log in with email and password credentials' })
+  @ApiOperation({
+    summary: 'Log in with email and password credentials',
+    description:
+      '## Auth Flow\n\n' +
+      '```mermaid\n' +
+      'sequenceDiagram\n' +
+      '  participant C as Client\n' +
+      '  participant A as API Server\n' +
+      '  participant DB as Database\n' +
+      '  C->>A: POST /auth/login {email, password}\n' +
+      '  A->>DB: Verify credentials\n' +
+      '  DB-->>A: User found\n' +
+      '  A->>A: Generate JWT access + refresh tokens\n' +
+      '  A->>DB: Store refresh token\n' +
+      '  A-->>C: Set cookies (access_token, refresh_token)\n' +
+      '```\n',
+  })
   @ApiResponse({ status: 200, description: 'Login successful, tokens set in cookies' })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(@Req() req: Request, @Res({ passthrough: true }) res: Response) {

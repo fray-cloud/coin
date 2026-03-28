@@ -47,7 +47,32 @@ export class StrategiesController {
   ) {}
 
   @Post()
-  @ApiOperation({ summary: 'Create a new trading strategy' })
+  @ApiOperation({
+    summary: 'Create a new trading strategy',
+    description:
+      '## Strategy Execution Flow\n\n' +
+      '```mermaid\n' +
+      'sequenceDiagram\n' +
+      '  participant W as Worker\n' +
+      '  participant R as Redis\n' +
+      '  participant E as Exchange API\n' +
+      '  participant K as Kafka\n' +
+      '  loop Every intervalSeconds\n' +
+      '    W->>E: getCandles(symbol, candleInterval)\n' +
+      '    E-->>W: OHLCV data\n' +
+      '    W->>R: Cache candles\n' +
+      '    W->>W: Evaluate strategy (RSI/MACD/Bollinger)\n' +
+      '    alt Signal Mode\n' +
+      '      W->>K: Publish StrategySignalEvent\n' +
+      '      K->>W: Send notification\n' +
+      '    else Auto Mode\n' +
+      '      W->>W: Risk check\n' +
+      '      W->>K: Publish OrderRequestedEvent\n' +
+      '      K->>W: Execute order\n' +
+      '    end\n' +
+      '  end\n' +
+      '```\n',
+  })
   @ApiResponse({ status: 201, description: 'Strategy created successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async create(@CurrentUser() user: User, @Body() dto: CreateStrategyDto) {
