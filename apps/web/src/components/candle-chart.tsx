@@ -155,12 +155,16 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
     volumeSeriesRef.current.setData(volumeData);
   }, [candles]);
 
-  // Fit content on interval change
+  // Fit content when new data arrives after interval change
+  const prevInterval = useRef(selectedInterval);
   useEffect(() => {
     if (chartInstance.current && candles && candles.length > 0) {
-      chartInstance.current.timeScale().fitContent();
+      if (prevInterval.current !== selectedInterval) {
+        chartInstance.current.timeScale().fitContent();
+        prevInterval.current = selectedInterval;
+      }
     }
-  }, [selectedInterval]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [candles, selectedInterval]);
 
   // Compare mode overlay
   useEffect(() => {
@@ -290,16 +294,17 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
           </span>
         )}
       </div>
-      {isLoading ? (
-        <div
-          style={{ height }}
-          className="flex items-center justify-center text-muted-foreground text-sm"
-        >
-          Loading chart...
-        </div>
-      ) : (
-        <div ref={chartRef} />
-      )}
+      <div style={{ position: 'relative' }}>
+        {isLoading && (
+          <div
+            style={{ height, position: 'absolute', inset: 0, zIndex: 10 }}
+            className="flex items-center justify-center text-muted-foreground text-sm bg-background/80"
+          >
+            Loading chart...
+          </div>
+        )}
+        <div ref={chartRef} style={{ height }} />
+      </div>
     </div>
   );
 }
