@@ -60,18 +60,68 @@ export class PlaceOrderStep implements SagaStep {
   readonly name = 'PlaceOrder';
   private readonly logger = new Logger(PlaceOrderStep.name);
   private readonly maxRetries = 2;
+  private redis: Redis;
+
+  constructor(redis: Redis) {
+    this.redis = redis;
+  }
 
   async execute(context: RealExecutionContext): Promise<RealExecutionContext> {
     const { event, credentials } = context;
     if (!credentials) throw new Error('No credentials available');
+
+    const order = { ...event.order };
+
+    // Upbit market buy requires KRW amount, not coin quantity.
+    // Convert quantity (coin units) to KRW using current price.
+    if (order.exchange === 'upbit' && order.type === 'market' && order.side === 'buy') {
+      const tickerKey = `ticker:upbit:${order.symbol}`;
+      const tickerData = await this.redis.get(tickerKey);
+      if (tickerData) {
+        const currentPrice = parseFloat(JSON.parse(tickerData).price);
+        const krwAmount = Math.floor(parseFloat(order.quantity) * currentPrice);
+        this.logger.log(`Upbit market buy: ${order.quantity} × ${currentPrice} = ${krwAmount} KRW`);
+        order.price = String(krwAmount);
+      } else {
+        throw new Error(`No ticker data for ${order.symbol} — cannot calculate KRW amount`);
+      }
+    }
 
     const adapter = REST_ADAPTERS[event.order.exchange]();
     let lastError: Error | undefined;
 
     for (let attempt = 0; attempt <= this.maxRetries; attempt++) {
       try {
-        const result = await adapter.placeOrder(credentials, event.order);
-        this.logger.log(`Order placed on ${event.order.exchange}: ${result.orderId}`);
+        let result = await adapter.placeOrder(credentials, order);
+        this.logger.log(
+          `Order placed on ${event.order.exchange}: ${result.orderId} (${result.status})`,
+        );
+
+        // For market orders, poll until filled (exchanges process async)
+        if (order.type === 'market' && result.status === 'placed' && result.orderId) {
+          for (let poll = 0; poll < 5; poll++) {
+            await new Promise((r) => setTimeout(r, 1000));
+            try {
+              const updated = await adapter.getOrder(credentials, result.orderId, order.symbol);
+              this.logger.log(
+                `Poll ${poll + 1}: ${updated.status} (filled qty: ${updated.filledQuantity})`,
+              );
+              if (
+                updated.status === 'filled' ||
+                updated.status === 'partial' ||
+                updated.status === 'cancelled'
+              ) {
+                // Upbit market buy returns 'cancelled' when done (remaining KRW refunded)
+                // but the adapter maps cancel+executed_volume>0 to 'filled'
+                result = updated;
+                break;
+              }
+            } catch {
+              // ignore poll errors
+            }
+          }
+        }
+
         return { ...context, result };
       } catch (err) {
         lastError = err as Error;
@@ -162,11 +212,18 @@ export async function executeRealOrderSaga(
   event: OrderRequestedEvent,
   prisma: PrismaService,
   producer: Producer,
+  redis?: Redis,
 ): Promise<void> {
   const logger = new Logger('RealExecutionSaga');
+  const redisInstance =
+    redis ||
+    new Redis({
+      host: process.env.REDIS_HOST || 'localhost',
+      port: Number(process.env.REDIS_PORT || 6379),
+    });
   const steps: SagaStep[] = [
     new DecryptKeysStep(prisma),
-    new PlaceOrderStep(),
+    new PlaceOrderStep(redisInstance),
     new UpdateDbStep(prisma),
     new PublishResultStep(producer),
   ];

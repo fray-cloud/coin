@@ -10,7 +10,7 @@ export class GetStrategyLogsHandler implements IQueryHandler<GetStrategyLogsQuer
   async execute(
     query: GetStrategyLogsQuery,
   ): Promise<{ items: unknown[]; nextCursor: string | null }> {
-    const { userId, strategyId, cursor, limit } = query;
+    const { userId, strategyId, cursor, limit, action, signal } = query;
 
     const strategy = await this.prisma.strategy.findFirst({
       where: { id: strategyId, userId },
@@ -21,6 +21,8 @@ export class GetStrategyLogsHandler implements IQueryHandler<GetStrategyLogsQuer
       where: {
         strategyId,
         ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
+        ...(action ? { action } : {}),
+        ...(signal ? { signal } : {}),
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,

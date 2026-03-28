@@ -8,6 +8,23 @@ import { RsiStrategy } from './indicators/rsi.strategy';
 import { MacdStrategy } from './indicators/macd.strategy';
 import { BollingerStrategy } from './indicators/bollinger.strategy';
 import { executeAutoTradeSaga } from './sagas/strategy-auto-trade-steps';
+import { UpbitRest, BinanceRest, BybitRest, IExchangeRest } from '@coin/exchange-adapters';
+import type { ExchangeId } from '@coin/types';
+
+const REST_ADAPTERS: Record<ExchangeId, () => IExchangeRest> = {
+  upbit: () => new UpbitRest(),
+  binance: () => new BinanceRest(),
+  bybit: () => new BybitRest(),
+};
+
+const CANDLE_CACHE_TTL: Record<string, number> = {
+  '1m': 30,
+  '5m': 120,
+  '15m': 300,
+  '1h': 600,
+  '4h': 1800,
+  '1d': 3600,
+};
 
 interface StrategyRecord {
   id: string;
@@ -23,6 +40,7 @@ interface StrategyRecord {
   config: Record<string, unknown>;
   riskConfig: RiskConfig;
   intervalSeconds: number;
+  candleInterval: string;
 }
 
 @Injectable()
@@ -129,7 +147,11 @@ export class StrategiesService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
-      const closePrices = await this.getClosePrices(strategy.exchange, strategy.symbol);
+      const closePrices = await this.getCandleClosePrices(
+        strategy.exchange,
+        strategy.symbol,
+        strategy.candleInterval || '1h',
+      );
       if (closePrices.length === 0) {
         return;
       }
@@ -164,13 +186,33 @@ export class StrategiesService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async getClosePrices(exchange: string, symbol: string): Promise<number[]> {
-    const key = `prices:${exchange}:${symbol}`;
-    const entries = await this.redis.zrangebyscore(key, '-inf', '+inf');
-    return entries.map((entry) => {
-      const parts = entry.split(':');
-      return parseFloat(parts[parts.length - 1]);
-    });
+  private async getCandleClosePrices(
+    exchange: string,
+    symbol: string,
+    interval: string,
+  ): Promise<number[]> {
+    const cacheKey = `candles:${exchange}:${symbol}:${interval}`;
+    const cached = await this.redis.get(cacheKey);
+
+    if (cached) {
+      const candles = JSON.parse(cached) as Array<{ close: string }>;
+      return candles.map((c) => parseFloat(c.close));
+    }
+
+    // Cache miss — fetch from exchange API
+    const adapterFactory = REST_ADAPTERS[exchange as ExchangeId];
+    if (!adapterFactory) return [];
+
+    try {
+      const adapter = adapterFactory();
+      const candles = await adapter.getCandles(symbol, interval, 200);
+      const ttl = CANDLE_CACHE_TTL[interval] || 600;
+      await this.redis.set(cacheKey, JSON.stringify(candles), 'EX', ttl);
+      return candles.map((c) => parseFloat(c.close));
+    } catch (err) {
+      this.logger.warn(`Failed to fetch candles for ${exchange}:${symbol}:${interval}: ${err}`);
+      return [];
+    }
   }
 
   private async createLog(

@@ -34,4 +34,8 @@ export class CreateStrategyDto {
   @IsInt()
   @Min(10)
   intervalSeconds?: number;
+
+  @IsOptional()
+  @IsIn(['1m', '5m', '15m', '1h', '4h', '1d'])
+  candleInterval?: string;
 }

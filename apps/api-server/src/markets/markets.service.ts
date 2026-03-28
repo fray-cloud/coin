@@ -234,6 +234,11 @@ export class MarketsService implements OnModuleInit, OnModuleDestroy {
     return data ? JSON.parse(data) : null;
   }
 
+  async getExchangeRate(): Promise<{ krwPerUsd: number; updatedAt: string } | null> {
+    const data = await this.redis.get('exchange-rate:KRW-USD');
+    return data ? JSON.parse(data) : null;
+  }
+
   async getAllTickers(): Promise<Ticker[]> {
     const keys: string[] = [];
     let cursor = '0';

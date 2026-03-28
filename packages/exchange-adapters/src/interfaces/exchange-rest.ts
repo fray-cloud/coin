@@ -5,6 +5,7 @@ import {
   OrderRequest,
   OrderResult,
   Market,
+  Candle,
 } from '@coin/types';
 
 export interface IExchangeRest {
@@ -23,4 +24,5 @@ export interface IExchangeRest {
     symbol?: string,
   ): Promise<OrderResult>;
   getMarkets(): Promise<Market[]>;
+  getCandles(symbol: string, interval: string, limit?: number): Promise<Candle[]>;
 }

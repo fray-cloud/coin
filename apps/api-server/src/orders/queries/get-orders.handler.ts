@@ -7,12 +7,17 @@ export class GetOrdersHandler implements IQueryHandler<GetOrdersQuery> {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(query: GetOrdersQuery) {
-    const { userId, cursor, limit } = query;
+    const { userId, cursor, limit, status, exchange, symbol, mode, side } = query;
 
     const orders = await this.prisma.order.findMany({
       where: {
         userId,
         ...(cursor ? { createdAt: { lt: new Date(cursor) } } : {}),
+        ...(status ? { status } : {}),
+        ...(exchange ? { exchange } : {}),
+        ...(symbol ? { symbol } : {}),
+        ...(mode ? { mode } : {}),
+        ...(side ? { side } : {}),
       },
       orderBy: { createdAt: 'desc' },
       take: limit + 1,

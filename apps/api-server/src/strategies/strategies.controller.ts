@@ -18,7 +18,13 @@ import {
   ToggleStrategyCommand,
   DeleteStrategyCommand,
 } from './commands';
-import { GetStrategiesQuery, GetStrategyQuery, GetStrategyLogsQuery } from './queries';
+import {
+  GetStrategiesQuery,
+  GetStrategyQuery,
+  GetStrategyLogsQuery,
+  GetStrategyPerformanceQuery,
+  GetStrategySignalsQuery,
+} from './queries';
 import { CreateStrategyDto } from './dto/create-strategy.dto';
 import { UpdateStrategyDto } from './dto/update-strategy.dto';
 import type { User } from '@coin/database';
@@ -61,15 +67,34 @@ export class StrategiesController {
     return this.commandBus.execute(new DeleteStrategyCommand(user.id, id));
   }
 
+  @Get(':id/performance')
+  async getPerformance(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.queryBus.execute(new GetStrategyPerformanceQuery(user.id, id));
+  }
+
+  @Get(':id/signals')
+  async getSignals(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.queryBus.execute(new GetStrategySignalsQuery(user.id, id));
+  }
+
   @Get(':id/logs')
   async getLogs(
     @CurrentUser() user: User,
     @Param('id') id: string,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
+    @Query('action') action?: string,
+    @Query('signal') signal?: string,
   ) {
     return this.queryBus.execute(
-      new GetStrategyLogsQuery(user.id, id, cursor, limit ? parseInt(limit, 10) : undefined),
+      new GetStrategyLogsQuery(
+        user.id,
+        id,
+        cursor,
+        limit ? parseInt(limit, 10) : undefined,
+        action,
+        signal,
+      ),
     );
   }
 }

@@ -244,6 +244,7 @@ export interface StrategyItem {
   config: Record<string, unknown>;
   riskConfig: Record<string, unknown>;
   intervalSeconds: number;
+  candleInterval: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -262,6 +263,23 @@ export interface StrategyLogsResponse {
   nextCursor: string | null;
 }
 
+export interface StrategyPerformance {
+  totalTrades: number;
+  buyTrades: number;
+  sellTrades: number;
+  wins: number;
+  losses: number;
+  winRate: number;
+  realizedPnl: number;
+  dailyPnl: Array<{ date: string; pnl: number }>;
+}
+
+export async function getStrategyPerformance(id: string): Promise<StrategyPerformance> {
+  const res = await apiFetch(`/strategies/${id}/performance`);
+  if (!res.ok) throw new Error('Failed to fetch strategy performance');
+  return res.json();
+}
+
 export interface CreateStrategyInput {
   name: string;
   type: string;
@@ -273,6 +291,7 @@ export interface CreateStrategyInput {
   config: Record<string, unknown>;
   riskConfig?: Record<string, unknown>;
   intervalSeconds?: number;
+  candleInterval?: string;
 }
 
 export async function getStrategies(): Promise<StrategyItem[]> {
@@ -340,6 +359,20 @@ export async function getStrategyLogs(
   return res.json();
 }
 
+// Strategy signals (for chart markers)
+export interface StrategySignal {
+  signal: 'buy' | 'sell';
+  action: string;
+  price: number;
+  createdAt: string;
+}
+
+export async function getStrategySignals(id: string): Promise<StrategySignal[]> {
+  const res = await apiFetch(`/strategies/${id}/signals`);
+  if (!res.ok) throw new Error('Failed to fetch strategy signals');
+  return res.json();
+}
+
 // --- Notifications ---
 
 export interface NotificationSettingItem {
@@ -387,8 +420,76 @@ export interface PortfolioSummary {
   dailyPnl: Array<{ date: string; pnl: number }>;
 }
 
-export async function getPortfolioSummary(): Promise<PortfolioSummary> {
-  const res = await apiFetch('/portfolio/summary');
+export async function getPortfolioSummary(
+  mode?: 'paper' | 'real' | 'all',
+): Promise<PortfolioSummary> {
+  const params = mode ? `?mode=${mode}` : '';
+  const res = await apiFetch(`/portfolio/summary${params}`);
   if (!res.ok) throw new Error('Failed to fetch portfolio');
+  return res.json();
+}
+
+// Exchange rate
+export interface ExchangeRate {
+  krwPerUsd: number;
+  source?: string;
+  updatedAt: string | null;
+}
+
+// Candles
+export interface CandleData {
+  exchange: string;
+  symbol: string;
+  interval: string;
+  open: string;
+  high: string;
+  low: string;
+  close: string;
+  volume: string;
+  timestamp: number;
+}
+
+export async function getCandles(
+  exchange: string,
+  symbol: string,
+  interval: string,
+  limit = 200,
+): Promise<CandleData[]> {
+  const res = await apiFetch(
+    `/markets/candles/${exchange}/${encodeURIComponent(symbol)}?interval=${interval}&limit=${limit}`,
+  );
+  if (!res.ok) throw new Error('Failed to fetch candles');
+  return res.json();
+}
+
+export async function getExchangeRate(): Promise<ExchangeRate> {
+  const res = await apiFetch('/markets/exchange-rate');
+  if (!res.ok) throw new Error('Failed to fetch exchange rate');
+  return res.json();
+}
+
+// Activity
+export interface ActivityItem {
+  id: string;
+  type: 'order' | 'strategy_signal' | 'strategy_order' | 'risk_blocked' | 'login';
+  title: string;
+  description: string;
+  exchange?: string;
+  symbol?: string;
+  status?: string;
+  side?: string;
+  link?: string;
+  createdAt: string;
+}
+
+export interface ActivityResponse {
+  items: ActivityItem[];
+  nextCursor: string | null;
+}
+
+export async function getActivity(cursor?: string): Promise<ActivityResponse> {
+  const params = cursor ? `?cursor=${cursor}&limit=20` : '?limit=20';
+  const res = await apiFetch(`/activity${params}`);
+  if (!res.ok) throw new Error('Failed to fetch activity');
   return res.json();
 }
