@@ -175,9 +175,10 @@ export function StrategyChart({
           priceLineVisible: false,
           lastValueVisible: false,
         });
-        const rsiData = rsiValues
-          .map((v, i) => (v !== null ? { time: times[i], value: v } : null))
-          .filter(Boolean) as any[];
+        const rsiData = rsiValues.map((v, i) => ({
+          time: times[i],
+          value: v ?? 50,
+        }));
         rsiSeries.setData(rsiData);
 
         // Overbought/Oversold lines
@@ -225,22 +226,19 @@ export function StrategyChart({
           lastValueVisible: false,
         });
 
-        const macdData = macdValues
-          .map((v, i) => (v.macd !== null ? { time: times[i], value: v.macd } : null))
-          .filter(Boolean) as any[];
-        const signalData = macdValues
-          .map((v, i) => (v.signal !== null ? { time: times[i], value: v.signal } : null))
-          .filter(Boolean) as any[];
-        const histData = macdValues
-          .map((v, i) => {
-            if (v.histogram === null) return null;
-            return {
-              time: times[i],
-              value: v.histogram,
-              color: v.histogram >= 0 ? 'rgba(34,197,94,0.6)' : 'rgba(239,68,68,0.6)',
-            };
-          })
-          .filter(Boolean) as any[];
+        const macdData = macdValues.map((v, i) => ({
+          time: times[i],
+          value: v.macd ?? 0,
+        }));
+        const signalData = macdValues.map((v, i) => ({
+          time: times[i],
+          value: v.signal ?? 0,
+        }));
+        const histData = macdValues.map((v, i) => ({
+          time: times[i],
+          value: v.histogram ?? 0,
+          color: (v.histogram ?? 0) >= 0 ? 'rgba(34,197,94,0.6)' : 'rgba(239,68,68,0.6)',
+        }));
 
         macdSeries.setData(macdData);
         signalSeries.setData(signalData);
