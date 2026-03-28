@@ -16,19 +16,12 @@ const config: StorybookConfig = {
     getAbsolutePath('@storybook/addon-onboarding'),
   ],
   framework: getAbsolutePath('@storybook/react-vite'),
-  core: {
-    allowedHosts: true,
-  },
   viteFinal: async (config) => {
     config.resolve = config.resolve || {};
     config.resolve.alias = {
       ...config.resolve.alias,
       '@': resolve(__dirname, '../src'),
     };
-    // base path only needed for static build behind sub-path proxy
-    if (process.env.STORYBOOK_BASE_PATH) {
-      config.base = process.env.STORYBOOK_BASE_PATH;
-    }
     return config;
   },
 };
