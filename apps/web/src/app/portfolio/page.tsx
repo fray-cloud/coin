@@ -10,6 +10,7 @@ import { formatKrw } from '@/lib/utils';
 import { PnlValue } from '@/components/shared/pnl-value';
 import { PnlChart } from '@/components/shared/pnl-chart';
 import { AssetTable } from '@/components/portfolio/asset-table';
+import { Skeleton, SkeletonCard, SkeletonChart, SkeletonTable } from '@/components/ui/skeleton';
 
 const MODES = ['all', 'real', 'paper'] as const;
 type Mode = (typeof MODES)[number];
@@ -26,22 +27,44 @@ export default function PortfolioPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-6xl mx-auto p-4">
-        <p className="text-muted-foreground">{t('loading')}</p>
+      <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
+        <div className="flex items-center justify-between">
+          <Skeleton className="h-8 w-40" />
+          <div className="flex gap-2">
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-8 w-16" />
+            <Skeleton className="h-8 w-16" />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <SkeletonChart height={250} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <SkeletonTable rows={5} cols={7} />
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   if (!data) {
     return (
-      <div className="max-w-6xl mx-auto p-4">
+      <div className="max-w-6xl mx-auto p-4 md:p-6">
         <p className="text-muted-foreground">{t('noData')}</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-6xl mx-auto p-4 space-y-6">
+    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('title')}</h1>
         <div className="flex gap-2">
