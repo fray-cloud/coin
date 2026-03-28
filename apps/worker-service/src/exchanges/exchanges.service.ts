@@ -91,25 +91,44 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async fetchExchangeRate() {
-    try {
-      const res = await fetch(
-        'https://quotation-api-cdn.dunamu.com/v1/forex/recent?codes=FRX.KRWUSD',
-      );
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = (await res.json()) as Array<{ basePrice: number }>;
-      const rate = data?.[0]?.basePrice;
-      if (rate && typeof rate === 'number') {
-        await this.redis.set(
-          'exchange-rate:KRW-USD',
-          JSON.stringify({ krwPerUsd: rate, updatedAt: new Date().toISOString() }),
-          'EX',
-          600,
-        );
-        this.logger.log(`Exchange rate updated: 1 USD = ${rate} KRW`);
+    const sources = [
+      {
+        name: 'dunamu',
+        url: 'https://quotation-api-cdn.dunamu.com/v1/forex/recent?codes=FRX.KRWUSD',
+        parse: (data: unknown) => (data as Array<{ basePrice: number }>)?.[0]?.basePrice,
+      },
+      {
+        name: 'fawazahmed0',
+        url: 'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json',
+        parse: (data: unknown) => (data as { usd: { krw: number } })?.usd?.krw,
+      },
+    ];
+
+    for (const source of sources) {
+      try {
+        const res = await fetch(source.url);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const rate = source.parse(data);
+        if (rate && typeof rate === 'number' && rate > 0) {
+          await this.redis.set(
+            'exchange-rate:KRW-USD',
+            JSON.stringify({
+              krwPerUsd: rate,
+              source: source.name,
+              updatedAt: new Date().toISOString(),
+            }),
+            'EX',
+            600,
+          );
+          this.logger.log(`Exchange rate updated (${source.name}): 1 USD = ${rate} KRW`);
+          return;
+        }
+      } catch (err) {
+        this.logger.warn(`Exchange rate fetch failed (${source.name}): ${err}`);
       }
-    } catch (err) {
-      this.logger.warn(`Failed to fetch exchange rate: ${err}`);
     }
+    this.logger.error('All exchange rate sources failed');
   }
 
   private async handleTicker(ticker: Ticker) {

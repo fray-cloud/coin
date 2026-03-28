@@ -7,9 +7,8 @@ import {
   ShoppingCart,
   BrainCircuit,
   PieChart,
-  KeyRound,
-  Bell,
   Activity,
+  Settings,
   LogOut,
   LogIn,
   UserPlus,
@@ -67,13 +66,6 @@ export function NavBar() {
                 {t('portfolio')}
               </Link>
               <Link
-                href="/accounts"
-                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"
-              >
-                <KeyRound size={15} />
-                {t('accounts')}
-              </Link>
-              <Link
                 href="/activity"
                 className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"
               >
@@ -81,11 +73,11 @@ export function NavBar() {
                 {t('activity')}
               </Link>
               <Link
-                href="/notifications"
+                href="/settings"
                 className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"
               >
-                <Bell size={15} />
-                {t('alerts')}
+                <Settings size={15} />
+                {t('settings')}
               </Link>
             </>
           )}

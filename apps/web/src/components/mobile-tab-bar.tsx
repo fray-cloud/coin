@@ -26,9 +26,7 @@ const TABS = [
 ];
 
 const MORE_ITEMS = [
-  { href: '/accounts', icon: KeyRound, labelKey: 'accounts' as const },
   { href: '/activity', icon: Activity, labelKey: 'activity' as const },
-  { href: '/notifications', icon: Bell, labelKey: 'alerts' as const },
   { href: '/settings', icon: Settings, labelKey: 'settings' as const },
 ];
 

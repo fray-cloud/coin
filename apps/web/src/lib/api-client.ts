@@ -418,6 +418,7 @@ export async function getPortfolioSummary(
 // Exchange rate
 export interface ExchangeRate {
   krwPerUsd: number;
+  source?: string;
   updatedAt: string | null;
 }
 
