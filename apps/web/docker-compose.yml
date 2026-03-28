@@ -24,6 +24,22 @@ services:
       retries: 3
       start_period: 30s
 
+  storybook:
+    build:
+      context: ../..
+      dockerfile: apps/web/Dockerfile
+      target: ${STORYBOOK_TARGET:-storybook-dev}
+    expose:
+      - '6006'
+    networks: [coin-net]
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1024M
+          cpus: '1.0'
+    profiles: ['storybook']
+
 networks:
   coin-net:
     name: coin-net
