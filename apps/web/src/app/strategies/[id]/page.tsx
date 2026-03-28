@@ -1,100 +1,16 @@
 'use client';
 
-import { use, useEffect, useRef } from 'react';
+import { use } from 'react';
 import Link from 'next/link';
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import {
-  getStrategy,
-  getStrategyLogs,
-  getStrategyPerformance,
-  toggleStrategy,
-  deleteStrategy,
-} from '@/lib/api-client';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { createChart, ColorType, type IChartApi } from 'lightweight-charts';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { ExchangeIcon, CoinIcon } from '@/components/icons';
 import { StrategyChart } from '@/components/strategy-chart';
-import { formatKrw } from '@/lib/utils';
-import { ACTION_STYLES, SIGNAL_STYLES } from '@/lib/constants';
-
-function PnlValue({ value }: { value: number }) {
-  const color = value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-muted-foreground';
-  const sign = value > 0 ? '+' : '';
-  return (
-    <span className={`font-bold ${color}`}>
-      {sign}
-      {formatKrw(value)}
-    </span>
-  );
-}
-
-function PnlMiniChart({ data }: { data: Array<{ date: string; pnl: number }> }) {
-  const chartRef = useRef<HTMLDivElement>(null);
-  const chartInstance = useRef<IChartApi | null>(null);
-
-  useEffect(() => {
-    if (!chartRef.current || data.length === 0) return;
-    if (chartInstance.current) {
-      try {
-        chartInstance.current.remove();
-      } catch {}
-      chartInstance.current = null;
-    }
-
-    const chart = createChart(chartRef.current, {
-      width: chartRef.current.clientWidth,
-      height: 150,
-      layout: {
-        attributionLogo: false,
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#9ca3af',
-      },
-      grid: {
-        vertLines: { color: 'rgba(243,244,246,0.1)' },
-        horzLines: { color: 'rgba(243,244,246,0.1)' },
-      },
-      rightPriceScale: { borderVisible: false },
-      timeScale: { borderVisible: false },
-    });
-
-    const series = chart.addAreaSeries({
-      lineColor: data[data.length - 1].pnl >= 0 ? '#22c55e' : '#ef4444',
-      topColor: data[data.length - 1].pnl >= 0 ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.3)',
-      bottomColor: data[data.length - 1].pnl >= 0 ? 'rgba(34,197,94,0.05)' : 'rgba(239,68,68,0.05)',
-      lineWidth: 2,
-    });
-
-    series.setData(data.map((d) => ({ time: d.date as any, value: d.pnl })));
-    chart.timeScale().fitContent();
-    chartInstance.current = chart;
-
-    const handleResize = () => {
-      if (chartRef.current) chart.applyOptions({ width: chartRef.current.clientWidth });
-    };
-    window.addEventListener('resize', handleResize);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      try {
-        chart.remove();
-      } catch {}
-      chartInstance.current = null;
-    };
-  }, [data]);
-
-  return <div ref={chartRef} />;
-}
-
-function ActionBadge({ action }: { action: string }) {
-  return (
-    <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${ACTION_STYLES[action] || 'bg-gray-100 text-gray-600'}`}
-    >
-      {action.replace('_', ' ')}
-    </span>
-  );
-}
+import { getStrategy, toggleStrategy, deleteStrategy } from '@/lib/api-client';
+import { StrategyInfo } from '@/components/strategies/strategy-info';
+import { PerformanceCard } from '@/components/strategies/performance-card';
+import { ExecutionLogs } from '@/components/strategies/execution-logs';
 
 export default function StrategyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -106,19 +22,6 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
     queryFn: () => getStrategy(id),
   });
 
-  const {
-    data: logsData,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery({
-    queryKey: ['strategyLogs', id],
-    queryFn: ({ pageParam }) => getStrategyLogs(id, pageParam),
-    initialPageParam: undefined as string | undefined,
-    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    staleTime: 5_000,
-  });
-
   const toggleMutation = useMutation({
     mutationFn: () => toggleStrategy(id),
     onSuccess: () => {
@@ -127,20 +30,10 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
     },
   });
 
-  const { data: performance } = useQuery({
-    queryKey: ['strategyPerformance', id],
-    queryFn: () => getStrategyPerformance(id),
-    staleTime: 30_000,
-  });
-
   const deleteMutation = useMutation({
     mutationFn: () => deleteStrategy(id),
-    onSuccess: () => {
-      router.push('/strategies');
-    },
+    onSuccess: () => router.push('/strategies'),
   });
-
-  const logs = logsData?.pages.flatMap((p) => p.items) ?? [];
 
   if (isLoading) {
     return (
@@ -159,7 +52,6 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
   }
 
   const config = strategy.config as Record<string, unknown>;
-  const riskConfig = strategy.riskConfig as Record<string, unknown>;
 
   return (
     <div className="max-w-4xl mx-auto p-4 space-y-6">
@@ -171,153 +63,13 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
         <span>{strategy.name}</span>
       </div>
 
-      {/* Strategy Info */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-xl">{strategy.name}</CardTitle>
-            <div className="flex items-center gap-3">
-              <button
-                type="button"
-                onClick={() => toggleMutation.mutate()}
-                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                  strategy.enabled ? 'bg-green-500' : 'bg-gray-300'
-                }`}
-              >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    strategy.enabled ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </button>
-              <span className="text-sm">{strategy.enabled ? 'Enabled' : 'Disabled'}</span>
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-destructive"
-                onClick={() => deleteMutation.mutate()}
-              >
-                Delete
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-              <span className="text-muted-foreground">Type</span>
-              <p className="font-medium">{strategy.type.toUpperCase()}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Exchange</span>
-              <p className="font-medium capitalize">{strategy.exchange}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Symbol</span>
-              <p className="font-medium">{strategy.symbol}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Interval</span>
-              <p className="font-medium">{strategy.intervalSeconds}s</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Mode</span>
-              <p
-                className={`font-medium ${strategy.mode === 'auto' ? 'text-green-600' : 'text-blue-600'}`}
-              >
-                {strategy.mode}
-              </p>
-            </div>
-            <div>
-              <span className="text-muted-foreground">Trading</span>
-              <p
-                className={`font-medium ${strategy.tradingMode === 'paper' ? 'text-purple-600' : 'text-orange-600'}`}
-              >
-                {strategy.tradingMode}
-              </p>
-            </div>
-          </div>
+      <StrategyInfo
+        strategy={strategy}
+        onToggle={() => toggleMutation.mutate()}
+        onDelete={() => deleteMutation.mutate()}
+      />
 
-          {/* Config details */}
-          <div className="mt-4 grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground mb-1">Parameters</p>
-              <div className="bg-muted/50 rounded p-2 text-xs space-y-1">
-                {Object.entries(config).map(([k, v]) => (
-                  <div key={k} className="flex justify-between">
-                    <span className="text-muted-foreground">{k}</span>
-                    <span className="font-medium">{String(v)}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {Object.keys(riskConfig).length > 0 && (
-              <div>
-                <p className="text-sm text-muted-foreground mb-1">Risk Management</p>
-                <div className="bg-muted/50 rounded p-2 text-xs space-y-1">
-                  {Object.entries(riskConfig).map(([k, v]) => (
-                    <div key={k} className="flex justify-between">
-                      <span className="text-muted-foreground">{k}</span>
-                      <span className="font-medium">{String(v)}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Performance */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            Performance
-            {strategy.mode === 'signal' && (
-              <span className="text-xs font-normal text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
-                시뮬레이션
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {performance && performance.totalTrades > 0 ? (
-            <>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                <div>
-                  <p className="text-xs text-muted-foreground">총 거래</p>
-                  <p className="text-xl font-bold">{performance.totalTrades}</p>
-                  <p className="text-xs text-muted-foreground">
-                    매수 {performance.buyTrades} / 매도 {performance.sellTrades}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-xs text-muted-foreground">승률</p>
-                  <p
-                    className={`text-xl font-bold ${performance.winRate >= 50 ? 'text-green-600' : 'text-red-600'}`}
-                  >
-                    {performance.winRate}%
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {performance.wins}승 {performance.losses}패
-                  </p>
-                </div>
-                <div className="col-span-2">
-                  <p className="text-xs text-muted-foreground">실현 손익</p>
-                  <p className="text-xl">
-                    <PnlValue value={performance.realizedPnl} />
-                  </p>
-                </div>
-              </div>
-              {performance.dailyPnl.length > 0 && <PnlMiniChart data={performance.dailyPnl} />}
-            </>
-          ) : (
-            <p className="text-center text-muted-foreground py-6">
-              아직 거래 기록이 없습니다. 전략을 활성화하면 수익이 여기에 표시됩니다.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+      <PerformanceCard strategyId={id} mode={strategy.mode} />
 
       {/* Strategy Chart with Indicator */}
       <Card>
@@ -339,78 +91,7 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
         </CardContent>
       </Card>
 
-      {/* Execution Logs */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Execution Logs</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {logs.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b text-left text-muted-foreground">
-                    <th className="pb-2 font-medium">Time</th>
-                    <th className="pb-2 font-medium">Action</th>
-                    <th className="pb-2 font-medium">Signal</th>
-                    <th className="pb-2 font-medium">Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {logs.map((log) => {
-                    const details = log.details as Record<string, unknown>;
-                    return (
-                      <tr key={log.id} className="border-b last:border-0">
-                        <td className="py-2 text-xs text-muted-foreground whitespace-nowrap">
-                          {new Date(log.createdAt).toLocaleString()}
-                        </td>
-                        <td className="py-2">
-                          <ActionBadge action={log.action} />
-                        </td>
-                        <td className="py-2">
-                          {log.signal ? (
-                            <span className={SIGNAL_STYLES[log.signal] || ''}>
-                              {log.signal.toUpperCase()}
-                            </span>
-                          ) : (
-                            '-'
-                          )}
-                        </td>
-                        <td className="py-2 text-xs text-muted-foreground max-w-xs truncate">
-                          {Object.entries(details)
-                            .filter(([k]) => k !== 'error')
-                            .map(([k, v]) => `${k}: ${v}`)
-                            .join(', ')}
-                          {details.error && (
-                            <span className="text-destructive">{String(details.error)}</span>
-                          )}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="text-center text-muted-foreground py-8">
-              No logs yet. Enable the strategy to start receiving signals.
-            </p>
-          )}
-
-          {hasNextPage && (
-            <div className="mt-4 text-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => fetchNextPage()}
-                disabled={isFetchingNextPage}
-              >
-                {isFetchingNextPage ? 'Loading...' : 'Load More'}
-              </Button>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <ExecutionLogs strategyId={id} />
     </div>
   );
 }

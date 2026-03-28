@@ -1,132 +1,15 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { getPortfolioSummary, type PortfolioAsset } from '@/lib/api-client';
+import { getPortfolioSummary } from '@/lib/api-client';
 import { useTranslations } from 'next-intl';
-import { createChart, ColorType, type IChartApi } from 'lightweight-charts';
-import { CoinIcon, ExchangeIcon } from '@/components/icons';
 import { formatKrw } from '@/lib/utils';
-
-function PnlValue({ value, prefix = '' }: { value: number; prefix?: string }) {
-  const color = value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-muted-foreground';
-  const sign = value > 0 ? '+' : '';
-  return (
-    <span className={`font-bold ${color}`}>
-      {prefix}
-      {sign}
-      {formatKrw(value)}
-    </span>
-  );
-}
-
-function PnlChart({ data }: { data: Array<{ date: string; pnl: number }> }) {
-  const chartRef = useRef<HTMLDivElement>(null);
-  const chartInstance = useRef<IChartApi | null>(null);
-
-  useEffect(() => {
-    if (!chartRef.current || data.length === 0) return;
-
-    const chart = createChart(chartRef.current, {
-      width: chartRef.current.clientWidth,
-      height: 250,
-      layout: {
-        attributionLogo: false,
-        background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#9ca3af',
-      },
-      grid: {
-        vertLines: { color: '#f3f4f6' },
-        horzLines: { color: '#f3f4f6' },
-      },
-      rightPriceScale: { borderVisible: false },
-      timeScale: { borderVisible: false },
-    });
-
-    const series = chart.addAreaSeries({
-      lineColor: '#3b82f6',
-      topColor: 'rgba(59,130,246,0.3)',
-      bottomColor: 'rgba(59,130,246,0.05)',
-      lineWidth: 2,
-    });
-
-    series.setData(
-      data.map((d) => ({
-        time: d.date,
-        value: d.pnl,
-      })),
-    );
-
-    chart.timeScale().fitContent();
-    chartInstance.current = chart;
-
-    const handleResize = () => {
-      if (chartRef.current) {
-        chart.applyOptions({ width: chartRef.current.clientWidth });
-      }
-    };
-    window.addEventListener('resize', handleResize);
-
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      chart.remove();
-    };
-  }, [data]);
-
-  return <div ref={chartRef} />;
-}
-
-function AssetTable({ assets }: { assets: PortfolioAsset[] }) {
-  const t = useTranslations('portfolio');
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b text-left text-muted-foreground">
-            <th className="pb-2 font-medium">{t('exchange')}</th>
-            <th className="pb-2 font-medium">{t('currency')}</th>
-            <th className="pb-2 font-medium text-right">{t('quantity')}</th>
-            <th className="pb-2 font-medium text-right">{t('avgCost')}</th>
-            <th className="pb-2 font-medium text-right">{t('current')}</th>
-            <th className="pb-2 font-medium text-right">{t('value')}</th>
-            <th className="pb-2 font-medium text-right">{t('pnl')}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {assets.map((a, i) => (
-            <tr key={`${a.exchange}-${a.currency}-${i}`} className="border-b last:border-0">
-              <td className="py-2">
-                <span className="flex items-center gap-1.5">
-                  <ExchangeIcon exchange={a.exchange} size={16} />
-                  <span className="capitalize">{a.exchange}</span>
-                </span>
-              </td>
-              <td className="py-2 font-medium">
-                <span className="flex items-center gap-1.5">
-                  <CoinIcon symbol={a.currency} size={16} />
-                  {a.currency}
-                </span>
-              </td>
-              <td className="py-2 text-right tabular-nums">{a.quantity}</td>
-              <td className="py-2 text-right tabular-nums">
-                {a.avgCost > 0 ? formatKrw(a.avgCost) : '-'}
-              </td>
-              <td className="py-2 text-right tabular-nums">
-                {a.currentPrice > 0 ? formatKrw(a.currentPrice) : '-'}
-              </td>
-              <td className="py-2 text-right tabular-nums">{formatKrw(a.valueKrw)}</td>
-              <td className="py-2 text-right">
-                <PnlValue value={a.pnl} />
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+import { PnlValue } from '@/components/shared/pnl-value';
+import { PnlChart } from '@/components/shared/pnl-chart';
+import { AssetTable } from '@/components/portfolio/asset-table';
 
 const MODES = ['all', 'real', 'paper'] as const;
 type Mode = (typeof MODES)[number];
