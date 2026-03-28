@@ -27,7 +27,8 @@
     "high24h": "24h High",
     "low24h": "24h Low",
     "volume": "Volume",
-    "waiting": "Waiting for ticker data..."
+    "waiting": "Waiting for ticker data...",
+    "search": "Search symbol..."
   },
   "orders": {
     "title": "Orders",
