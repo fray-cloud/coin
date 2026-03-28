@@ -44,7 +44,7 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
     baseCoin,
     selectedInterval,
     priceType,
-    baseCurrency,
+    exchange,
     compareMode,
   );
   const chartRef = useRef<HTMLDivElement>(null);

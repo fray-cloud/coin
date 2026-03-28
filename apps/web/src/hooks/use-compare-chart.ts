@@ -29,11 +29,14 @@ interface CompareLineData {
   data: Array<{ time: number; value: number }>;
 }
 
+/**
+ * @param currentExchange - 현재 차트의 거래소 (이 거래소의 통화 기준으로 환산)
+ */
 export function useCompareChart(
   baseCoin: string,
   interval: string,
   priceType: PriceType,
-  targetCurrency: 'KRW' | 'USD',
+  currentExchange: string,
   enabled: boolean,
 ) {
   const symbols = COIN_SYMBOL_MAP[baseCoin.toUpperCase()] || {};
@@ -62,21 +65,26 @@ export function useCompareChart(
   const krwPerUsd = rateQuery[0]?.data?.krwPerUsd || 0;
   const isLoading = candleQueries.some((q) => q.isLoading) || rateQuery[0]?.isLoading;
 
+  // 현재 거래소가 KRW 기반이면 비교 라인도 KRW로, USDT 기반이면 USDT로
+  const currentIsKrw = currentExchange === 'upbit';
+
   const lines: CompareLineData[] = exchanges.map((ex, i) => {
     const candles = candleQueries[i]?.data || [];
-    const isKrwExchange = ex === 'upbit';
+    const compareIsKrw = ex === 'upbit';
 
     return {
       exchange: ex,
       data: candles.map((c) => {
         let price = extractPrice(c, priceType);
 
-        // Convert to target currency
-        if (krwPerUsd > 0) {
-          if (targetCurrency === 'USD' && isKrwExchange) {
-            price = price / krwPerUsd;
-          } else if (targetCurrency === 'KRW' && !isKrwExchange) {
+        // 현재 거래소와 비교 거래소의 통화가 다르면 환산
+        if (krwPerUsd > 0 && currentIsKrw !== compareIsKrw) {
+          if (currentIsKrw && !compareIsKrw) {
+            // 현재=KRW, 비교=USDT → 비교 라인을 KRW로 환산
             price = price * krwPerUsd;
+          } else if (!currentIsKrw && compareIsKrw) {
+            // 현재=USDT, 비교=KRW → 비교 라인을 USDT로 환산
+            price = price / krwPerUsd;
           }
         }
 
