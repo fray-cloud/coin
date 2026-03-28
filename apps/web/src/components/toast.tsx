@@ -3,10 +3,10 @@
 import { useToastStore, type Toast } from '@/stores/use-toast-store';
 
 const TYPE_STYLES: Record<string, string> = {
-  success: 'border-green-500 bg-green-50 text-green-900',
-  warning: 'border-yellow-500 bg-yellow-50 text-yellow-900',
-  error: 'border-red-500 bg-red-50 text-red-900',
-  info: 'border-blue-500 bg-blue-50 text-blue-900',
+  success: 'border-green-500 bg-green-50 text-green-900 dark:bg-green-950 dark:text-green-200',
+  warning: 'border-yellow-500 bg-yellow-50 text-yellow-900 dark:bg-yellow-950 dark:text-yellow-200',
+  error: 'border-red-500 bg-red-50 text-red-900 dark:bg-red-950 dark:text-red-200',
+  info: 'border-blue-500 bg-blue-50 text-blue-900 dark:bg-blue-950 dark:text-blue-200',
 };
 
 function ToastItem({ toast, onClose }: { toast: Toast; onClose: () => void }) {

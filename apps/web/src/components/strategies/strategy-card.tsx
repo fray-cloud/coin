@@ -53,11 +53,21 @@ export function StrategyCard({ strategy, onToggle, onDelete }: StrategyCardProps
               {strategy.symbol}
             </div>
             <div className="flex gap-3 text-xs text-muted-foreground">
-              <span className={strategy.mode === 'auto' ? 'text-green-600' : 'text-blue-600'}>
+              <span
+                className={
+                  strategy.mode === 'auto'
+                    ? 'text-green-600 dark:text-green-400'
+                    : 'text-blue-600 dark:text-blue-400'
+                }
+              >
                 {strategy.mode}
               </span>
               <span
-                className={strategy.tradingMode === 'paper' ? 'text-purple-600' : 'text-orange-600'}
+                className={
+                  strategy.tradingMode === 'paper'
+                    ? 'text-purple-600 dark:text-purple-400'
+                    : 'text-orange-600 dark:text-orange-400'
+                }
               >
                 {strategy.tradingMode}
               </span>

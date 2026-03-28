@@ -53,7 +53,7 @@ export function StrategyInfo({ strategy, onToggle, onDelete }: StrategyInfoProps
           <div>
             <span className="text-muted-foreground">Mode</span>
             <p
-              className={`font-medium ${strategy.mode === 'auto' ? 'text-green-600' : 'text-blue-600'}`}
+              className={`font-medium ${strategy.mode === 'auto' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}`}
             >
               {strategy.mode}
             </p>
@@ -61,7 +61,7 @@ export function StrategyInfo({ strategy, onToggle, onDelete }: StrategyInfoProps
           <div>
             <span className="text-muted-foreground">Trading</span>
             <p
-              className={`font-medium ${strategy.tradingMode === 'paper' ? 'text-purple-600' : 'text-orange-600'}`}
+              className={`font-medium ${strategy.tradingMode === 'paper' ? 'text-purple-600 dark:text-purple-400' : 'text-orange-600 dark:text-orange-400'}`}
             >
               {strategy.tradingMode}
             </p>

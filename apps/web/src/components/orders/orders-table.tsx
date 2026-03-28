@@ -79,7 +79,7 @@ export function OrdersTable() {
                       </span>
                     </td>
                     <td
-                      className={`py-2 font-medium ${order.side === 'buy' ? 'text-green-600' : 'text-red-600'}`}
+                      className={`py-2 font-medium ${order.side === 'buy' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
                     >
                       {order.side.toUpperCase()}
                     </td>
@@ -95,7 +95,7 @@ export function OrdersTable() {
                     </td>
                     <td className="py-2">
                       <span
-                        className={`text-xs ${order.mode === 'paper' ? 'text-purple-600' : 'text-orange-600'}`}
+                        className={`text-xs ${order.mode === 'paper' ? 'text-purple-600 dark:text-purple-400' : 'text-orange-600 dark:text-orange-400'}`}
                       >
                         {order.mode}
                       </span>

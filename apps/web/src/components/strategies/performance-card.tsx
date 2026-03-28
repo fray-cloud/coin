@@ -19,7 +19,7 @@ export function PerformanceCard({ strategyId, mode }: PerformanceCardProps) {
         <CardTitle className="text-lg flex items-center gap-2">
           Performance
           {mode === 'signal' && (
-            <span className="text-xs font-normal text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">
+            <span className="text-xs font-normal text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-900/30 px-1.5 py-0.5 rounded">
               시뮬레이션
             </span>
           )}
@@ -39,7 +39,7 @@ export function PerformanceCard({ strategyId, mode }: PerformanceCardProps) {
               <div>
                 <p className="text-xs text-muted-foreground">승률</p>
                 <p
-                  className={`text-xl font-bold ${performance.winRate >= 50 ? 'text-green-600' : 'text-red-600'}`}
+                  className={`text-xl font-bold ${performance.winRate >= 50 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
                 >
                   {performance.winRate}%
                 </p>

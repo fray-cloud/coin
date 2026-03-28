@@ -30,7 +30,7 @@ export function ToggleSwitch({
         className={cn(
           'relative inline-flex items-center rounded-full transition-colors',
           trackSize,
-          checked ? 'bg-green-500' : 'bg-gray-300',
+          checked ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600',
         )}
       >
         <span

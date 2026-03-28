@@ -26,43 +26,52 @@ function ActivityIcon({ type, side }: { type: ActivityItem['type']; side?: strin
   switch (type) {
     case 'order':
       return (
-        <div className={`p-2 rounded-full ${side === 'buy' ? 'bg-green-100' : 'bg-red-100'}`}>
-          <ShoppingCart size={16} className={side === 'buy' ? 'text-green-600' : 'text-red-600'} />
+        <div
+          className={`p-2 rounded-full ${side === 'buy' ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'}`}
+        >
+          <ShoppingCart
+            size={16}
+            className={
+              side === 'buy'
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-red-600 dark:text-red-400'
+            }
+          />
         </div>
       );
     case 'strategy_signal':
       return (
         <div
-          className={`p-2 rounded-full ${side === 'buy' ? 'bg-blue-100' : side === 'sell' ? 'bg-purple-100' : 'bg-blue-100'}`}
+          className={`p-2 rounded-full ${side === 'buy' ? 'bg-blue-100 dark:bg-blue-900/30' : side === 'sell' ? 'bg-purple-100 dark:bg-purple-900/30' : 'bg-blue-100 dark:bg-blue-900/30'}`}
         >
           <BrainCircuit
             size={16}
             className={
               side === 'buy'
-                ? 'text-blue-600'
+                ? 'text-blue-600 dark:text-blue-400'
                 : side === 'sell'
-                  ? 'text-purple-600'
-                  : 'text-blue-600'
+                  ? 'text-purple-600 dark:text-purple-400'
+                  : 'text-blue-600 dark:text-blue-400'
             }
           />
         </div>
       );
     case 'strategy_order':
       return (
-        <div className="p-2 rounded-full bg-green-100">
-          <BrainCircuit size={16} className="text-green-600" />
+        <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30">
+          <BrainCircuit size={16} className="text-green-600 dark:text-green-400" />
         </div>
       );
     case 'risk_blocked':
       return (
-        <div className="p-2 rounded-full bg-yellow-100">
-          <Shield size={16} className="text-yellow-600" />
+        <div className="p-2 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
+          <Shield size={16} className="text-yellow-600 dark:text-yellow-400" />
         </div>
       );
     case 'login':
       return (
-        <div className="p-2 rounded-full bg-gray-100">
-          <LogIn size={16} className="text-gray-600" />
+        <div className="p-2 rounded-full bg-gray-100 dark:bg-gray-800">
+          <LogIn size={16} className="text-gray-600 dark:text-gray-400" />
         </div>
       );
   }
