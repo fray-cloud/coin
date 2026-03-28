@@ -72,7 +72,13 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
+  async logout(
+    @Req() req: Request & { user?: { id: string } },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    if (req.user?.id) {
+      await this.recordLogin(req.user.id, req, 'logout');
+    }
     const refreshToken = req.cookies?.refresh_token;
     if (refreshToken) {
       await this.tokenService.revokeRefreshToken(refreshToken);

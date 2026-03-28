@@ -93,8 +93,9 @@ export class ActivityService {
     const loginItems: ActivityItem[] = logins.map((l) => ({
       id: `login-${l.id}`,
       type: 'login' as const,
-      title: `로그인 (${l.method})`,
+      title: l.method === 'logout' ? '로그아웃' : `로그인 (${l.method})`,
       description: l.ip ? `IP: ${l.ip}` : '',
+      side: l.method === 'logout' ? 'logout' : undefined,
       link: '/activity',
       createdAt: l.createdAt,
     }));

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { ShoppingCart, BrainCircuit, Shield, LogIn } from 'lucide-react';
+import { ShoppingCart, BrainCircuit, Shield, LogIn, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ExchangeIcon, CoinIcon } from '@/components/icons';
@@ -70,7 +70,11 @@ function ActivityIcon({ type, side }: { type: ActivityItem['type']; side?: strin
         </div>
       );
     case 'login':
-      return (
+      return side === 'logout' ? (
+        <div className="p-2 rounded-full bg-orange-100 dark:bg-orange-900/30">
+          <LogOut size={16} className="text-orange-600 dark:text-orange-400" />
+        </div>
+      ) : (
         <div className="p-2 rounded-full bg-gray-100 dark:bg-gray-800">
           <LogIn size={16} className="text-gray-600 dark:text-gray-400" />
         </div>
