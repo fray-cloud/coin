@@ -160,7 +160,7 @@ export function StrategyChart({
           horzLines: { color: 'rgba(243,244,246,0.1)' },
         },
         rightPriceScale: { borderVisible: false, minimumWidth: 80 },
-        timeScale: { borderVisible: false, timeVisible: false },
+        timeScale: { visible: false },
       });
 
       // Add invisible anchor series with same timestamps as candle chart to align time axes
