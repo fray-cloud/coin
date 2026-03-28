@@ -66,7 +66,7 @@ export function StrategyChart({
         vertLines: { color: 'rgba(243,244,246,0.1)' },
         horzLines: { color: 'rgba(243,244,246,0.1)' },
       },
-      rightPriceScale: { borderVisible: false },
+      rightPriceScale: { borderVisible: false, minimumWidth: 80 },
       timeScale: { borderVisible: false, timeVisible: true },
     });
 
@@ -147,7 +147,7 @@ export function StrategyChart({
           vertLines: { color: 'rgba(243,244,246,0.1)' },
           horzLines: { color: 'rgba(243,244,246,0.1)' },
         },
-        rightPriceScale: { borderVisible: false },
+        rightPriceScale: { borderVisible: false, minimumWidth: 80 },
         timeScale: { borderVisible: false, timeVisible: true },
       });
 
