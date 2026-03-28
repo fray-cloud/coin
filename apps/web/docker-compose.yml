@@ -29,8 +29,10 @@ services:
       context: ../..
       dockerfile: apps/web/Dockerfile
       target: ${STORYBOOK_TARGET:-storybook-dev}
-    ports:
-      - '${STORYBOOK_PORT:-6006}:6006'
+    environment:
+      - STORYBOOK_BASE_PATH=/storybook/
+    expose:
+      - '6006'
     networks: [coin-net]
     restart: unless-stopped
     deploy:
