@@ -29,6 +29,8 @@ export function EasyStrategyWizard({ keys, onSuccess }: EasyStrategyWizardProps)
   const [exchange, setExchange] = useState('');
   const [symbol, setSymbol] = useState('');
   const [tradingMode, setTradingMode] = useState<'paper' | 'real'>('paper');
+  const [quantity, setQuantity] = useState('0.001');
+  const [paperCapital, setPaperCapital] = useState('100000000');
   const [name, setName] = useState('');
   const [error, setError] = useState('');
 
@@ -62,7 +64,11 @@ export function EasyStrategyWizard({ keys, onSuccess }: EasyStrategyWizardProps)
       mode: 'signal',
       tradingMode,
       ...(tradingMode === 'real' && exchangeKey ? { exchangeKeyId: exchangeKey.id } : {}),
-      config: preset.config,
+      config: {
+        ...preset.config,
+        quantity,
+        ...(tradingMode === 'paper' && paperCapital ? { paperCapital: Number(paperCapital) } : {}),
+      },
       riskConfig: Object.keys(preset.riskConfig).length > 0 ? preset.riskConfig : undefined,
       intervalSeconds: preset.intervalSeconds,
       candleInterval: preset.candleInterval,
@@ -195,6 +201,45 @@ export function EasyStrategyWizard({ keys, onSuccess }: EasyStrategyWizardProps)
                 {t('real')}
               </Button>
             </div>
+
+            {/* Quantity */}
+            <div className="space-y-1">
+              <Label className="text-sm">{t('quantity') || '주문 수량'}</Label>
+              <Input
+                value={quantity}
+                onChange={(e) => setQuantity(e.target.value)}
+                type="number"
+                step="0.001"
+                min="0.0001"
+                placeholder="0.001"
+              />
+              {symbol && preset && (
+                <p className="text-xs text-muted-foreground">
+                  ≈{' '}
+                  {(
+                    Number(quantity) *
+                    Number(
+                      tickers.find((tk) => tk.exchange === exchange && tk.symbol === symbol)
+                        ?.price || 0,
+                    )
+                  ).toLocaleString('ko-KR', { maximumFractionDigits: 2 })}{' '}
+                  {exchange === 'upbit' ? 'KRW' : 'USDT'}
+                </p>
+              )}
+            </div>
+
+            {/* Paper Capital */}
+            {tradingMode === 'paper' && (
+              <div className="space-y-1">
+                <Label className="text-sm">가상 자본</Label>
+                <Input
+                  value={paperCapital}
+                  onChange={(e) => setPaperCapital(e.target.value)}
+                  type="number"
+                  placeholder={exchange === 'upbit' ? '100,000,000 KRW' : '100,000 USDT'}
+                />
+              </div>
+            )}
           </div>
         )}
 
