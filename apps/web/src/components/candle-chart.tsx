@@ -79,6 +79,18 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
       },
       rightPriceScale: { borderVisible: false },
       timeScale: { borderVisible: false, timeVisible: true },
+      localization: {
+        timeFormatter: (t: number) => {
+          const d = new Date(t * 1000);
+          return d.toLocaleString('ko-KR', {
+            month: 'numeric',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          });
+        },
+      },
       crosshair: {
         horzLine: { visible: true, labelVisible: true },
         vertLine: { visible: true, labelVisible: true },

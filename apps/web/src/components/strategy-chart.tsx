@@ -67,7 +67,19 @@ export function StrategyChart({
         horzLines: { color: 'rgba(243,244,246,0.1)' },
       },
       rightPriceScale: { borderVisible: false, minimumWidth: 80 },
-      timeScale: { borderVisible: false, timeVisible: true },
+      timeScale: { borderVisible: false, timeVisible: true, shiftVisibleRangeOnNewBar: true },
+      localization: {
+        timeFormatter: (t: number) => {
+          const d = new Date(t * 1000);
+          return d.toLocaleString('ko-KR', {
+            month: 'numeric',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          });
+        },
+      },
     });
 
     const candleSeries = chart.addCandlestickSeries({
