@@ -91,7 +91,7 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async fetchExchangeRate() {
-    this.logger.log('Fetching exchange rate...');
+    console.log(`[ExchangesService] Fetching exchange rate...`);
     const sources = [
       {
         name: 'fawazahmed0',
@@ -107,7 +107,7 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
 
     for (const source of sources) {
       try {
-        const res = await fetch(source.url);
+        const res = await fetch(source.url, { signal: AbortSignal.timeout(10000) });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const rate = source.parse(data);
@@ -122,14 +122,16 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
             'EX',
             600,
           );
-          this.logger.log(`Exchange rate updated (${source.name}): 1 USD = ${rate} KRW`);
+          console.log(
+            `[ExchangesService] Exchange rate updated (${source.name}): 1 USD = ${rate} KRW`,
+          );
           return;
         }
       } catch (err) {
-        this.logger.warn(`Exchange rate fetch failed (${source.name}): ${err}`);
+        console.warn(`[ExchangesService] Exchange rate fetch failed (${source.name}): ${err}`);
       }
     }
-    this.logger.error('All exchange rate sources failed');
+    console.error('[ExchangesService] All exchange rate sources failed');
   }
 
   private async handleTicker(ticker: Ticker) {
