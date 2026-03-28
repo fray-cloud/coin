@@ -10,6 +10,7 @@ import {
   HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Response, Request } from 'express';
 import { AuthService } from './auth.service';
@@ -25,6 +26,7 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import { SignupDto } from './dto/signup.dto';
 import type { User } from '@coin/database';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -50,6 +52,9 @@ export class AuthController {
   @Public()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @Post('signup')
+  @ApiOperation({ summary: 'Register a new user account with email and password' })
+  @ApiResponse({ status: 201, description: 'User created successfully' })
+  @ApiResponse({ status: 400, description: 'Validation error or email already exists' })
   async signup(@Body() dto: SignupDto, @Res({ passthrough: true }) res: Response) {
     const user = await this.authService.signup(dto);
     const tokens = await this.tokenService.issueTokenPair(user);
@@ -62,6 +67,9 @@ export class AuthController {
   @UseGuards(LocalAuthGuard)
   @Post('login')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Log in with email and password credentials' })
+  @ApiResponse({ status: 200, description: 'Login successful, tokens set in cookies' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
   async login(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const user = req.user as User;
     const tokens = await this.tokenService.issueTokenPair(user);
@@ -72,6 +80,10 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Log out and revoke the current refresh token' })
+  @ApiResponse({ status: 200, description: 'Logged out successfully' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async logout(
     @Req() req: Request & { user?: { id: string } },
     @Res({ passthrough: true }) res: Response,
@@ -90,6 +102,9 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Rotate the refresh token and issue new access and refresh tokens' })
+  @ApiResponse({ status: 200, description: 'Tokens refreshed successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid or missing refresh token' })
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const refreshToken = req.cookies?.refresh_token;
     if (!refreshToken) {
@@ -102,6 +117,10 @@ export class AuthController {
   }
 
   @Get('me')
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Retrieve the currently authenticated user profile' })
+  @ApiResponse({ status: 200, description: 'Current user profile returned' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
   async me(@CurrentUser() user: User) {
     return {
       id: user.id,
@@ -115,11 +134,15 @@ export class AuthController {
   @Public()
   @UseGuards(GoogleAuthGuard)
   @Get('google')
+  @ApiOperation({ summary: 'Initiate Google OAuth login flow' })
+  @ApiResponse({ status: 302, description: 'Redirects to Google consent screen' })
   google() {}
 
   @Public()
   @UseGuards(GoogleAuthGuard)
   @Get('google/callback')
+  @ApiOperation({ summary: 'Handle Google OAuth callback and issue tokens' })
+  @ApiResponse({ status: 302, description: 'Redirects to the app after successful login' })
   async googleCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
     const tokens = await this.tokenService.issueTokenPair(user);
@@ -132,11 +155,15 @@ export class AuthController {
   @Public()
   @UseGuards(KakaoAuthGuard)
   @Get('kakao')
+  @ApiOperation({ summary: 'Initiate Kakao OAuth login flow' })
+  @ApiResponse({ status: 302, description: 'Redirects to Kakao consent screen' })
   kakao() {}
 
   @Public()
   @UseGuards(KakaoAuthGuard)
   @Get('kakao/callback')
+  @ApiOperation({ summary: 'Handle Kakao OAuth callback and issue tokens' })
+  @ApiResponse({ status: 302, description: 'Redirects to the app after successful login' })
   async kakaoCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
     const tokens = await this.tokenService.issueTokenPair(user);
@@ -149,11 +176,15 @@ export class AuthController {
   @Public()
   @UseGuards(NaverAuthGuard)
   @Get('naver')
+  @ApiOperation({ summary: 'Initiate Naver OAuth login flow' })
+  @ApiResponse({ status: 302, description: 'Redirects to Naver consent screen' })
   naver() {}
 
   @Public()
   @UseGuards(NaverAuthGuard)
   @Get('naver/callback')
+  @ApiOperation({ summary: 'Handle Naver OAuth callback and issue tokens' })
+  @ApiResponse({ status: 302, description: 'Redirects to the app after successful login' })
   async naverCallback(@Req() req: Request, @Res() res: Response) {
     const user = req.user as User;
     const tokens = await this.tokenService.issueTokenPair(user);
