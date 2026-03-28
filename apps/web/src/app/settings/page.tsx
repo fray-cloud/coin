@@ -214,30 +214,78 @@ function AccountsTab() {
   );
 }
 
+const RATE_SOURCES = [
+  { value: 'dunamu', label: '두나무 (Dunamu)', desc: '업비트 기반 실시간 환율' },
+  { value: 'fawazahmed0', label: 'Currency API', desc: '무료, 200+ 통화, 일일 갱신' },
+];
+
 function ExchangeRateTab() {
-  const { krwPerUsd, updatedAt } = useExchangeRate();
+  const { krwPerUsd, updatedAt, isLoading } = useExchangeRate();
+  const [source, setSource] = useState(
+    () => localStorage.getItem('exchangeRateSource') || 'dunamu',
+  );
+
+  const handleSourceChange = (newSource: string) => {
+    setSource(newSource);
+    localStorage.setItem('exchangeRateSource', newSource);
+  };
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>환율 설정</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="bg-muted/50 rounded-lg p-4">
-          <p className="text-sm text-muted-foreground">현재 환율</p>
-          <p className="text-2xl font-bold tabular-nums">
-            1 USD = {krwPerUsd ? krwPerUsd.toLocaleString('ko-KR') : '-'} KRW
-          </p>
-          {updatedAt && (
-            <p className="text-xs text-muted-foreground mt-1">
-              마지막 갱신: {new Date(updatedAt).toLocaleString()}
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>현재 환율</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="bg-muted/50 rounded-lg p-4">
+            <p className="text-sm text-muted-foreground">USD → KRW</p>
+            <p className="text-2xl font-bold tabular-nums">
+              1 USD ={' '}
+              {krwPerUsd
+                ? krwPerUsd.toLocaleString('ko-KR', { maximumFractionDigits: 2 })
+                : '조회 중...'}{' '}
+              KRW
             </p>
-          )}
-        </div>
-        <p className="text-sm text-muted-foreground">
-          소스: 두나무 (Dunamu) — 업비트 기반 실시간 환율
-        </p>
-      </CardContent>
-    </Card>
+            {updatedAt && (
+              <p className="text-xs text-muted-foreground mt-1">
+                마지막 갱신: {new Date(updatedAt).toLocaleString()}
+              </p>
+            )}
+            {!krwPerUsd && !isLoading && (
+              <p className="text-xs text-destructive mt-1">
+                환율을 가져올 수 없습니다. Worker 서비스를 확인하세요.
+              </p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>환율 소스</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {RATE_SOURCES.map((s) => (
+            <button
+              key={s.value}
+              type="button"
+              onClick={() => handleSourceChange(s.value)}
+              className={`w-full p-3 rounded-lg border text-left transition-colors ${
+                source === s.value
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50'
+              }`}
+            >
+              <p className="font-medium text-sm">{s.label}</p>
+              <p className="text-xs text-muted-foreground">{s.desc}</p>
+            </button>
+          ))}
+          <p className="text-xs text-muted-foreground">
+            환율 소스 변경은 다음 갱신 주기(5분)에 적용됩니다.
+          </p>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
 

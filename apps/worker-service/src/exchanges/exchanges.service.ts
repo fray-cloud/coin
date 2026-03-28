@@ -42,7 +42,7 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
     this.logger.log('Kafka producer connected');
 
     // Fetch exchange rate immediately and every 5 minutes
-    this.fetchExchangeRate();
+    await this.fetchExchangeRate();
     this.exchangeRateInterval = setInterval(() => this.fetchExchangeRate(), 5 * 60 * 1000);
 
     const upbit = new UpbitWebSocket({
@@ -91,6 +91,7 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async fetchExchangeRate() {
+    this.logger.log('Fetching exchange rate...');
     const sources = [
       {
         name: 'dunamu',
