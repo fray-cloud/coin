@@ -212,21 +212,28 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
     }
   }, [compareMode, compareExchange, compareLines]);
 
-  // Real-time compare line update
+  // Real-time compare line update — update last point instead of adding new time
   useEffect(() => {
-    if (!compareSeriesRef.current || !compareTicker || !compareMode) return;
+    if (
+      !compareSeriesRef.current ||
+      !compareTicker ||
+      !compareMode ||
+      !candles ||
+      candles.length === 0
+    )
+      return;
 
     let price = Number(compareTicker.price);
-    // Convert to current exchange's currency
     const currentIsKrw = exchange === 'upbit';
     const compareIsKrw = compareExchange === 'upbit';
     if (krwPerUsd > 0 && currentIsKrw !== compareIsKrw) {
       price = currentIsKrw ? price * krwPerUsd : price / krwPerUsd;
     }
 
-    const now = Math.floor(Date.now() / 1000) as any;
-    compareSeriesRef.current.update({ time: now, value: price });
-  }, [compareTicker, compareMode, compareExchange, exchange, krwPerUsd]);
+    // Use last candle's time to keep within chart range
+    const lastTime = (candles[candles.length - 1].timestamp / 1000) as any;
+    compareSeriesRef.current.update({ time: lastTime, value: price });
+  }, [compareTicker, compareMode, compareExchange, exchange, krwPerUsd, candles]);
 
   // Real-time ticker update
   useEffect(() => {
