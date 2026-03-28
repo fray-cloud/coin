@@ -7,6 +7,7 @@ import { useCandles } from '@/hooks/use-candles';
 import { useTickersStore } from '@/stores/use-tickers-store';
 import { useCompareChart, parseCoinFromSymbol } from '@/hooks/use-compare-chart';
 import { useBaseCurrency } from '@/hooks/use-base-currency';
+import { useExchangeRate } from '@/hooks/use-exchange-rate';
 
 const INTERVALS = ['1m', '5m', '15m', '1h', '4h', '1d'] as const;
 const PRICE_TYPES = ['close', 'high', 'low', 'mid'] as const;
@@ -57,6 +58,22 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
 
   const tickerKey = `${exchange}:${symbol}`;
   const ticker = useTickersStore((s) => s.tickers.get(tickerKey));
+  const { krwPerUsd } = useExchangeRate();
+
+  // Compare exchange ticker for real-time price
+  const COIN_SYMBOL_MAP: Record<string, Record<string, string>> = {
+    BTC: { upbit: 'KRW-BTC', binance: 'BTCUSDT', bybit: 'BTCUSDT' },
+    ETH: { upbit: 'KRW-ETH', binance: 'ETHUSDT', bybit: 'ETHUSDT' },
+    XRP: { upbit: 'KRW-XRP', binance: 'XRPUSDT', bybit: 'XRPUSDT' },
+  };
+  const compareSymbol = compareExchange
+    ? COIN_SYMBOL_MAP[baseCoin.toUpperCase()]?.[compareExchange]
+    : '';
+  const compareTickerKey =
+    compareExchange && compareSymbol ? `${compareExchange}:${compareSymbol}` : '';
+  const compareTicker = useTickersStore((s) =>
+    compareTickerKey ? s.tickers.get(compareTickerKey) : undefined,
+  );
 
   // Create chart instance once
   useEffect(() => {
@@ -194,6 +211,22 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
       }
     }
   }, [compareMode, compareExchange, compareLines]);
+
+  // Real-time compare line update
+  useEffect(() => {
+    if (!compareSeriesRef.current || !compareTicker || !compareMode) return;
+
+    let price = Number(compareTicker.price);
+    // Convert to current exchange's currency
+    const currentIsKrw = exchange === 'upbit';
+    const compareIsKrw = compareExchange === 'upbit';
+    if (krwPerUsd > 0 && currentIsKrw !== compareIsKrw) {
+      price = currentIsKrw ? price * krwPerUsd : price / krwPerUsd;
+    }
+
+    const now = Math.floor(Date.now() / 1000) as any;
+    compareSeriesRef.current.update({ time: now, value: price });
+  }, [compareTicker, compareMode, compareExchange, exchange, krwPerUsd]);
 
   // Real-time ticker update
   useEffect(() => {
