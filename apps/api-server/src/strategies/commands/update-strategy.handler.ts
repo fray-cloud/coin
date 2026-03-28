@@ -30,6 +30,7 @@ export class UpdateStrategyHandler implements ICommandHandler<UpdateStrategyComm
     if (dto.config !== undefined) data.config = dto.config;
     if (dto.riskConfig !== undefined) data.riskConfig = dto.riskConfig;
     if (dto.intervalSeconds !== undefined) data.intervalSeconds = dto.intervalSeconds;
+    if (dto.candleInterval !== undefined) data.candleInterval = dto.candleInterval;
 
     return this.prisma.strategy.update({
       where: { id },

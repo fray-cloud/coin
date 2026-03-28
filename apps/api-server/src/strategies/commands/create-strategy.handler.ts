@@ -36,6 +36,7 @@ export class CreateStrategyHandler implements ICommandHandler<CreateStrategyComm
         config: dto.config as never,
         riskConfig: (dto.riskConfig || {}) as never,
         intervalSeconds: dto.intervalSeconds || 60,
+        candleInterval: dto.candleInterval || '1h',
       },
     });
 
