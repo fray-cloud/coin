@@ -77,9 +77,18 @@ export class StrategiesController {
     @Param('id') id: string,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
+    @Query('action') action?: string,
+    @Query('signal') signal?: string,
   ) {
     return this.queryBus.execute(
-      new GetStrategyLogsQuery(user.id, id, cursor, limit ? parseInt(limit, 10) : undefined),
+      new GetStrategyLogsQuery(
+        user.id,
+        id,
+        cursor,
+        limit ? parseInt(limit, 10) : undefined,
+        action,
+        signal,
+      ),
     );
   }
 }

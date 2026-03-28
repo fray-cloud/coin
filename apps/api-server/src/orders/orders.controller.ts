@@ -33,9 +33,23 @@ export class OrdersController {
     @CurrentUser() user: User,
     @Query('cursor') cursor?: string,
     @Query('limit') limit?: string,
+    @Query('status') status?: string,
+    @Query('exchange') exchange?: string,
+    @Query('symbol') symbol?: string,
+    @Query('mode') mode?: string,
+    @Query('side') side?: string,
   ) {
     return this.queryBus.execute(
-      new GetOrdersQuery(user.id, cursor, limit ? parseInt(limit, 10) : undefined),
+      new GetOrdersQuery(
+        user.id,
+        cursor,
+        limit ? parseInt(limit, 10) : undefined,
+        status,
+        exchange,
+        symbol,
+        mode,
+        side,
+      ),
     );
   }
 
