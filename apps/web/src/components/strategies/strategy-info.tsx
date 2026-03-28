@@ -51,6 +51,10 @@ export function StrategyInfo({ strategy, onToggle, onDelete }: StrategyInfoProps
             <p className="font-medium">{strategy.intervalSeconds}s</p>
           </div>
           <div>
+            <span className="text-muted-foreground">Candle</span>
+            <p className="font-medium">{strategy.candleInterval || '1h'}</p>
+          </div>
+          <div>
             <span className="text-muted-foreground">Mode</span>
             <p
               className={`font-medium ${strategy.mode === 'auto' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}`}

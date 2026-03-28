@@ -71,7 +71,8 @@ export function StrategyCard({ strategy, onToggle, onDelete }: StrategyCardProps
               >
                 {strategy.tradingMode}
               </span>
-              <span>{strategy.intervalSeconds}s interval</span>
+              <span>{strategy.intervalSeconds}s</span>
+              <span>{strategy.candleInterval || '1h'}봉</span>
             </div>
           </div>
           <div className="flex items-center gap-2">

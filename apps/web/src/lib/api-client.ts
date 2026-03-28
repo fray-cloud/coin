@@ -244,6 +244,7 @@ export interface StrategyItem {
   config: Record<string, unknown>;
   riskConfig: Record<string, unknown>;
   intervalSeconds: number;
+  candleInterval: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -290,6 +291,7 @@ export interface CreateStrategyInput {
   config: Record<string, unknown>;
   riskConfig?: Record<string, unknown>;
   intervalSeconds?: number;
+  candleInterval?: string;
 }
 
 export async function getStrategies(): Promise<StrategyItem[]> {

@@ -13,17 +13,7 @@ interface StrategyChartProps {
   symbol: string;
   strategyType: string;
   config: Record<string, unknown>;
-  intervalSeconds?: number;
-}
-
-function mapIntervalSecondsToCandle(seconds?: number): string {
-  if (!seconds) return '1h';
-  if (seconds <= 60) return '1m';
-  if (seconds <= 300) return '5m';
-  if (seconds <= 900) return '15m';
-  if (seconds <= 3600) return '1h';
-  if (seconds <= 14400) return '4h';
-  return '1d';
+  candleInterval?: string;
 }
 
 export function StrategyChart({
@@ -31,11 +21,9 @@ export function StrategyChart({
   symbol,
   strategyType,
   config,
-  intervalSeconds,
+  candleInterval,
 }: StrategyChartProps) {
-  const [selectedInterval, setSelectedInterval] = useState(() =>
-    mapIntervalSecondsToCandle(intervalSeconds),
-  );
+  const [selectedInterval, setSelectedInterval] = useState(candleInterval || '1h');
   const chartRef = useRef<HTMLDivElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<IChartApi | null>(null);

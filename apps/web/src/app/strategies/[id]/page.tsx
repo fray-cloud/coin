@@ -86,7 +86,7 @@ export default function StrategyDetailPage({ params }: { params: Promise<{ id: s
             symbol={strategy.symbol}
             strategyType={strategy.type}
             config={config}
-            intervalSeconds={strategy.intervalSeconds}
+            candleInterval={strategy.candleInterval}
           />
         </CardContent>
       </Card>

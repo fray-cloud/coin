@@ -29,6 +29,7 @@ export function CreateStrategyForm({ keys, onSuccess }: CreateStrategyFormProps)
   const [mode, setMode] = useState<'auto' | 'signal'>('signal');
   const [tradingMode, setTradingMode] = useState<'paper' | 'real'>('paper');
   const [intervalSeconds, setIntervalSeconds] = useState('60');
+  const [candleInterval, setCandleInterval] = useState('1h');
   const [config, setConfig] = useState<Record<string, unknown>>(DEFAULT_CONFIGS.rsi);
   const [riskStopLoss, setRiskStopLoss] = useState('');
   const [riskDailyMax, setRiskDailyMax] = useState('');
@@ -85,6 +86,7 @@ export function CreateStrategyForm({ keys, onSuccess }: CreateStrategyFormProps)
       },
       riskConfig: Object.keys(riskConfig).length > 0 ? riskConfig : undefined,
       intervalSeconds: Number(intervalSeconds),
+      candleInterval,
     });
   };
 
@@ -366,6 +368,23 @@ export function CreateStrategyForm({ keys, onSuccess }: CreateStrategyFormProps)
               )}
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label>{t('candleInterval')}</Label>
+            <div className="flex gap-1">
+              {['1m', '5m', '15m', '1h', '4h', '1d'].map((iv) => (
+                <Button
+                  key={iv}
+                  type="button"
+                  variant={candleInterval === iv ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setCandleInterval(iv)}
+                >
+                  {iv}
+                </Button>
+              ))}
+            </div>
+          </div>
 
           <div className="space-y-2">
             <Label>{t('interval')}</Label>
