@@ -2,10 +2,21 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { createChart, ColorType, type IChartApi, type ISeriesApi } from 'lightweight-charts';
+import { GitCompare } from 'lucide-react';
 import { useCandles } from '@/hooks/use-candles';
 import { useTickersStore } from '@/stores/use-tickers-store';
+import { useCompareChart, parseCoinFromSymbol } from '@/hooks/use-compare-chart';
+import { useBaseCurrency } from '@/hooks/use-base-currency';
 
 const INTERVALS = ['1m', '5m', '15m', '1h', '4h', '1d'] as const;
+const PRICE_TYPES = ['close', 'high', 'low', 'mid'] as const;
+type PriceType = (typeof PRICE_TYPES)[number];
+
+const EXCHANGE_COLORS: Record<string, string> = {
+  upbit: '#3b82f6',
+  binance: '#f59e0b',
+  bybit: '#f97316',
+};
 
 interface CandleChartProps {
   exchange: string;
@@ -15,6 +26,17 @@ interface CandleChartProps {
 
 export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps) {
   const [selectedInterval, setSelectedInterval] = useState('1h');
+  const [compareMode, setCompareMode] = useState(false);
+  const [priceType, setPriceType] = useState<PriceType>('close');
+  const { currency: baseCurrency } = useBaseCurrency();
+  const baseCoin = parseCoinFromSymbol(symbol);
+  const { lines: compareLines } = useCompareChart(
+    baseCoin,
+    selectedInterval,
+    priceType,
+    baseCurrency,
+    compareMode,
+  );
   const chartRef = useRef<HTMLDivElement>(null);
   const chartInstance = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
@@ -87,6 +109,23 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
 
     candleSeries.setData(candleData);
     volumeSeries.setData(volumeData);
+    // Compare mode: add line series for other exchanges
+    if (compareMode && compareLines.length > 0) {
+      for (const line of compareLines) {
+        if (line.exchange === exchange) continue; // Skip current exchange
+        if (line.data.length === 0) continue;
+        const color = EXCHANGE_COLORS[line.exchange] || '#888';
+        const lineSeries = chart.addLineSeries({
+          color,
+          lineWidth: 2,
+          priceLineVisible: false,
+          lastValueVisible: true,
+          title: line.exchange,
+        });
+        lineSeries.setData(line.data.map((d) => ({ time: d.time as any, value: d.value })));
+      }
+    }
+
     chart.timeScale().fitContent();
 
     chartInstance.current = chart;
@@ -105,7 +144,7 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
       chartInstance.current = null;
       candleSeriesRef.current = null;
     };
-  }, [candles, height]);
+  }, [candles, height, compareMode, compareLines, exchange]);
 
   // Update last candle with real-time ticker price
   useEffect(() => {
@@ -142,7 +181,45 @@ export function CandleChart({ exchange, symbol, height = 400 }: CandleChartProps
               {iv}
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => setCompareMode(!compareMode)}
+            className={`px-2.5 py-1 text-xs font-medium rounded transition-colors inline-flex items-center gap-1 ${
+              compareMode
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:bg-muted'
+            }`}
+          >
+            <GitCompare size={12} />
+            비교
+          </button>
         </div>
+        {compareMode && (
+          <div className="flex gap-1 mb-2">
+            {PRICE_TYPES.map((pt) => (
+              <button
+                key={pt}
+                type="button"
+                onClick={() => setPriceType(pt)}
+                className={`px-2 py-0.5 text-xs rounded transition-colors ${
+                  priceType === pt
+                    ? 'bg-secondary text-secondary-foreground'
+                    : 'text-muted-foreground hover:bg-muted'
+                }`}
+              >
+                {pt === 'high' ? '고가' : pt === 'low' ? '저가' : pt === 'mid' ? '중앙' : '종가'}
+              </button>
+            ))}
+            <div className="ml-auto flex gap-1 items-center text-xs">
+              {Object.entries(EXCHANGE_COLORS).map(([ex, color]) => (
+                <span key={ex} className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full" style={{ background: color }} />
+                  {ex}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
         {ticker && (
           <span
             className={`text-sm font-bold tabular-nums ${Number(ticker.changePercent24h) >= 0 ? 'text-green-500' : 'text-red-500'}`}
