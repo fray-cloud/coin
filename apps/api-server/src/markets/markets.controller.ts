@@ -18,14 +18,22 @@ export class MarketsController {
   constructor(private readonly marketsService: MarketsService) {}
 
   @Get('tickers')
-  @ApiOperation({ summary: '모든 거래소의 캐시된 티커 조회' })
+  @ApiOperation({
+    summary: '모든 거래소의 캐시된 티커 조회',
+    description:
+      '모든 거래소(Upbit, Binance, Bybit)의 실시간 티커 데이터를 Redis 캐시에서 조회합니다. 가격, 24시간 변동률, 거래량 등을 포함합니다.',
+  })
   @ApiResponse({ status: 200, description: '티커 목록 반환' })
   async getAllTickers() {
     return this.marketsService.getAllTickers();
   }
 
   @Get('exchange-rate')
-  @ApiOperation({ summary: '현재 KRW/USD 환율 조회' })
+  @ApiOperation({
+    summary: '현재 KRW/USD 환율 조회',
+    description:
+      '현재 KRW/USD 환율을 반환합니다. Worker 서비스가 5분마다 갱신하며, fawazahmed0 또는 두나무 API에서 가져옵니다.',
+  })
   @ApiResponse({ status: 200, description: '환율 반환' })
   async getExchangeRate() {
     const rate = await this.marketsService.getExchangeRate();
@@ -33,7 +41,11 @@ export class MarketsController {
   }
 
   @Get('candles/:exchange/:symbol')
-  @ApiOperation({ summary: '거래소의 심볼에 대한 캔들스틱(OHLCV) 데이터 조회' })
+  @ApiOperation({
+    summary: '거래소의 심볼에 대한 캔들스틱(OHLCV) 데이터 조회',
+    description:
+      '거래소별 캔들스틱(OHLCV) 데이터를 조회합니다. 1분~1일 간격을 지원하며, 최대 500개까지 반환합니다. 인증 불필요.',
+  })
   @ApiResponse({ status: 200, description: '캔들 데이터 반환' })
   @ApiResponse({ status: 404, description: '거래소를 찾을 수 없음' })
   @ApiParam({ name: 'exchange', description: '거래소 식별자 (upbit, binance, bybit)' })
@@ -63,7 +75,10 @@ export class MarketsController {
   }
 
   @Get('ticker/:exchange/:symbol')
-  @ApiOperation({ summary: '거래소의 특정 심볼 최신 티커 조회' })
+  @ApiOperation({
+    summary: '거래소의 특정 심볼 최신 티커 조회',
+    description: '특정 거래소의 특정 심볼 최신 티커를 Redis 캐시에서 조회합니다.',
+  })
   @ApiResponse({ status: 200, description: '티커 데이터 반환' })
   @ApiResponse({ status: 404, description: '티커를 찾을 수 없음' })
   @ApiParam({ name: 'exchange', description: '거래소 식별자 (upbit, binance, bybit)' })

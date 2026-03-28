@@ -15,7 +15,7 @@ export class PortfolioController {
   @ApiOperation({
     summary: '모든 거래소의 통합 포트폴리오 요약 조회',
     description:
-      '## 포트폴리오 집계\n\n- **전체(all)**: 실제 거래소 잔고 + 모든 체결 주문 기반 손익\n- **실전(real)**: 실제 거래소 API에서 잔고 조회\n- **모의(paper)**: 모의 주문 이력 기반 가상 잔고 계산',
+      '## 포트폴리오 집계\n\n- **전체(all)**: 실제 거래소 잔고 + 모든 체결 주문 기반 손익\n- **실전(real)**: 실제 거래소 API에서 잔고 조회\n- **모의(paper)**: 모의 주문 이력 기반 가상 잔고 계산\n\n포트폴리오 요약을 조회합니다. 총 자산 가치, 실현/미실현 손익, 자산별 상세 내역을 반환합니다.\n\n- **전체(all)**: 실제 거래소 잔고 + 전체 주문 기반 손익\n- **실전(real)**: 거래소 API에서 실제 잔고 조회\n- **모의(paper)**: 모의 주문 이력 기반 가상 잔고 계산',
   })
   @ApiResponse({ status: 200, description: '포트폴리오 요약 반환' })
   @ApiResponse({ status: 401, description: '인증 필요' })

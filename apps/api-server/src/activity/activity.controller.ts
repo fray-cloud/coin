@@ -11,7 +11,11 @@ export class ActivityController {
   constructor(private readonly activityService: ActivityService) {}
 
   @Get()
-  @ApiOperation({ summary: '커서 기반 페이지네이션으로 활동 피드 조회' })
+  @ApiOperation({
+    summary: '커서 기반 페이지네이션으로 활동 피드 조회',
+    description:
+      '사용자의 활동 피드를 조회합니다. 주문 체결, 전략 시그널, 리스크 차단, 로그인/로그아웃 이력이 시간순으로 통합되어 반환됩니다. 커서 기반 페이지네이션을 지원합니다.',
+  })
   @ApiResponse({ status: 200, description: '활동 피드 반환' })
   @ApiResponse({ status: 401, description: '인증 필요' })
   @ApiQuery({ name: 'cursor', required: false, description: '페이지네이션 커서' })
