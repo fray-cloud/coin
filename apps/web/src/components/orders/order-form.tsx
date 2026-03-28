@@ -121,7 +121,7 @@ export function OrderForm({
           {/* Exchange */}
           <div className="space-y-2">
             <Label>{t('exchange')}</Label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {activeExchanges.map((ex) => (
                 <Button
                   key={ex}
@@ -181,7 +181,7 @@ export function OrderForm({
             <>
               <div className="space-y-2">
                 <Label>{t('side')}</Label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     type="button"
                     variant={side === 'buy' ? 'default' : 'outline'}
@@ -206,7 +206,7 @@ export function OrderForm({
               {/* Type toggle */}
               <div className="space-y-2">
                 <Label>{t('type')}</Label>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     type="button"
                     variant={type === 'market' ? 'default' : 'outline'}

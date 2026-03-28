@@ -144,7 +144,7 @@ export function StrategyInfo({ strategy, onToggle, onDelete }: StrategyInfoProps
           <div>
             <span className="text-muted-foreground">{t('candleInterval')}</span>
             {editing ? (
-              <div className="flex gap-1 mt-1">
+              <div className="flex gap-1 flex-wrap mt-1">
                 {CANDLE_INTERVALS.map((iv) => (
                   <Button
                     key={iv}

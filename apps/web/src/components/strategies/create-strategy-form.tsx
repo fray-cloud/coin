@@ -109,7 +109,7 @@ export function CreateStrategyForm({ keys, onSuccess }: CreateStrategyFormProps)
 
           <div className="space-y-2">
             <Label>{t('type')}</Label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {STRATEGY_TYPES.map((st) => (
                 <Button
                   key={st.value}
@@ -126,7 +126,7 @@ export function CreateStrategyForm({ keys, onSuccess }: CreateStrategyFormProps)
 
           <div className="space-y-2">
             <Label>{t('exchange')}</Label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap">
               {activeExchanges.map((ex) => (
                 <Button
                   key={ex}
@@ -371,7 +371,7 @@ export function CreateStrategyForm({ keys, onSuccess }: CreateStrategyFormProps)
 
           <div className="space-y-2">
             <Label>{t('candleInterval')}</Label>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap">
               {['1m', '5m', '15m', '1h', '4h', '1d'].map((iv) => (
                 <Button
                   key={iv}

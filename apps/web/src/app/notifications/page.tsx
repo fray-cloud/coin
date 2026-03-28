@@ -60,14 +60,14 @@ export default function NotificationsPage() {
 
   if (isLoading) {
     return (
-      <div className="max-w-2xl mx-auto p-4">
+      <div className="max-w-6xl mx-auto p-4 md:p-6">
         <p className="text-muted-foreground">Loading...</p>
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto p-4 space-y-6">
+    <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-6">
       <h1 className="text-2xl font-bold">{t('title')}</h1>
 
       <Card>
