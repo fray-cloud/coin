@@ -6,23 +6,10 @@ import { Ticker } from '@coin/types';
 import { CoinIcon, ExchangeIcon } from '@/components/icons';
 import { useExchangeRate } from '@/hooks/use-exchange-rate';
 import { MiniChart } from '@/components/mini-chart';
+import { formatPrice, formatVolume } from '@/lib/utils';
 
 interface TickerTableProps {
   tickers: Ticker[];
-}
-
-function formatPrice(price: string): string {
-  const num = Number(price);
-  if (num >= 1000) return num.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
-  if (num >= 1) return num.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
-  return num.toLocaleString('ko-KR', { maximumFractionDigits: 8 });
-}
-
-function formatVolume(volume: string): string {
-  const num = Number(volume);
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`;
-  if (num >= 1_000) return `${(num / 1_000).toFixed(2)}K`;
-  return num.toFixed(2);
 }
 
 function convertedPrice(price: string, exchange: string, krwPerUsd: number): string | null {

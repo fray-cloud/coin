@@ -22,22 +22,8 @@ import { useTranslations } from 'next-intl';
 import type { Ticker } from '@coin/types';
 import { CoinIcon, ExchangeIcon } from '@/components/icons';
 import { CandleChart } from '@/components/candle-chart';
-
-const STATUS_STYLES: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  placed: 'bg-blue-100 text-blue-800',
-  filled: 'bg-green-100 text-green-800',
-  partial: 'bg-cyan-100 text-cyan-800',
-  cancelled: 'bg-gray-100 text-gray-600',
-  failed: 'bg-red-100 text-red-800',
-};
-
-function formatPrice(price: string): string {
-  const num = Number(price);
-  if (num >= 1000) return num.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
-  if (num >= 1) return num.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
-  return num.toLocaleString('ko-KR', { maximumFractionDigits: 8 });
-}
+import { formatPrice } from '@/lib/utils';
+import { STATUS_STYLES } from '@/lib/constants';
 
 function StatusBadge({ status }: { status: string }) {
   return (

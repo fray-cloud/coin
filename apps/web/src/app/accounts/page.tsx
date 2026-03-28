@@ -16,12 +16,7 @@ import {
   type ExchangeKeyItem,
   type BalanceItem,
 } from '@/lib/api-client';
-
-const EXCHANGES = [
-  { value: 'upbit', label: 'Upbit' },
-  { value: 'binance', label: 'Binance' },
-  { value: 'bybit', label: 'Bybit' },
-];
+import { EXCHANGES } from '@/lib/constants';
 
 function ExchangeLabel({ exchange }: { exchange: string }) {
   return (

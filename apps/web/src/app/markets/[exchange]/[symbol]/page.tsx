@@ -9,13 +9,7 @@ import { CoinIcon, ExchangeIcon } from '@/components/icons';
 import { CandleChart } from '@/components/candle-chart';
 import { useTickers } from '@/hooks/use-tickers';
 import { useExchangeRate } from '@/hooks/use-exchange-rate';
-
-function formatPrice(price: string): string {
-  const num = Number(price);
-  if (num >= 1000) return num.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
-  if (num >= 1) return num.toLocaleString('ko-KR', { maximumFractionDigits: 2 });
-  return num.toLocaleString('ko-KR', { maximumFractionDigits: 8 });
-}
+import { formatPrice } from '@/lib/utils';
 
 export default function MarketDetailPage() {
   const params = useParams();

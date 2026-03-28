@@ -8,15 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ExchangeIcon, CoinIcon } from '@/components/icons';
 import { getActivity, type ActivityItem } from '@/lib/api-client';
-
-const STATUS_STYLES: Record<string, string> = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  placed: 'bg-blue-100 text-blue-800',
-  filled: 'bg-green-100 text-green-800',
-  partial: 'bg-cyan-100 text-cyan-800',
-  cancelled: 'bg-gray-100 text-gray-600',
-  failed: 'bg-red-100 text-red-800',
-};
+import { STATUS_STYLES } from '@/lib/constants';
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();

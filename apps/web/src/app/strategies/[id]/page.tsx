@@ -16,25 +16,8 @@ import { useRouter } from 'next/navigation';
 import { createChart, ColorType, type IChartApi } from 'lightweight-charts';
 import { ExchangeIcon, CoinIcon } from '@/components/icons';
 import { StrategyChart } from '@/components/strategy-chart';
-
-const ACTION_STYLES: Record<string, string> = {
-  signal_generated: 'bg-blue-100 text-blue-800',
-  order_placed: 'bg-green-100 text-green-800',
-  risk_blocked: 'bg-yellow-100 text-yellow-800',
-  error: 'bg-red-100 text-red-800',
-};
-
-const SIGNAL_STYLES: Record<string, string> = {
-  buy: 'text-green-600 font-medium',
-  sell: 'text-red-600 font-medium',
-};
-
-function formatKrw(value: number): string {
-  if (Math.abs(value) >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(2)}M`;
-  }
-  return value.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
-}
+import { formatKrw } from '@/lib/utils';
+import { ACTION_STYLES, SIGNAL_STYLES } from '@/lib/constants';
 
 function PnlValue({ value }: { value: number }) {
   const color = value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-muted-foreground';

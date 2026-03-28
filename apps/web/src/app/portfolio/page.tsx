@@ -8,13 +8,7 @@ import { getPortfolioSummary, type PortfolioAsset } from '@/lib/api-client';
 import { useTranslations } from 'next-intl';
 import { createChart, ColorType, type IChartApi } from 'lightweight-charts';
 import { CoinIcon, ExchangeIcon } from '@/components/icons';
-
-function formatKrw(value: number): string {
-  if (Math.abs(value) >= 1_000_000) {
-    return `${(value / 1_000_000).toFixed(2)}M`;
-  }
-  return value.toLocaleString('ko-KR', { maximumFractionDigits: 0 });
-}
+import { formatKrw } from '@/lib/utils';
 
 function PnlValue({ value, prefix = '' }: { value: number; prefix?: string }) {
   const color = value > 0 ? 'text-green-600' : value < 0 ? 'text-red-600' : 'text-muted-foreground';
