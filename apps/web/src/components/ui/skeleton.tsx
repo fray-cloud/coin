@@ -37,5 +37,5 @@ export function SkeletonTable({ rows = 5, cols = 4 }: { rows?: number; cols?: nu
 }
 
 export function SkeletonChart({ height = 250 }: { height?: number }) {
-  return <Skeleton className={`w-full`} style={{ height }} />;
+  return <Skeleton className={`w-full h-[${height}px]`} />;
 }

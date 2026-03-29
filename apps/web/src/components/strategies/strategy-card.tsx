@@ -25,6 +25,7 @@ export interface StrategyCardProps {
     tradingMode: string;
     enabled: boolean;
     intervalSeconds: number;
+    candleInterval?: string;
     createdAt: string;
   };
   onToggle: () => void;

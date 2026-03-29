@@ -39,11 +39,11 @@ LOG_PATH := $(PROJECT_DIR)/logs
 init-dirs: ## Create data and log directories with correct permissions
 	@mkdir -p $(DATA_PATH)/postgres $(DATA_PATH)/redis $(DATA_PATH)/kafka $(DATA_PATH)/zookeeper/data $(DATA_PATH)/zookeeper/log
 	@mkdir -p $(LOG_PATH)/postgres $(LOG_PATH)/redis $(LOG_PATH)/nginx $(LOG_PATH)/api-server $(LOG_PATH)/worker-service
-	@docker run --rm -v $(abspath $(LOG_PATH)):/logs alpine sh -c "chown -R 70:70 /logs/postgres && chown -R 999:1000 /logs/redis"
+	@docker run --rm -v $(abspath $(LOG_PATH)):/logs alpine sh -c "chown -R 70:70 /logs/postgres && chown -R 999:1000 /logs/redis && chown -R 1001:1001 /logs/api-server && chown -R 1001:1001 /logs/worker-service"
 	@echo "Directories ready"
 
 dev: dev-build init-dirs ## Start development environment
-	$(DEV_COMPOSE) up -d
+	$(DEV_COMPOSE) up -d --build
 
 DEV_COMPOSE := DATA_DIR=$(DATA_PATH) LOG_DIR=$(LOG_PATH) docker compose -f docker-compose.dev.yml --env-file .env.dev
 
@@ -71,8 +71,8 @@ prod-build: ## Build production images
 
 PROD_COMPOSE := DATA_DIR=$(DATA_PATH) LOG_DIR=$(LOG_PATH) docker compose --env-file .env
 
-prod: init-dirs ## Start production environment
-	$(PROD_COMPOSE) up -d
+prod: init-dirs ## Start production environment (builds if needed)
+	$(PROD_COMPOSE) up -d --build
 
 prod-down: ## Stop production environment
 	$(PROD_COMPOSE) down
