@@ -40,7 +40,7 @@ jobs:
 
   build-api-server:
     needs: changes
-    if: needs.changes.outputs.api-server == 'true'
+    if: needs.changes.outputs.api-server == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -67,7 +67,7 @@ jobs:
 
   build-web:
     needs: changes
-    if: needs.changes.outputs.web == 'true'
+    if: needs.changes.outputs.web == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -94,7 +94,7 @@ jobs:
 
   build-worker-service:
     needs: changes
-    if: needs.changes.outputs.worker-service == 'true'
+    if: needs.changes.outputs.worker-service == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
