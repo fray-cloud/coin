@@ -22,10 +22,14 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
-        transport:
-          process.env.NODE_ENV !== 'production'
-            ? { target: 'pino-pretty', options: { colorize: true, singleLine: true } }
-            : undefined,
+        transport: {
+          targets: [
+            { target: 'pino/file', options: { destination: '/app/logs/app.log', mkdir: true } },
+            process.env.NODE_ENV !== 'production'
+              ? { target: 'pino-pretty', options: { colorize: true, singleLine: true } }
+              : { target: 'pino/file', options: { destination: 1 } },
+          ],
+        },
         serializers: {
           req: (req: any) => ({ method: req.method, url: req.url }),
           res: (res: any) => ({ statusCode: res.statusCode }),

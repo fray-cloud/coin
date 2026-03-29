@@ -10,10 +10,14 @@ import { StrategiesModule } from './strategies/strategies.module';
     LoggerModule.forRoot({
       pinoHttp: {
         level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'production' ? 'info' : 'debug'),
-        transport:
-          process.env.NODE_ENV !== 'production'
-            ? { target: 'pino-pretty', options: { colorize: true, singleLine: true } }
-            : undefined,
+        transport: {
+          targets: [
+            { target: 'pino/file', options: { destination: '/app/logs/app.log', mkdir: true } },
+            process.env.NODE_ENV !== 'production'
+              ? { target: 'pino-pretty', options: { colorize: true, singleLine: true } }
+              : { target: 'pino/file', options: { destination: 1 } },
+          ],
+        },
       },
     }),
     PrismaModule,

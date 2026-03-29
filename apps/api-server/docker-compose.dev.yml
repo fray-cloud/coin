@@ -1,13 +1,16 @@
 services:
-  worker-service:
+  api-server:
     build:
       context: ../..
-      dockerfile: apps/worker-service/Dockerfile
-      target: production
+      dockerfile: apps/api-server/Dockerfile.dev
     env_file:
-      - ../../.env
+      - ../../.env.dev
     volumes:
-      - ${LOG_DIR:-../../logs}/worker-service:/app/logs
+      - ../../:/app
+      - /app/node_modules
+      - ${LOG_DIR:-../../logs}/api-server:/app/logs
+    expose:
+      - '3000'
     depends_on:
       postgres:
         condition: service_healthy
@@ -22,11 +25,12 @@ services:
         limits:
           memory: 512M
           cpus: '1.0'
-    logging:
-      driver: json-file
-      options:
-        max-size: '10m'
-        max-file: '5'
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://localhost:3000/health']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 40s
 
 networks:
   coin-net:

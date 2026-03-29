@@ -1,9 +1,8 @@
-FROM node:20-alpine AS base
+FROM node:20-alpine
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
 WORKDIR /app
 
-# Install all dependencies
-FROM base AS deps
+# Install all monorepo dependencies
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json ./
 COPY apps/api-server/package.json ./apps/api-server/
 COPY apps/web/package.json ./apps/web/
@@ -16,21 +15,3 @@ COPY packages/exchange-adapters/package.json ./packages/exchange-adapters/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 RUN pnpm install --frozen-lockfile
-
-# Build + deploy
-FROM base AS builder
-COPY --from=deps /app ./
-COPY . .
-RUN pnpm --filter @coin/types --filter @coin/utils --filter @coin/database --filter @coin/kafka-contracts --filter @coin/exchange-adapters build && \
-    pnpm --filter worker-service build && \
-    pnpm --filter worker-service deploy --prod /app/deployed
-
-# Production
-FROM node:20-alpine AS production
-ENV NODE_ENV=production
-WORKDIR /app
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nestjs
-COPY --from=builder /app/deployed ./
-USER nestjs
-CMD ["node", "dist/main.js"]

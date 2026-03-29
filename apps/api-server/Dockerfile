@@ -17,15 +17,6 @@ COPY packages/tsconfig/package.json ./packages/tsconfig/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 RUN pnpm install --frozen-lockfile
 
-# Development
-FROM base AS development
-COPY --from=deps /app ./
-COPY . .
-RUN pnpm install --frozen-lockfile
-WORKDIR /app/apps/api-server
-EXPOSE 3000
-CMD ["sh", "-c", "pnpm --filter @coin/database db:generate && pnpm --filter @coin/database build && pnpm --filter @coin/kafka-contracts build && pnpm --filter @coin/database exec prisma migrate deploy && pnpm dev"]
-
 # Build + deploy
 FROM base AS builder
 COPY --from=deps /app ./

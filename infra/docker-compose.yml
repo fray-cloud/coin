@@ -7,8 +7,23 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:-coin}
       POSTGRES_USER: ${POSTGRES_USER:-coin}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-coin_dev}
+    command:
+      - 'postgres'
+      - '-c'
+      - 'logging_collector=on'
+      - '-c'
+      - 'log_directory=/var/log/postgresql'
+      - '-c'
+      - 'log_filename=postgresql.log'
+      - '-c'
+      - 'log_rotation_age=1d'
+      - '-c'
+      - 'log_rotation_size=50MB'
+      - '-c'
+      - 'log_truncate_on_rotation=on'
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ${DATA_DIR:-./data}/postgres:/var/lib/postgresql/data
+      - ${LOG_DIR:-./logs}/postgres:/var/log/postgresql
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-coin}']
       interval: 5s
@@ -16,6 +31,11 @@ services:
       retries: 5
     networks: [coin-net]
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
     deploy:
       resources:
         limits:
@@ -26,7 +46,10 @@ services:
     image: redis:7-alpine
     ports:
       - '${REDIS_PORT:-6379}:6379'
-    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru --logfile /var/log/redis/redis.log
+    volumes:
+      - ${DATA_DIR:-./data}/redis:/data
+      - ${LOG_DIR:-./logs}/redis:/var/log/redis
     healthcheck:
       test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
@@ -34,6 +57,11 @@ services:
       retries: 5
     networks: [coin-net]
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
     deploy:
       resources:
         limits:
@@ -45,8 +73,16 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - ${DATA_DIR:-./data}/zookeeper/data:/var/lib/zookeeper/data
+      - ${DATA_DIR:-./data}/zookeeper/log:/var/lib/zookeeper/log
     networks: [coin-net]
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
     deploy:
       resources:
         limits:
@@ -65,6 +101,9 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    user: '0:0'
+    volumes:
+      - ${DATA_DIR:-./data}/kafka:/var/lib/kafka/data
     depends_on:
       - zookeeper
     healthcheck:
@@ -74,14 +113,16 @@ services:
       retries: 5
     networks: [coin-net]
     restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
     deploy:
       resources:
         limits:
           memory: 1G
           cpus: '1.0'
-
-volumes:
-  pgdata:
 
 networks:
   coin-net:

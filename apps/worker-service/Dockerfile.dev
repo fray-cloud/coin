@@ -1,0 +1,3 @@
+FROM coin-base
+WORKDIR /app/apps/worker-service
+CMD ["sh", "-c", "pnpm --filter @coin/database db:generate && pnpm --filter @coin/database build && pnpm --filter @coin/kafka-contracts build && pnpm dev"]
