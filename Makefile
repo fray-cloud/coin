@@ -49,6 +49,7 @@ init-dirs: ## Create data and log directories with correct permissions
 	@echo "Directories ready"
 
 dev: dev-build init-dirs ## Start development environment
+	@find . -name 'tsconfig.tsbuildinfo' -delete 2>/dev/null || true
 	$(DEV_COMPOSE) up -d --build
 
 DEV_COMPOSE := DATA_DIR=$(DATA_PATH) LOG_DIR=$(LOG_PATH) docker compose -f docker-compose.dev.yml --env-file .env.dev

@@ -18,22 +18,28 @@ COPY packages/eslint-config/package.json ./packages/eslint-config/
 COPY packages/database/prisma ./packages/database/prisma
 RUN pnpm install --frozen-lockfile
 
-# Build
+# Build + deploy
 FROM base AS builder
 COPY --from=deps /app ./
 COPY . .
 RUN pnpm --filter @coin/database db:generate && \
     pnpm --filter @coin/types --filter @coin/utils --filter @coin/database --filter @coin/kafka-contracts --filter @coin/exchange-adapters build && \
-    pnpm --filter api-server build
+    pnpm --filter api-server build && \
+    pnpm --filter api-server deploy /app/deployed && \
+    cp -r /app/packages/database/prisma /app/deployed/prisma && \
+    cp -r /app/packages/database/generated /app/deployed/generated && \
+    PRISMA_CLI=$(find /app/deployed/node_modules/.pnpm -path "*/prisma/build/index.js" -name "index.js" | grep "prisma@" | head -1) && \
+    echo "#!/bin/sh" > /app/deployed/prisma-cli.sh && \
+    echo "node $PRISMA_CLI \"\$@\"" | sed "s|/app/deployed|.|g" >> /app/deployed/prisma-cli.sh && \
+    chmod +x /app/deployed/prisma-cli.sh
 
 # Production
 FROM node:20-alpine AS production
 ENV NODE_ENV=production
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate && \
-    addgroup --system --gid 1001 nodejs && \
+RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
-COPY --from=builder /app ./
+COPY --from=builder /app/deployed ./
 USER nestjs
 EXPOSE 3000
-CMD ["sh", "-c", "pnpm --filter @coin/database exec prisma migrate deploy && node apps/api-server/dist/main.js"]
+CMD ["sh", "-c", "./prisma-cli.sh migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]
