@@ -17,22 +17,6 @@ COPY packages/tsconfig/package.json ./packages/tsconfig/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
 RUN pnpm install --frozen-lockfile
 
-# Development
-FROM base AS development
-COPY --from=deps /app ./
-COPY . .
-WORKDIR /app/apps/web
-EXPOSE 3001
-CMD ["pnpm", "dev"]
-
-# Storybook development
-FROM base AS storybook-dev
-COPY --from=deps /app ./
-COPY . .
-WORKDIR /app/apps/web
-EXPOSE 6006
-CMD ["pnpm", "storybook", "--no-open"]
-
 # Storybook static build
 FROM base AS storybook-builder
 COPY --from=deps /app ./

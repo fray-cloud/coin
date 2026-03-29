@@ -3,9 +3,11 @@ services:
     build:
       context: ../..
       dockerfile: apps/api-server/Dockerfile
-      target: ${BUILD_TARGET:-production}
+      target: production
     env_file:
       - ../../.env
+    volumes:
+      - ${LOG_DIR:-../../logs}/api-server:/app/logs
     expose:
       - '3000'
     depends_on:
@@ -28,6 +30,11 @@ services:
       timeout: 5s
       retries: 3
       start_period: 40s
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '5'
 
 networks:
   coin-net:

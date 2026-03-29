@@ -147,7 +147,7 @@ export function ExecutionLogs({ strategyId }: ExecutionLogsProps) {
                           .filter(([k]) => k !== 'error')
                           .map(([k, v]) => `${k}: ${v}`)
                           .join(', ')}
-                        {details.error && (
+                        {Boolean(details.error) && (
                           <span className="text-destructive">{String(details.error)}</span>
                         )}
                       </td>

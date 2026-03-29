@@ -2,10 +2,11 @@ import { cn } from '@/lib/utils';
 
 interface SkeletonProps {
   className?: string;
+  style?: React.CSSProperties;
 }
 
-export function Skeleton({ className }: SkeletonProps) {
-  return <div className={cn('animate-pulse rounded-md bg-muted', className)} />;
+export function Skeleton({ className, style }: SkeletonProps) {
+  return <div className={cn('animate-pulse rounded-md bg-muted', className)} style={style} />;
 }
 
 export function SkeletonCard() {
@@ -37,5 +38,5 @@ export function SkeletonTable({ rows = 5, cols = 4 }: { rows?: number; cols?: nu
 }
 
 export function SkeletonChart({ height = 250 }: { height?: number }) {
-  return <Skeleton className={`w-full`} style={{ height }} />;
+  return <Skeleton className="w-full" style={{ height }} />;
 }

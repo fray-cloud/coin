@@ -9,3 +9,6 @@ dist
 .env.*
 .claude
 .agents
+data
+logs
+backups
