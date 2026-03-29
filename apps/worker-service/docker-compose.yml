@@ -1,5 +1,6 @@
 services:
   worker-service:
+    image: ghcr.io/fray-cloud/coin-worker-service:latest
     build:
       context: ../..
       dockerfile: apps/worker-service/Dockerfile
