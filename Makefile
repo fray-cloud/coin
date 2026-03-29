@@ -67,16 +67,18 @@ dev-logs-worker: ## Follow worker-service development logs
 # ============================================
 
 prod-build: ## Build production images
-	docker compose --env-file .env build
+	$(PROD_COMPOSE) build
+
+PROD_COMPOSE := DATA_DIR=$(DATA_PATH) LOG_DIR=$(LOG_PATH) docker compose --env-file .env
 
 prod: init-dirs ## Start production environment
-	docker compose --env-file .env up -d
+	$(PROD_COMPOSE) up -d
 
 prod-down: ## Stop production environment
-	docker compose --env-file .env down
+	$(PROD_COMPOSE) down
 
 prod-logs: ## Follow all production logs
-	docker compose --env-file .env logs -f
+	$(PROD_COMPOSE) logs -f
 
 # ============================================
 # Build
@@ -85,13 +87,13 @@ prod-logs: ## Follow all production logs
 build: prod-build ## Build all production images (alias)
 
 build-api: ## Build api-server production image
-	docker compose --env-file .env build api-server
+	$(PROD_COMPOSE) build api-server
 
 build-web: ## Build web production image
-	docker compose --env-file .env build web
+	$(PROD_COMPOSE) build web
 
 build-worker: ## Build worker-service production image
-	docker compose --env-file .env build worker-service
+	$(PROD_COMPOSE) build worker-service
 
 # ============================================
 # CI/CD
@@ -119,14 +121,14 @@ db-generate: ## Generate Prisma client
 	pnpm --filter @coin/database db:generate
 
 db-migrate: ## Run Prisma migrations
-	docker compose --env-file .env exec api-server node node_modules/prisma/build/index.js migrate deploy --schema=./prisma/schema.prisma
+	$(PROD_COMPOSE) exec api-server node node_modules/prisma/build/index.js migrate deploy --schema=./prisma/schema.prisma
 
 db-seed: ## Seed database
 	pnpm --filter @coin/database exec prisma db seed
 
 backup-db: ## Backup PostgreSQL database
 	@mkdir -p backups
-	docker compose --env-file .env exec -T postgres pg_dump -U $${POSTGRES_USER:-coin} $${POSTGRES_DB:-coin} > backups/backup_$$(date +%Y%m%d_%H%M%S).sql
+	$(PROD_COMPOSE) exec -T postgres pg_dump -U $${POSTGRES_USER:-coin} $${POSTGRES_DB:-coin} > backups/backup_$$(date +%Y%m%d_%H%M%S).sql
 	@echo "Backup saved to backups/"
 
 # ============================================
@@ -134,10 +136,10 @@ backup-db: ## Backup PostgreSQL database
 # ============================================
 
 ps: ## Show running containers
-	docker compose --env-file .env ps 2>/dev/null || $(DEV_COMPOSE) ps
+	$(PROD_COMPOSE) ps 2>/dev/null || $(DEV_COMPOSE) ps
 
 clean: ## Remove all containers, volumes, and images
-	docker compose --env-file .env down -v --rmi local 2>/dev/null || true
+	$(PROD_COMPOSE) down -v --rmi local 2>/dev/null || true
 	$(DEV_COMPOSE) down -v --rmi local 2>/dev/null || true
 	docker rmi coin-base 2>/dev/null || true
 	@echo "Cleaned up all containers, volumes, and images"
