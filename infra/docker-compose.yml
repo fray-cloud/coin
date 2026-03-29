@@ -70,7 +70,6 @@ services:
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.6.0
-    user: '0:0'
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
@@ -102,7 +101,6 @@ services:
       KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
-    user: '0:0'
     volumes:
       - ${DATA_DIR:-./data}/kafka:/var/lib/kafka/data
     depends_on:

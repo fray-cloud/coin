@@ -13,7 +13,7 @@ setup: env cert dev-build ## Initial project setup (env, cert, base image)
 	@echo "Setup complete. Run 'make dev' to start."
 
 env: ## Copy .env.example to .env.dev (if not exists)
-	@test -f .env.dev || (cp .env.example .env.dev && sed -i 's/NODE_ENV=.*/NODE_ENV=development/' .env.dev && echo "Created .env.dev from .env.example")
+	@test -f .env.dev || (cp .env.example .env.dev && sed 's/NODE_ENV=.*/NODE_ENV=development/' .env.dev > .env.dev.tmp && mv .env.dev.tmp .env.dev && echo "Created .env.dev from .env.example")
 	@test -f .env || (cp .env.example .env && echo "Created .env from .env.example")
 	@echo ".env files ready"
 
@@ -39,7 +39,13 @@ LOG_PATH := $(PROJECT_DIR)/logs
 init-dirs: ## Create data and log directories with correct permissions
 	@mkdir -p $(DATA_PATH)/postgres $(DATA_PATH)/redis $(DATA_PATH)/kafka $(DATA_PATH)/zookeeper/data $(DATA_PATH)/zookeeper/log
 	@mkdir -p $(LOG_PATH)/postgres $(LOG_PATH)/redis $(LOG_PATH)/nginx $(LOG_PATH)/api-server $(LOG_PATH)/worker-service
-	@docker run --rm -v $(abspath $(LOG_PATH)):/logs alpine sh -c "chown -R 70:70 /logs/postgres && chown -R 999:1000 /logs/redis && chown -R 1001:1001 /logs/api-server && chown -R 1001:1001 /logs/worker-service"
+	@docker run --rm -v $(abspath $(DATA_PATH)):/data -v $(abspath $(LOG_PATH)):/logs alpine sh -c "\
+		chown -R 70:70 /logs/postgres && \
+		chown -R 999:1000 /logs/redis && \
+		chown -R 1001:1001 /logs/api-server && \
+		chown -R 1001:1001 /logs/worker-service && \
+		chown -R 1000:1000 /data/kafka && \
+		chown -R 1000:1000 /data/zookeeper"
 	@echo "Directories ready"
 
 dev: dev-build init-dirs ## Start development environment
