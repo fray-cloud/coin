@@ -15,36 +15,31 @@ COPY packages/utils/package.json ./packages/utils/
 COPY packages/exchange-adapters/package.json ./packages/exchange-adapters/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
+COPY packages/database/prisma ./packages/database/prisma
 RUN pnpm install --frozen-lockfile
-
-# Development
-FROM base AS development
-COPY --from=deps /app ./
-COPY . .
-RUN pnpm install --frozen-lockfile
-WORKDIR /app/apps/api-server
-EXPOSE 3000
-CMD ["sh", "-c", "pnpm --filter @coin/database db:generate && pnpm --filter @coin/database build && pnpm --filter @coin/kafka-contracts build && pnpm --filter @coin/database exec prisma migrate deploy && pnpm dev"]
 
 # Build + deploy
 FROM base AS builder
 COPY --from=deps /app ./
 COPY . .
-RUN pnpm --filter @coin/types --filter @coin/utils --filter @coin/database --filter @coin/kafka-contracts --filter @coin/exchange-adapters build && \
+RUN pnpm --filter @coin/database db:generate && \
+    pnpm --filter @coin/types --filter @coin/utils --filter @coin/database --filter @coin/kafka-contracts --filter @coin/exchange-adapters build && \
     pnpm --filter api-server build && \
-    pnpm --filter api-server deploy --prod /app/deployed
+    pnpm --filter api-server deploy /app/deployed && \
+    cp -r /app/packages/database/prisma /app/deployed/prisma && \
+    cp -r /app/packages/database/generated /app/deployed/generated && \
+    PRISMA_CLI=$(find /app/deployed/node_modules/.pnpm -path "*/prisma/build/index.js" -name "index.js" | grep "prisma@" | head -1) && \
+    echo "#!/bin/sh" > /app/deployed/prisma-cli.sh && \
+    echo "node $PRISMA_CLI \"\$@\"" | sed "s|/app/deployed|.|g" >> /app/deployed/prisma-cli.sh && \
+    chmod +x /app/deployed/prisma-cli.sh
 
 # Production
 FROM node:20-alpine AS production
 ENV NODE_ENV=production
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@9.15.4 --activate && \
-    addgroup --system --gid 1001 nodejs && \
+RUN addgroup --system --gid 1001 nodejs && \
     adduser --system --uid 1001 nestjs
 COPY --from=builder /app/deployed ./
-COPY --from=builder /app/packages/database/prisma ./prisma
-COPY --from=builder /app/node_modules/.pnpm/prisma@*/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/.pnpm/@prisma+engines@*/node_modules/@prisma/engines ./node_modules/@prisma/engines
 USER nestjs
 EXPOSE 3000
-CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]
+CMD ["sh", "-c", "./prisma-cli.sh migrate deploy --schema=./prisma/schema.prisma && node dist/main.js"]

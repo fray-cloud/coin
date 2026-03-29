@@ -1,13 +1,13 @@
 services:
   api-server:
-    image: ghcr.io/fray-cloud/coin-api-server:latest
     build:
       context: ../..
-      dockerfile: apps/api-server/Dockerfile
-      target: production
+      dockerfile: apps/api-server/Dockerfile.dev
     env_file:
-      - ../../.env
+      - ../../.env.dev
     volumes:
+      - ../../:/app
+      - /app/node_modules
       - ${LOG_DIR:-../../logs}/api-server:/app/logs
     expose:
       - '3000'
@@ -31,11 +31,6 @@ services:
       timeout: 5s
       retries: 3
       start_period: 40s
-    logging:
-      driver: json-file
-      options:
-        max-size: '10m'
-        max-file: '5'
 
 networks:
   coin-net:

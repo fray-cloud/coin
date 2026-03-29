@@ -444,7 +444,6 @@ export function CreateStrategyForm({ keys, onSuccess }: CreateStrategyFormProps)
               symbol={symbol}
               strategyType={type}
               config={config}
-              intervalSeconds={Number(intervalSeconds)}
             />
           </div>
         )}

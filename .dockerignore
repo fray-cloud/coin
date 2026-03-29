@@ -1,11 +1,14 @@
 node_modules
-.next
-dist
+**/.next
+**/dist
 .turbo
-*.tsbuildinfo
+**/*.tsbuildinfo
 .git
 .gitignore
 .env
 .env.*
 .claude
 .agents
+data
+logs
+backups

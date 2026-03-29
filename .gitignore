@@ -10,6 +10,7 @@ dist/
 
 # Environment
 .env
+.env.dev
 .env.local
 .env.*.local
 
@@ -32,9 +33,13 @@ coverage/
 
 # Prisma
 packages/database/prisma/*.db
+packages/database/generated/
 
 # Docker volumes
 docker/data/
+data/
+logs/
+backups/
 infra/nginx/certs/
 
 # tmp

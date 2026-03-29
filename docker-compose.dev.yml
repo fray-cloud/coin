@@ -1,0 +1,6 @@
+include:
+  - path: infra/docker-compose.yml
+  - path: apps/api-server/docker-compose.dev.yml
+  - path: apps/web/docker-compose.dev.yml
+  - path: apps/worker-service/docker-compose.dev.yml
+  - path: infra/nginx/docker-compose.yml

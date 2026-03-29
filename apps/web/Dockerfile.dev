@@ -1,0 +1,4 @@
+FROM coin-base
+WORKDIR /app/apps/web
+EXPOSE 3001
+CMD ["pnpm", "dev"]

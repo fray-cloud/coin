@@ -1,13 +1,13 @@
 services:
   worker-service:
-    image: ghcr.io/fray-cloud/coin-worker-service:latest
     build:
       context: ../..
-      dockerfile: apps/worker-service/Dockerfile
-      target: production
+      dockerfile: apps/worker-service/Dockerfile.dev
     env_file:
-      - ../../.env
+      - ../../.env.dev
     volumes:
+      - ../../:/app
+      - /app/node_modules
       - ${LOG_DIR:-../../logs}/worker-service:/app/logs
     depends_on:
       postgres:
@@ -23,11 +23,6 @@ services:
         limits:
           memory: 512M
           cpus: '1.0'
-    logging:
-      driver: json-file
-      options:
-        max-size: '10m'
-        max-file: '5'
 
 networks:
   coin-net:

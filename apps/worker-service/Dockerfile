@@ -15,23 +15,18 @@ COPY packages/utils/package.json ./packages/utils/
 COPY packages/exchange-adapters/package.json ./packages/exchange-adapters/
 COPY packages/tsconfig/package.json ./packages/tsconfig/
 COPY packages/eslint-config/package.json ./packages/eslint-config/
+COPY packages/database/prisma ./packages/database/prisma
 RUN pnpm install --frozen-lockfile
-
-# Development
-FROM base AS development
-COPY --from=deps /app ./
-COPY . .
-RUN pnpm install --frozen-lockfile
-WORKDIR /app/apps/worker-service
-CMD ["sh", "-c", "pnpm --filter @coin/database db:generate && pnpm --filter @coin/database build && pnpm --filter @coin/kafka-contracts build && pnpm dev"]
 
 # Build + deploy
 FROM base AS builder
 COPY --from=deps /app ./
 COPY . .
-RUN pnpm --filter @coin/types --filter @coin/utils --filter @coin/database --filter @coin/kafka-contracts --filter @coin/exchange-adapters build && \
+RUN pnpm --filter @coin/database db:generate && \
+    pnpm --filter @coin/types --filter @coin/utils --filter @coin/database --filter @coin/kafka-contracts --filter @coin/exchange-adapters build && \
     pnpm --filter worker-service build && \
-    pnpm --filter worker-service deploy --prod /app/deployed
+    pnpm --filter worker-service deploy /app/deployed && \
+    cp -r /app/packages/database/generated /app/deployed/generated
 
 # Production
 FROM node:20-alpine AS production
