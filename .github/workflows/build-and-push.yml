@@ -3,6 +3,7 @@ name: Build & Push Images
 on:
   push:
     branches: [main]
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -17,6 +18,8 @@ jobs:
       worker-service: ${{ steps.filter.outputs.worker-service }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - uses: dorny/paths-filter@v3
         id: filter
         with:
