@@ -1,7 +1,7 @@
 import swc from 'unplugin-swc';
-import { createVitestConfig } from '@coin/test-utils/vitest.base';
+import { defineConfig } from 'vitest/config';
 
-export default createVitestConfig({
+export default defineConfig({
   plugins: [
     swc.vite({
       module: { type: 'es6' },
@@ -13,10 +13,15 @@ export default createVitestConfig({
     }),
   ],
   test: {
+    globals: true,
+    passWithNoTests: true,
     include: ['src/**/*.test.ts'],
     coverage: {
+      provider: 'v8',
+      reporter: ['text', 'json-summary', 'html'],
       include: ['src/**/*.ts'],
       exclude: ['src/main.ts', 'src/**/*.module.ts'],
+      thresholds: { lines: 70, branches: 70, functions: 70, statements: 70 },
     },
   },
 });

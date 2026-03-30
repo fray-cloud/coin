@@ -9,8 +9,7 @@
     "start:prod": "node dist/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "clean": "rm -rf dist .turbo",
-    "test:unit": "vitest run",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@coin/database": "workspace:*",
