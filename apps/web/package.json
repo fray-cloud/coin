@@ -8,6 +8,7 @@
     "start": "next start --port 3001",
     "lint": "next lint",
     "clean": "rm -rf .next .turbo",
+    "test:unit": "vitest run",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
@@ -30,10 +31,16 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@coin/test-utils": "workspace:*",
     "@coin/tsconfig": "workspace:*",
+    "@testing-library/jest-dom": "^6",
+    "@testing-library/react": "^16",
+    "@testing-library/user-event": "^14",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4",
+    "jsdom": "^26",
     "typescript": "^5",
     "storybook": "^10.3.3",
     "@storybook/react-vite": "^10.3.3",

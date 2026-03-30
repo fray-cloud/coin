@@ -8,7 +8,8 @@
     "start": "node dist/main.js",
     "start:prod": "node dist/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "clean": "rm -rf dist .turbo"
+    "clean": "rm -rf dist .turbo",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@coin/database": "workspace:*",
@@ -51,8 +52,11 @@
     "telegraf": "^4.16.3"
   },
   "devDependencies": {
+    "@coin/test-utils": "workspace:*",
     "@coin/tsconfig": "workspace:*",
     "@nestjs/cli": "^11",
+    "@nestjs/testing": "^11",
+    "@swc/core": "^1",
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
@@ -61,6 +65,9 @@
     "@types/passport-jwt": "^4.0.1",
     "@types/passport-local": "^1.0.38",
     "@types/passport-oauth2": "^1.8.0",
-    "typescript": "^5"
+    "@vitest/coverage-v8": "^4.1.2",
+    "typescript": "^5",
+    "unplugin-swc": "^1",
+    "vitest": "^4.1.2"
   }
 }
