@@ -1,0 +1,25 @@
+{
+  "name": "@coin/test-utils",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./vitest.base": "./src/vitest.base.ts",
+    "./msw": "./src/msw/index.ts"
+  },
+  "scripts": {
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@coin/types": "workspace:*",
+    "msw": "^2",
+    "vitest": "^4.1.2",
+    "@vitest/coverage-v8": "^4.1.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "typescript": "^5"
+  }
+}

@@ -11,7 +11,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ci:
+  unit-tests:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -28,8 +28,80 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - run: pnpm turbo run test build
+      - run: pnpm turbo run test:unit
         env:
           TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
           TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+          DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: coin_test
+          POSTGRES_USER: coin_test
+          POSTGRES_PASSWORD: coin_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U coin_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm --filter @coin/database db:migrate:test
+        env:
+          DATABASE_URL: postgresql://coin_test:coin_test@localhost:5432/coin_test
+
+      - run: pnpm turbo run test:integration
+        env:
+          TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+          TURBO_TEAM: ${{ secrets.TURBO_TEAM }}
+          DATABASE_URL: postgresql://coin_test:coin_test@localhost:5432/coin_test
+          REDIS_URL: redis://localhost:6379
+
+  lint-and-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm turbo run lint build
+        env:
           DATABASE_URL: postgresql://dummy:dummy@localhost:5432/dummy

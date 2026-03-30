@@ -6,7 +6,8 @@
   "types": "./dist/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "test:unit": "vitest run"
   },
   "dependencies": {
     "@coin/types": "workspace:*",
@@ -15,9 +16,13 @@
     "ws": "^8"
   },
   "devDependencies": {
+    "@coin/test-utils": "workspace:*",
     "@types/jsonwebtoken": "^9",
     "@types/uuid": "^10",
     "@types/ws": "^8",
-    "typescript": "^5"
+    "@vitest/coverage-v8": "^4.1.2",
+    "msw": "^2",
+    "typescript": "^5",
+    "vitest": "^4.1.2"
   }
 }
