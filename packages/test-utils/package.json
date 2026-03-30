@@ -6,7 +6,6 @@
   "types": "./src/index.ts",
   "exports": {
     ".": "./src/index.ts",
-    "./vitest.base": "./src/vitest.base.ts",
     "./msw": "./src/msw/index.ts"
   },
   "scripts": {
