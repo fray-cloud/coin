@@ -44,6 +44,9 @@ jobs:
           sed -i 's|REDIS_HOST=.*|REDIS_HOST=redis|' .env
           sed -i 's|KAFKA_BROKERS=.*|KAFKA_BROKERS=kafka:29092|' .env
 
+      - name: Generate SSL certificate
+        run: make cert
+
       - name: Build and start services
         run: make prod
 
