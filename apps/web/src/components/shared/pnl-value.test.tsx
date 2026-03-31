@@ -30,6 +30,6 @@ describe('PnlValue', () => {
 
   it('100만 이상이면 M 단위로 포맷해야 한다', () => {
     render(<PnlValue value={1500000} />);
-    expect(screen.getByText(/1\.50M/)).toBeDefined();
+    expect(screen.getByText(/1\.50M/)).toBeInTheDocument();
   });
 });

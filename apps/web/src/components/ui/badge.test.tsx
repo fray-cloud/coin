@@ -5,7 +5,7 @@ import { Badge } from './badge';
 describe('Badge', () => {
   it('텍스트를 렌더링해야 한다', () => {
     render(<Badge>RSI</Badge>);
-    expect(screen.getByText('RSI')).toBeDefined();
+    expect(screen.getByText('RSI')).toBeInTheDocument();
   });
 
   it('기본 variant를 적용해야 한다', () => {
