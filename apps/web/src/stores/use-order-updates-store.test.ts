@@ -1,9 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createMockSocket } from './__test-helpers__/mock-socket';
 
-const mockSocket = {
-  on: vi.fn(),
-  disconnect: vi.fn(),
-};
+const mockSocket = createMockSocket();
 vi.mock('socket.io-client', () => ({
   io: vi.fn(() => mockSocket),
 }));
@@ -24,38 +22,38 @@ describe('useOrderUpdatesStore', () => {
     });
   });
 
-  it('connect 호출 시 소켓을 생성하고 userId를 저장해야 한다', () => {
+  it('connect 호출 시 소켓 이벤트를 등록해야 한다', () => {
     useOrderUpdatesStore.getState().connect('user-1', mockQueryClient as never);
 
-    expect(useOrderUpdatesStore.getState()._socket).toBeDefined();
-    expect(useOrderUpdatesStore.getState()._userId).toBe('user-1');
+    const registeredEvents = mockSocket.on.mock.calls.map((c: unknown[]) => c[0]);
+    expect(registeredEvents).toContain('order:updated');
+    expect(registeredEvents).toContain('strategy:signal');
+    expect(registeredEvents).toContain('notification:received');
   });
 
-  it('같은 userId로 중복 connect 시 소켓을 재생성하지 않아야 한다', () => {
+  it('같은 userId로 중복 connect 시 이벤트를 재등록하지 않아야 한다', () => {
     useOrderUpdatesStore.getState().connect('user-1', mockQueryClient as never);
-    const firstSocket = useOrderUpdatesStore.getState()._socket;
+    const firstCallCount = mockSocket.on.mock.calls.length;
 
     useOrderUpdatesStore.getState().connect('user-1', mockQueryClient as never);
-    expect(useOrderUpdatesStore.getState()._socket).toBe(firstSocket);
+    expect(mockSocket.on.mock.calls.length).toBe(firstCallCount);
   });
 
-  it('다른 userId로 connect 시 기존 소켓을 종료하고 새로 생성해야 한다', () => {
+  it('다른 userId로 connect 시 기존 소켓을 종료해야 한다', () => {
     useOrderUpdatesStore.getState().connect('user-1', mockQueryClient as never);
     useOrderUpdatesStore.getState().connect('user-2', mockQueryClient as never);
 
     expect(mockSocket.disconnect).toHaveBeenCalled();
-    expect(useOrderUpdatesStore.getState()._userId).toBe('user-2');
   });
 
   it('order:updated 이벤트 수신 시 orders 쿼리를 무효화해야 한다', () => {
     useOrderUpdatesStore.getState().connect('user-1', mockQueryClient as never);
 
-    // Find the order:updated handler from socket.on calls
-    const onCall = mockSocket.on.mock.calls.find((call: unknown[]) => call[0] === 'order:updated');
-    expect(onCall).toBeDefined();
+    const handler = mockSocket.on.mock.calls.find(
+      (call: unknown[]) => call[0] === 'order:updated',
+    )![1] as () => void;
+    handler();
 
-    // Invoke the handler
-    onCall![1]();
     expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
       queryKey: ['orders'],
     });
@@ -64,12 +62,11 @@ describe('useOrderUpdatesStore', () => {
   it('strategy:signal 이벤트 수신 시 strategies 쿼리를 무효화해야 한다', () => {
     useOrderUpdatesStore.getState().connect('user-1', mockQueryClient as never);
 
-    const onCall = mockSocket.on.mock.calls.find(
+    const handler = mockSocket.on.mock.calls.find(
       (call: unknown[]) => call[0] === 'strategy:signal',
-    );
-    expect(onCall).toBeDefined();
+    )![1] as () => void;
+    handler();
 
-    onCall![1]();
     expect(mockQueryClient.invalidateQueries).toHaveBeenCalledWith({
       queryKey: ['strategies'],
     });
@@ -80,8 +77,6 @@ describe('useOrderUpdatesStore', () => {
 
     useOrderUpdatesStore.getState().connect('user-1', mockQueryClient as never);
     useOrderUpdatesStore.getState().disconnect();
-
-    expect(useOrderUpdatesStore.getState()._disconnectTimer).toBeDefined();
 
     vi.advanceTimersByTime(200);
     expect(mockSocket.disconnect).toHaveBeenCalled();

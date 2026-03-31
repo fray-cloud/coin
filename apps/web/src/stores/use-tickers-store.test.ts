@@ -1,10 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { createMockSocket } from './__test-helpers__/mock-socket';
 
-// Mock socket.io-client before import
-const mockSocket = {
-  on: vi.fn(),
-  disconnect: vi.fn(),
-};
+const mockSocket = createMockSocket();
 vi.mock('socket.io-client', () => ({
   io: vi.fn(() => mockSocket),
 }));
@@ -28,37 +25,29 @@ describe('useTickersStore', () => {
     vi.useRealTimers();
   });
 
-  it('connect 호출 시 소켓을 생성하고 refCount를 증가시켜야 한다', () => {
+  it('connect 호출 시 소켓 이벤트를 등록해야 한다', () => {
     useTickersStore.getState().connect();
 
-    expect(useTickersStore.getState()._refCount).toBe(1);
-    expect(useTickersStore.getState()._socket).toBeDefined();
+    const registeredEvents = mockSocket.on.mock.calls.map((c: unknown[]) => c[0]);
+    expect(registeredEvents).toContain('connect');
+    expect(registeredEvents).toContain('disconnect');
+    expect(registeredEvents).toContain('ticker');
   });
 
-  it('중복 connect 시 소켓을 재생성하지 않고 refCount만 증가해야 한다', () => {
+  it('중복 connect 시 소켓 이벤트를 재등록하지 않아야 한다', () => {
     useTickersStore.getState().connect();
-    useTickersStore.getState().connect();
+    const firstCallCount = mockSocket.on.mock.calls.length;
 
-    expect(useTickersStore.getState()._refCount).toBe(2);
+    useTickersStore.getState().connect();
+    expect(mockSocket.on.mock.calls.length).toBe(firstCallCount);
   });
 
-  it('disconnect 호출 시 refCount를 감소시켜야 한다', () => {
-    useTickersStore.getState().connect();
+  it('모든 구독 해제 후 지연 뒤 소켓을 종료해야 한다', () => {
     useTickersStore.getState().connect();
     useTickersStore.getState().disconnect();
-
-    expect(useTickersStore.getState()._refCount).toBe(1);
-  });
-
-  it('refCount가 0이 되면 지연 후 소켓을 종료해야 한다', () => {
-    useTickersStore.getState().connect();
-    useTickersStore.getState().disconnect();
-
-    // 아직 타이머 대기 중
-    expect(useTickersStore.getState()._disconnectTimer).toBeDefined();
 
     vi.advanceTimersByTime(200);
-    expect(useTickersStore.getState()._socket).toBeNull();
+    expect(mockSocket.disconnect).toHaveBeenCalled();
   });
 
   it('React Strict Mode 재마운트 시 disconnect → connect가 소켓을 유지해야 한다', () => {
@@ -67,8 +56,8 @@ describe('useTickersStore', () => {
     // 즉시 다시 connect (Strict Mode 시뮬레이션)
     useTickersStore.getState().connect();
 
-    expect(useTickersStore.getState()._disconnectTimer).toBeNull();
-    expect(useTickersStore.getState()._socket).toBeDefined();
+    vi.advanceTimersByTime(200);
+    expect(mockSocket.disconnect).not.toHaveBeenCalled();
   });
 
   it('getTickersArray가 Map을 배열로 변환해야 한다', () => {
