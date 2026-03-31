@@ -1,4 +1,4 @@
-const BASE_URL = process.env.API_E2E_BASE_URL || 'https://localhost/api';
+const BASE_URL = (process.env.API_E2E_BASE_URL || 'https://localhost/api').replace(/\/$/, '');
 
 export async function api(
   path: string,
@@ -6,9 +6,11 @@ export async function api(
 ): Promise<Response> {
   const { cookies, ...fetchOptions } = options;
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
     ...(options.headers as Record<string, string>),
   };
+  if (fetchOptions.body) {
+    headers['Content-Type'] ??= 'application/json';
+  }
   if (cookies) {
     headers['Cookie'] = cookies;
   }
@@ -34,5 +36,9 @@ export async function signupAndLogin(email?: string, password = 'TestPass123!'):
     method: 'POST',
     body: JSON.stringify({ email: e, password }),
   });
+  if (!signupRes.ok) {
+    const body = await signupRes.text();
+    throw new Error(`signupAndLogin failed (${signupRes.status}): ${body}`);
+  }
   return extractCookies(signupRes);
 }
