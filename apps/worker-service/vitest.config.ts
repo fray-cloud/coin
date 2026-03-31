@@ -15,7 +15,7 @@ export default defineConfig({
   test: {
     globals: true,
     passWithNoTests: true,
-    reporters: ['verbose'],
+    reporters: process.env.CI ? ['verbose'] : ['default'],
     include: ['src/**/*.test.ts'],
     coverage: {
       provider: 'v8',
