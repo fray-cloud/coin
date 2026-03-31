@@ -9,6 +9,7 @@
     "lint": "next lint",
     "clean": "rm -rf .next .turbo",
     "test:unit": "vitest run",
+    "test:e2e": "playwright test --config playwright.config.ts",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
   },
