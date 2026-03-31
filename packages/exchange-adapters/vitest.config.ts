@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     globals: true,
     passWithNoTests: true,
+    reporters: ['verbose'],
     include: ['src/**/*.test.ts'],
     setupFiles: ['./src/test-setup.ts'],
     coverage: {

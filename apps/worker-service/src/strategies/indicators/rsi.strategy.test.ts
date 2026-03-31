@@ -19,14 +19,14 @@ function generateFlatPrices(length: number, base = 100): number[] {
 }
 
 describe('RsiStrategy', () => {
-  it('should return hold when not enough data', () => {
+  it('데이터가 부족하면 hold를 반환해야 한다', () => {
     const result = strategy.evaluate([100, 101, 102], { period: 14 });
     expect(result.signal).toBe('hold');
     expect(result.confidence).toBe(0);
     expect(result.reason).toContain('Not enough data');
   });
 
-  it('should return buy when RSI <= oversold (30)', () => {
+  it('RSI가 과매도(30) 이하이면 buy를 반환해야 한다', () => {
     // Strongly decreasing prices → low RSI
     const prices = generateDecreasingPrices(30);
     const result = strategy.evaluate(prices, { period: 14, overbought: 70, oversold: 30 });
@@ -36,7 +36,7 @@ describe('RsiStrategy', () => {
     expect(Number(result.indicatorValues.rsi)).toBeLessThanOrEqual(30);
   });
 
-  it('should return sell when RSI >= overbought (70)', () => {
+  it('RSI가 과매수(70) 이상이면 sell를 반환해야 한다', () => {
     // Strongly increasing prices → high RSI
     const prices = generateIncreasingPrices(30);
     const result = strategy.evaluate(prices, { period: 14, overbought: 70, oversold: 30 });
@@ -45,14 +45,14 @@ describe('RsiStrategy', () => {
     expect(Number(result.indicatorValues.rsi)).toBeGreaterThanOrEqual(70);
   });
 
-  it('should return hold when RSI is in neutral zone', () => {
+  it('RSI가 중립 구간이면 hold를 반환해야 한다', () => {
     const prices = generateFlatPrices(30);
     const result = strategy.evaluate(prices, { period: 14, overbought: 70, oversold: 30 });
     expect(result.signal).toBe('hold');
     expect(result.reason).toContain('neutral');
   });
 
-  it('should use default config when not provided', () => {
+  it('설정이 없으면 기본값을 사용해야 한다', () => {
     const prices = generateFlatPrices(30);
     const result = strategy.evaluate(prices, {});
     // Should use defaults: period=14, overbought=70, oversold=30
@@ -60,7 +60,7 @@ describe('RsiStrategy', () => {
     expect(result.indicatorValues.rsi).toBeDefined();
   });
 
-  it('should respect custom thresholds', () => {
+  it('사용자 정의 임계값을 적용해야 한다', () => {
     const prices = generateIncreasingPrices(30);
     // Default overbought=70 should trigger sell on strong uptrend
     const resultDefault = strategy.evaluate(prices, { period: 14, overbought: 70, oversold: 30 });
@@ -73,7 +73,7 @@ describe('RsiStrategy', () => {
     expect(resultLower.confidence).toBeGreaterThanOrEqual(resultDefault.confidence);
   });
 
-  it('should have type "rsi"', () => {
+  it('타입이 "rsi"여야 한다', () => {
     expect(strategy.type).toBe('rsi');
   });
 });

@@ -23,13 +23,13 @@ function generateNeutralPrices(length = 25): number[] {
 }
 
 describe('BollingerStrategy', () => {
-  it('should return hold when not enough data', () => {
+  it('데이터가 부족하면 hold를 반환해야 한다', () => {
     const result = strategy.evaluate([100, 101, 102], { period: 20 });
     expect(result.signal).toBe('hold');
     expect(result.reason).toContain('Not enough data');
   });
 
-  it('should return buy when price < lower band', () => {
+  it('가격이 하단 밴드 미만이면 buy를 반환해야 한다', () => {
     const prices = generateBuySignalPrices(25);
     const result = strategy.evaluate(prices, { period: 20, stdDev: 2 });
     expect(result.signal).toBe('buy');
@@ -41,7 +41,7 @@ describe('BollingerStrategy', () => {
     expect(result.indicatorValues).toHaveProperty('price');
   });
 
-  it('should return sell when price > upper band', () => {
+  it('가격이 상단 밴드 초과이면 sell를 반환해야 한다', () => {
     const prices = generateSellSignalPrices(25);
     const result = strategy.evaluate(prices, { period: 20, stdDev: 2 });
     expect(result.signal).toBe('sell');
@@ -49,25 +49,25 @@ describe('BollingerStrategy', () => {
     expect(result.reason).toContain('Upper Band');
   });
 
-  it('should return hold when price within bands', () => {
+  it('가격이 밴드 내에 있으면 hold를 반환해야 한다', () => {
     const prices = generateNeutralPrices(25);
     const result = strategy.evaluate(prices, { period: 20, stdDev: 2 });
     expect(result.signal).toBe('hold');
     expect(result.reason).toContain('within bands');
   });
 
-  it('should use default config', () => {
+  it('기본 설정을 사용해야 한다', () => {
     const prices = generateNeutralPrices(25);
     const result = strategy.evaluate(prices, {});
     // Defaults: period=20, stdDev=2
     expect(result.signal).toBeDefined();
   });
 
-  it('should have type "bollinger"', () => {
+  it('타입이 "bollinger"여야 한다', () => {
     expect(strategy.type).toBe('bollinger');
   });
 
-  it('should handle narrow bands with small stdDev', () => {
+  it('작은 stdDev로 좁은 밴드를 처리해야 한다', () => {
     // With stdDev=1, bands are narrower → more likely to trigger signals
     const prices = generateNeutralPrices(25);
     prices.push(105); // Moderate price that might exceed narrow bands

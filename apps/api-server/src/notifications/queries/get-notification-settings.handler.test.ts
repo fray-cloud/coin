@@ -12,7 +12,7 @@ describe('GetNotificationSettingsHandler', () => {
     handler = new GetNotificationSettingsHandler(mockPrisma as never);
   });
 
-  it('should return existing settings', async () => {
+  it('기존 설정을 반환해야 한다', async () => {
     const setting = {
       telegramChatId: '12345',
       notifyOrders: true,
@@ -25,7 +25,7 @@ describe('GetNotificationSettingsHandler', () => {
     expect(result).toEqual(setting);
   });
 
-  it('should return defaults when no settings exist', async () => {
+  it('설정이 없으면 기본값을 반환해야 한다', async () => {
     mockPrisma.notificationSetting.findUnique.mockResolvedValue(null);
 
     const result = await handler.execute(new GetNotificationSettingsQuery('user-1'));

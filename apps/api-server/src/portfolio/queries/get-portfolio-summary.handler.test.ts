@@ -12,7 +12,7 @@ describe('GetPortfolioSummaryHandler', () => {
     handler = new GetPortfolioSummaryHandler(mockPortfolioService as never);
   });
 
-  it('should delegate to portfolioService.getSummary', async () => {
+  it('portfolioService.getSummary에 위임해야 한다', async () => {
     const summary = { totalValue: 1000, assets: [] };
     mockPortfolioService.getSummary.mockResolvedValue(summary);
 
@@ -21,7 +21,7 @@ describe('GetPortfolioSummaryHandler', () => {
     expect(mockPortfolioService.getSummary).toHaveBeenCalledWith('user-1', 'paper');
   });
 
-  it('should pass mode "all" when not specified', async () => {
+  it('모드가 지정되지 않으면 undefined를 전달해야 한다', async () => {
     mockPortfolioService.getSummary.mockResolvedValue({});
 
     await handler.execute(new GetPortfolioSummaryQuery('user-1'));

@@ -12,6 +12,7 @@ export default defineConfig({
   test: {
     globals: true,
     passWithNoTests: true,
+    reporters: ['verbose'],
     environment: 'jsdom',
     include: ['src/**/*.test.{ts,tsx}'],
     setupFiles: ['./src/test-setup.ts'],

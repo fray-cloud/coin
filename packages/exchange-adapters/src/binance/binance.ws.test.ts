@@ -54,13 +54,13 @@ describe('BinanceWebSocket', () => {
     return wsInstances[wsInstances.length - 1];
   }
 
-  it('should not connect without symbols', () => {
+  it('심볼 없이 연결하지 않아야 한다', () => {
     const before = wsInstances.length;
     ws.connect();
     expect(wsInstances.length).toBe(before);
   });
 
-  it('should connect when subscribing to ticker', async () => {
+  it('티커 구독 시 연결되어야 한다', async () => {
     ws.subscribeTicker(['BTCUSDT'], vi.fn());
     await vi.advanceTimersByTimeAsync(1);
 
@@ -68,7 +68,7 @@ describe('BinanceWebSocket', () => {
     expect(ws.isConnected()).toBe(true);
   });
 
-  it('should reconnect with new URL when symbols change', async () => {
+  it('심볼 변경 시 새 URL로 재연결해야 한다', async () => {
     ws.subscribeTicker(['BTCUSDT'], vi.fn());
     await vi.advanceTimersByTimeAsync(1);
 
@@ -78,7 +78,7 @@ describe('BinanceWebSocket', () => {
     expect(onConnected).toHaveBeenCalledTimes(2);
   });
 
-  it('should normalize 24hrTicker message', async () => {
+  it('24hrTicker 메시지를 정규화해야 한다', async () => {
     const callback = vi.fn();
     ws.subscribeTicker(['BTCUSDT'], callback);
     await vi.advanceTimersByTimeAsync(1);
@@ -113,7 +113,7 @@ describe('BinanceWebSocket', () => {
     });
   });
 
-  it('should ignore non-ticker messages', async () => {
+  it('티커가 아닌 메시지는 무시해야 한다', async () => {
     const callback = vi.fn();
     ws.subscribeTicker(['BTCUSDT'], callback);
     await vi.advanceTimersByTimeAsync(1);
@@ -122,7 +122,7 @@ describe('BinanceWebSocket', () => {
     expect(callback).not.toHaveBeenCalled();
   });
 
-  it('should auto-reconnect on close', async () => {
+  it('연결 종료 시 자동 재연결해야 한다', async () => {
     ws.subscribeTicker(['BTCUSDT'], vi.fn());
     await vi.advanceTimersByTimeAsync(1);
     const countBefore = wsInstances.length;
@@ -134,7 +134,7 @@ describe('BinanceWebSocket', () => {
     expect(wsInstances.length).toBeGreaterThan(countBefore);
   });
 
-  it('should call onError on error event', async () => {
+  it('에러 이벤트 발생 시 onError를 호출해야 한다', async () => {
     ws.subscribeTicker(['BTCUSDT'], vi.fn());
     await vi.advanceTimersByTimeAsync(1);
 
@@ -143,7 +143,7 @@ describe('BinanceWebSocket', () => {
     expect(onError).toHaveBeenCalledWith(error);
   });
 
-  it('should disconnect and cleanup', async () => {
+  it('연결 해제 후 정리되어야 한다', async () => {
     ws.subscribeTicker(['BTCUSDT'], vi.fn());
     await vi.advanceTimersByTimeAsync(1);
 

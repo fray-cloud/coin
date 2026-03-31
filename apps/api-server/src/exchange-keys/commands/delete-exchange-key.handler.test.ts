@@ -15,7 +15,7 @@ describe('DeleteExchangeKeyHandler', () => {
     handler = new DeleteExchangeKeyHandler(mockPrisma as never);
   });
 
-  it('should delete an exchange key', async () => {
+  it('거래소 키를 삭제해야 한다', async () => {
     mockPrisma.exchangeKey.findFirst.mockResolvedValue({ id: 'key-1' });
     mockPrisma.exchangeKey.delete.mockResolvedValue({ id: 'key-1' });
 
@@ -23,7 +23,7 @@ describe('DeleteExchangeKeyHandler', () => {
     expect(result).toEqual({ message: 'Deleted' });
   });
 
-  it('should throw if key not found', async () => {
+  it('키를 찾을 수 없으면 예외를 던져야 한다', async () => {
     mockPrisma.exchangeKey.findFirst.mockResolvedValue(null);
 
     await expect(

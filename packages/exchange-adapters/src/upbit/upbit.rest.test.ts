@@ -12,8 +12,8 @@ const credentials: ExchangeCredentials = {
 const adapter = new UpbitRest();
 
 describe('UpbitRest', () => {
-  describe('getBalances', () => {
-    it('should return normalized balances', async () => {
+  describe('잔고 조회 (getBalances)', () => {
+    it('정규화된 잔고 목록을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.upbit.com/v1/accounts', () => {
           return HttpResponse.json([
@@ -40,7 +40,7 @@ describe('UpbitRest', () => {
       });
     });
 
-    it('should return empty array when no balances', async () => {
+    it('잔고가 없으면 빈 배열을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.upbit.com/v1/accounts', () => {
           return HttpResponse.json([]);
@@ -51,7 +51,7 @@ describe('UpbitRest', () => {
       expect(balances).toEqual([]);
     });
 
-    it('should throw on API error', async () => {
+    it('API 에러 시 예외를 던져야 한다', async () => {
       server.use(
         http.get('https://api.upbit.com/v1/accounts', () => {
           return new HttpResponse('Unauthorized', { status: 401 });
@@ -62,8 +62,8 @@ describe('UpbitRest', () => {
     });
   });
 
-  describe('getOpenOrders', () => {
-    it('should return mapped open orders', async () => {
+  describe('미체결 주문 조회 (getOpenOrders)', () => {
+    it('매핑된 미체결 주문 목록을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.upbit.com/v1/orders', () => {
           return HttpResponse.json([
@@ -94,8 +94,8 @@ describe('UpbitRest', () => {
     });
   });
 
-  describe('placeOrder', () => {
-    it('should place a limit order', async () => {
+  describe('주문 생성 (placeOrder)', () => {
+    it('지정가 주문을 생성해야 한다', async () => {
       server.use(
         http.post('https://api.upbit.com/v1/orders', () => {
           return HttpResponse.json({
@@ -128,7 +128,7 @@ describe('UpbitRest', () => {
       expect(result.status).toBe('placed');
     });
 
-    it('should place a market sell order', async () => {
+    it('시장가 매도 주문을 생성해야 한다', async () => {
       server.use(
         http.post('https://api.upbit.com/v1/orders', () => {
           return HttpResponse.json({
@@ -163,7 +163,7 @@ describe('UpbitRest', () => {
       expect(result.side).toBe('sell');
     });
 
-    it('should place a market buy order (KRW amount)', async () => {
+    it('시장가 매수 주문을 생성해야 한다 (KRW 금액 기준)', async () => {
       server.use(
         http.post('https://api.upbit.com/v1/orders', () => {
           return HttpResponse.json({
@@ -197,7 +197,7 @@ describe('UpbitRest', () => {
       expect(result.status).toBe('filled');
     });
 
-    it('should throw on API error', async () => {
+    it('API 에러 시 예외를 던져야 한다', async () => {
       server.use(
         http.post('https://api.upbit.com/v1/orders', () => {
           return new HttpResponse('Bad Request', { status: 400 });
@@ -216,8 +216,8 @@ describe('UpbitRest', () => {
     });
   });
 
-  describe('cancelOrder', () => {
-    it('should cancel an order', async () => {
+  describe('주문 취소 (cancelOrder)', () => {
+    it('주문을 취소해야 한다', async () => {
       server.use(
         http.delete('https://api.upbit.com/v1/order', () => {
           return HttpResponse.json({
@@ -242,8 +242,8 @@ describe('UpbitRest', () => {
     });
   });
 
-  describe('getOrder', () => {
-    it('should return a single order', async () => {
+  describe('주문 조회 (getOrder)', () => {
+    it('단일 주문을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.upbit.com/v1/order', () => {
           return HttpResponse.json({
@@ -272,8 +272,8 @@ describe('UpbitRest', () => {
     });
   });
 
-  describe('getMarkets', () => {
-    it('should return normalized markets', async () => {
+  describe('마켓 목록 조회 (getMarkets)', () => {
+    it('정규화된 마켓 목록을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.upbit.com/v1/market/all', () => {
           return HttpResponse.json([
@@ -294,7 +294,7 @@ describe('UpbitRest', () => {
       });
     });
 
-    it('should throw on API error', async () => {
+    it('API 에러 시 예외를 던져야 한다', async () => {
       server.use(
         http.get('https://api.upbit.com/v1/market/all', () => {
           return new HttpResponse('Server Error', { status: 500 });
@@ -305,8 +305,8 @@ describe('UpbitRest', () => {
     });
   });
 
-  describe('getCandles', () => {
-    it('should return normalized candles in chronological order', async () => {
+  describe('캔들 조회 (getCandles)', () => {
+    it('시간순으로 정렬된 정규화된 캔들을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.upbit.com/v1/candles/minutes/60', () => {
           return HttpResponse.json([
@@ -343,7 +343,7 @@ describe('UpbitRest', () => {
       expect(candles[0].close).toBe('50500000');
     });
 
-    it('should map interval correctly', async () => {
+    it('인터벌을 올바르게 매핑해야 한다', async () => {
       const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
       server.use(
@@ -362,7 +362,7 @@ describe('UpbitRest', () => {
       fetchSpy.mockRestore();
     });
 
-    it('should throw on API error', async () => {
+    it('API 에러 시 예외를 던져야 한다', async () => {
       server.use(
         http.get('https://api.upbit.com/v1/candles/*', () => {
           return new HttpResponse('Rate Limited', { status: 429 });
@@ -373,8 +373,8 @@ describe('UpbitRest', () => {
     });
   });
 
-  describe('mapOrderResponse edge cases', () => {
-    it('should calculate filledPrice from trades when executed_funds is missing', async () => {
+  describe('주문 응답 매핑 엣지 케이스 (mapOrderResponse)', () => {
+    it('executed_funds가 없을 때 체결 내역에서 체결가를 계산해야 한다', async () => {
       server.use(
         http.get('https://api.upbit.com/v1/order', () => {
           return HttpResponse.json({
@@ -420,7 +420,7 @@ describe('UpbitRest', () => {
       expect(result.filledPrice).toBe(String(100100 / 0.002));
     });
 
-    it('should handle "watch" state as placed', async () => {
+    it('"watch" 상태를 placed로 처리해야 한다', async () => {
       server.use(
         http.get('https://api.upbit.com/v1/order', () => {
           return HttpResponse.json({

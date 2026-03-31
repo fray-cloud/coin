@@ -12,7 +12,7 @@ describe('GetExchangeKeysHandler', () => {
     handler = new GetExchangeKeysHandler(mockPrisma as never);
   });
 
-  it('should return exchange keys without sensitive data', async () => {
+  it('민감한 데이터 없이 거래소 키를 반환해야 한다', async () => {
     const keys = [{ id: 'key-1', exchange: 'upbit', createdAt: new Date() }];
     mockPrisma.exchangeKey.findMany.mockResolvedValue(keys);
 

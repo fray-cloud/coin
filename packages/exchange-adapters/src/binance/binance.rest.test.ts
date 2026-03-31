@@ -12,8 +12,8 @@ const credentials: ExchangeCredentials = {
 const adapter = new BinanceRest();
 
 describe('BinanceRest', () => {
-  describe('getBalances', () => {
-    it('should return normalized balances', async () => {
+  describe('잔고 조회 (getBalances)', () => {
+    it('정규화된 잔고 목록을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.binance.com/api/v3/account', () => {
           return HttpResponse.json({
@@ -36,7 +36,7 @@ describe('BinanceRest', () => {
       });
     });
 
-    it('should throw on API error', async () => {
+    it('API 에러 시 예외를 던져야 한다', async () => {
       server.use(
         http.get('https://api.binance.com/api/v3/account', () => {
           return new HttpResponse('Unauthorized', { status: 401 });
@@ -47,8 +47,8 @@ describe('BinanceRest', () => {
     });
   });
 
-  describe('getOpenOrders', () => {
-    it('should return open orders', async () => {
+  describe('미체결 주문 조회 (getOpenOrders)', () => {
+    it('미체결 주문 목록을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.binance.com/api/v3/openOrders', () => {
           return HttpResponse.json([
@@ -74,7 +74,7 @@ describe('BinanceRest', () => {
       expect(orders[0].side).toBe('buy');
     });
 
-    it('should return empty array for no open orders', async () => {
+    it('미체결 주문이 없으면 빈 배열을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.binance.com/api/v3/openOrders', () => {
           return HttpResponse.json([]);
@@ -86,8 +86,8 @@ describe('BinanceRest', () => {
     });
   });
 
-  describe('placeOrder', () => {
-    it('should place a market order', async () => {
+  describe('주문 생성 (placeOrder)', () => {
+    it('시장가 주문을 생성해야 한다', async () => {
       server.use(
         http.post('https://api.binance.com/api/v3/order', () => {
           return HttpResponse.json({
@@ -117,7 +117,7 @@ describe('BinanceRest', () => {
       expect(result.type).toBe('market');
     });
 
-    it('should place a limit order with GTC', async () => {
+    it('GTC 지정가 주문을 생성해야 한다', async () => {
       server.use(
         http.post('https://api.binance.com/api/v3/order', () => {
           return HttpResponse.json({
@@ -148,7 +148,7 @@ describe('BinanceRest', () => {
       expect(result.type).toBe('limit');
     });
 
-    it('should throw on API error', async () => {
+    it('API 에러 시 예외를 던져야 한다', async () => {
       server.use(
         http.post('https://api.binance.com/api/v3/order', () => {
           return new HttpResponse('Insufficient balance', { status: 400 });
@@ -167,8 +167,8 @@ describe('BinanceRest', () => {
     });
   });
 
-  describe('cancelOrder', () => {
-    it('should cancel an order', async () => {
+  describe('주문 취소 (cancelOrder)', () => {
+    it('주문을 취소해야 한다', async () => {
       server.use(
         http.delete('https://api.binance.com/api/v3/order', () => {
           return HttpResponse.json({
@@ -189,8 +189,8 @@ describe('BinanceRest', () => {
     });
   });
 
-  describe('getOrder', () => {
-    it('should return a filled order', async () => {
+  describe('주문 조회 (getOrder)', () => {
+    it('체결 완료된 주문을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.binance.com/api/v3/order', () => {
           return HttpResponse.json({
@@ -212,7 +212,7 @@ describe('BinanceRest', () => {
       expect(result.status).toBe('filled');
     });
 
-    it('should map PARTIALLY_FILLED status', async () => {
+    it('PARTIALLY_FILLED 상태를 올바르게 매핑해야 한다', async () => {
       server.use(
         http.get('https://api.binance.com/api/v3/order', () => {
           return HttpResponse.json({
@@ -233,7 +233,7 @@ describe('BinanceRest', () => {
       expect(result.status).toBe('partial');
     });
 
-    it('should map REJECTED status to failed', async () => {
+    it('REJECTED 상태를 failed로 매핑해야 한다', async () => {
       server.use(
         http.get('https://api.binance.com/api/v3/order', () => {
           return HttpResponse.json({
@@ -253,7 +253,7 @@ describe('BinanceRest', () => {
       expect(result.status).toBe('failed');
     });
 
-    it('should map EXPIRED status to cancelled', async () => {
+    it('EXPIRED 상태를 cancelled로 매핑해야 한다', async () => {
       server.use(
         http.get('https://api.binance.com/api/v3/order', () => {
           return HttpResponse.json({
@@ -274,8 +274,8 @@ describe('BinanceRest', () => {
     });
   });
 
-  describe('getMarkets', () => {
-    it('should return only TRADING markets', async () => {
+  describe('마켓 목록 조회 (getMarkets)', () => {
+    it('TRADING 상태의 마켓만 반환해야 한다', async () => {
       server.use(
         http.get('https://api.binance.com/api/v3/exchangeInfo', () => {
           return HttpResponse.json({
@@ -299,7 +299,7 @@ describe('BinanceRest', () => {
       });
     });
 
-    it('should throw on API error', async () => {
+    it('API 에러 시 예외를 던져야 한다', async () => {
       server.use(
         http.get('https://api.binance.com/api/v3/exchangeInfo', () => {
           return new HttpResponse('Server Error', { status: 500 });
@@ -310,8 +310,8 @@ describe('BinanceRest', () => {
     });
   });
 
-  describe('getCandles', () => {
-    it('should return normalized candles', async () => {
+  describe('캔들 조회 (getCandles)', () => {
+    it('정규화된 캔들을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.binance.com/api/v3/klines', () => {
           return HttpResponse.json([
@@ -363,7 +363,7 @@ describe('BinanceRest', () => {
       });
     });
 
-    it('should throw on API error', async () => {
+    it('API 에러 시 예외를 던져야 한다', async () => {
       server.use(
         http.get('https://api.binance.com/api/v3/klines', () => {
           return new HttpResponse('Rate Limited', { status: 429 });

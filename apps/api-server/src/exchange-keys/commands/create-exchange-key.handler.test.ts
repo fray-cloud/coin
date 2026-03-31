@@ -36,7 +36,7 @@ describe('CreateExchangeKeyHandler', () => {
     handler = new CreateExchangeKeyHandler(mockPrisma as never, mockConfig as never);
   });
 
-  it('should create/upsert an exchange key with encrypted credentials', async () => {
+  it('암호화된 자격증명으로 거래소 키를 생성/upsert해야 한다', async () => {
     mockPrisma.exchangeKey.upsert.mockResolvedValue({
       id: 'key-1',
       exchange: 'upbit',
@@ -57,7 +57,7 @@ describe('CreateExchangeKeyHandler', () => {
     expect(upsertCall.create.secretKey).not.toBe('my-secret');
   });
 
-  it('should throw if ENCRYPTION_MASTER_KEY is not configured', async () => {
+  it('ENCRYPTION_MASTER_KEY가 설정되지 않으면 예외를 던져야 한다', async () => {
     mockConfig.getOrThrow.mockImplementation(() => {
       throw new Error('Missing ENCRYPTION_MASTER_KEY');
     });
@@ -73,7 +73,7 @@ describe('CreateExchangeKeyHandler', () => {
     ).rejects.toThrow();
   });
 
-  it('should throw BadRequestException if API validation fails', async () => {
+  it('API 검증에 실패하면 BadRequestException을 던져야 한다', async () => {
     mockGetBalances.mockRejectedValue(new Error('Invalid API key'));
 
     await expect(

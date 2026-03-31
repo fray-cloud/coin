@@ -16,8 +16,8 @@ function bybitOk(result: unknown) {
 }
 
 describe('BybitRest', () => {
-  describe('getBalances', () => {
-    it('should return normalized balances', async () => {
+  describe('잔고 조회 (getBalances)', () => {
+    it('정규화된 잔고 목록을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.bybit.com/v5/account/wallet-balance', () => {
           return bybitOk({
@@ -44,7 +44,7 @@ describe('BybitRest', () => {
       });
     });
 
-    it('should return empty array when no wallet data', async () => {
+    it('지갑 데이터가 없으면 빈 배열을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.bybit.com/v5/account/wallet-balance', () => {
           return bybitOk({ list: [] });
@@ -55,7 +55,7 @@ describe('BybitRest', () => {
       expect(balances).toEqual([]);
     });
 
-    it('should throw on API error', async () => {
+    it('API 에러 시 예외를 던져야 한다', async () => {
       server.use(
         http.get('https://api.bybit.com/v5/account/wallet-balance', () => {
           return new HttpResponse('Unauthorized', { status: 401 });
@@ -65,7 +65,7 @@ describe('BybitRest', () => {
       await expect(adapter.getBalances(credentials)).rejects.toThrow('Bybit API error 401');
     });
 
-    it('should throw on retCode !== 0', async () => {
+    it('retCode가 0이 아니면 예외를 던져야 한다', async () => {
       server.use(
         http.get('https://api.bybit.com/v5/account/wallet-balance', () => {
           return HttpResponse.json({ retCode: 10001, retMsg: 'Invalid API key' });
@@ -78,8 +78,8 @@ describe('BybitRest', () => {
     });
   });
 
-  describe('getOpenOrders', () => {
-    it('should return open orders', async () => {
+  describe('미체결 주문 조회 (getOpenOrders)', () => {
+    it('미체결 주문 목록을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.bybit.com/v5/order/realtime', () => {
           return bybitOk({
@@ -109,7 +109,7 @@ describe('BybitRest', () => {
       expect(orders[0].type).toBe('limit');
     });
 
-    it('should return empty array when no orders', async () => {
+    it('주문이 없으면 빈 배열을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.bybit.com/v5/order/realtime', () => {
           return bybitOk({ list: [] });
@@ -121,8 +121,8 @@ describe('BybitRest', () => {
     });
   });
 
-  describe('placeOrder', () => {
-    it('should place a market order', async () => {
+  describe('주문 생성 (placeOrder)', () => {
+    it('시장가 주문을 생성해야 한다', async () => {
       server.use(
         http.post('https://api.bybit.com/v5/order/create', () => {
           return bybitOk({ orderId: 'new-bybit-order' });
@@ -143,7 +143,7 @@ describe('BybitRest', () => {
       expect(result.type).toBe('market');
     });
 
-    it('should place a limit order with price and GTC', async () => {
+    it('가격과 GTC로 지정가 주문을 생성해야 한다', async () => {
       server.use(
         http.post('https://api.bybit.com/v5/order/create', () => {
           return bybitOk({ orderId: 'limit-order' });
@@ -164,7 +164,7 @@ describe('BybitRest', () => {
       expect(result.price).toBe('60000');
     });
 
-    it('should throw on API error', async () => {
+    it('API 에러 시 예외를 던져야 한다', async () => {
       server.use(
         http.post('https://api.bybit.com/v5/order/create', () => {
           return new HttpResponse('Bad Request', { status: 400 });
@@ -183,8 +183,8 @@ describe('BybitRest', () => {
     });
   });
 
-  describe('cancelOrder', () => {
-    it('should cancel an order', async () => {
+  describe('주문 취소 (cancelOrder)', () => {
+    it('주문을 취소해야 한다', async () => {
       server.use(
         http.post('https://api.bybit.com/v5/order/cancel', () => {
           return bybitOk({ orderId: 'cancelled-order' });
@@ -197,8 +197,8 @@ describe('BybitRest', () => {
     });
   });
 
-  describe('getOrder', () => {
-    it('should return a single order', async () => {
+  describe('주문 조회 (getOrder)', () => {
+    it('단일 주문을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.bybit.com/v5/order/realtime', () => {
           return bybitOk({
@@ -228,7 +228,7 @@ describe('BybitRest', () => {
       expect(result.filledPrice).toBe('50500');
     });
 
-    it('should throw when order not found', async () => {
+    it('주문을 찾을 수 없으면 예외를 던져야 한다', async () => {
       server.use(
         http.get('https://api.bybit.com/v5/order/realtime', () => {
           return bybitOk({ list: [] });
@@ -241,8 +241,8 @@ describe('BybitRest', () => {
     });
   });
 
-  describe('getMarkets', () => {
-    it('should return only Trading markets', async () => {
+  describe('마켓 목록 조회 (getMarkets)', () => {
+    it('Trading 상태의 마켓만 반환해야 한다', async () => {
       server.use(
         http.get('https://api.bybit.com/v5/market/instruments-info', () => {
           return HttpResponse.json({
@@ -270,7 +270,7 @@ describe('BybitRest', () => {
       });
     });
 
-    it('should throw on retCode !== 0', async () => {
+    it('retCode가 0이 아니면 예외를 던져야 한다', async () => {
       server.use(
         http.get('https://api.bybit.com/v5/market/instruments-info', () => {
           return HttpResponse.json({ retCode: 10001, retMsg: 'Service unavailable', result: {} });
@@ -280,7 +280,7 @@ describe('BybitRest', () => {
       await expect(adapter.getMarkets()).rejects.toThrow('Bybit API error: Service unavailable');
     });
 
-    it('should throw on HTTP error', async () => {
+    it('HTTP 에러 시 예외를 던져야 한다', async () => {
       server.use(
         http.get('https://api.bybit.com/v5/market/instruments-info', () => {
           return new HttpResponse('Server Error', { status: 500 });
@@ -291,8 +291,8 @@ describe('BybitRest', () => {
     });
   });
 
-  describe('getCandles', () => {
-    it('should return candles in chronological order', async () => {
+  describe('캔들 조회 (getCandles)', () => {
+    it('시간순으로 정렬된 캔들을 반환해야 한다', async () => {
       server.use(
         http.get('https://api.bybit.com/v5/market/kline', () => {
           return HttpResponse.json({
@@ -327,7 +327,7 @@ describe('BybitRest', () => {
       });
     });
 
-    it('should throw on retCode !== 0', async () => {
+    it('retCode가 0이 아니면 예외를 던져야 한다', async () => {
       server.use(
         http.get('https://api.bybit.com/v5/market/kline', () => {
           return HttpResponse.json({ retCode: 10001, retMsg: 'Invalid symbol', result: {} });
@@ -339,7 +339,7 @@ describe('BybitRest', () => {
       );
     });
 
-    it('should throw on HTTP error', async () => {
+    it('HTTP 에러 시 예외를 던져야 한다', async () => {
       server.use(
         http.get('https://api.bybit.com/v5/market/kline', () => {
           return new HttpResponse('Rate Limited', { status: 429 });
