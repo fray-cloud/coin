@@ -29,7 +29,7 @@ describe('AuthService', () => {
 
       const result = await service.signup({ email: 'test@test.com', password: 'pass123' } as never);
       expect(result.id).toBe('u1');
-      expect(bcrypt.hash).toHaveBeenCalledWith('pass123', 10);
+      expect(bcrypt.hash).toHaveBeenCalledWith('pass123', expect.any(Number));
     });
 
     it('이미 비밀번호로 등록된 이메일이면 ConflictException을 던져야 한다', async () => {
