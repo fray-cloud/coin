@@ -1,0 +1,88 @@
+name: E2E Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      E2E_BASE_URL: https://localhost
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: pnpm --filter web exec playwright install --with-deps chromium
+
+      - name: Create .env from example
+        run: |
+          cp .env.example .env
+          sed -i 's|JWT_ACCESS_SECRET=.*|JWT_ACCESS_SECRET=ci-access-secret-for-e2e-testing|' .env
+          sed -i 's|JWT_REFRESH_SECRET=.*|JWT_REFRESH_SECRET=ci-refresh-secret-for-e2e-testing|' .env
+          sed -i "s|ENCRYPTION_MASTER_KEY=.*|ENCRYPTION_MASTER_KEY=$(openssl rand -hex 32)|" .env
+          sed -i 's|DATABASE_URL=.*|DATABASE_URL=postgresql://coin:coin_dev@postgres:5432/coin|' .env
+          sed -i 's|REDIS_HOST=.*|REDIS_HOST=redis|' .env
+          sed -i 's|KAFKA_BROKERS=.*|KAFKA_BROKERS=kafka:29092|' .env
+
+      - name: Generate SSL certificate
+        run: make cert
+
+      - name: Build and start services
+        run: make prod
+
+      - name: Wait for services to be healthy
+        run: |
+          echo "Waiting for services..."
+          healthy=false
+          for i in $(seq 1 60); do
+            if curl -sk -o /dev/null -w "%{http_code}" https://localhost 2>/dev/null | grep -q "200\|301\|302\|307"; then
+              echo "Services ready after ${i} attempts"
+              healthy=true
+              break
+            fi
+            echo "Attempt $i/60..."
+            sleep 5
+          done
+          if [ "$healthy" != "true" ]; then
+            echo "::error::Services failed to become healthy within 5 minutes"
+            docker compose logs --tail=50
+            exit 1
+          fi
+
+      - name: Run Playwright E2E tests
+        run: pnpm --filter web test:e2e
+
+      - name: Run API E2E tests
+        run: pnpm --filter api-server test:e2e
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: e2e-report
+          path: apps/web/test-results/
+          retention-days: 7
+
+      - name: Stop services
+        if: always()
+        run: make prod-down

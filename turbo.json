@@ -19,8 +19,16 @@
       "outputs": []
     },
     "test": {
+      "dependsOn": ["test:unit", "test:integration"]
+    },
+    "test:unit": {
       "dependsOn": ["build"],
       "outputs": ["coverage/**"]
+    },
+    "test:integration": {
+      "dependsOn": ["build"],
+      "outputs": ["coverage/**"],
+      "env": ["DATABASE_URL", "REDIS_URL"]
     },
     "clean": {
       "cache": false
