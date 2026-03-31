@@ -16,7 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
-      DATABASE_URL: postgresql://coin:coin_dev@postgres:5432/coin
       E2E_BASE_URL: https://localhost
     steps:
       - uses: actions/checkout@v4
@@ -35,11 +34,18 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm --filter web exec playwright install --with-deps chromium
 
-      - name: Build production images
-        run: docker compose build
+      - name: Create .env from example
+        run: |
+          cp .env.example .env
+          sed -i 's|JWT_ACCESS_SECRET=.*|JWT_ACCESS_SECRET=ci-access-secret-for-e2e-testing|' .env
+          sed -i 's|JWT_REFRESH_SECRET=.*|JWT_REFRESH_SECRET=ci-refresh-secret-for-e2e-testing|' .env
+          sed -i "s|ENCRYPTION_MASTER_KEY=.*|ENCRYPTION_MASTER_KEY=$(openssl rand -hex 32)|" .env
+          sed -i 's|DATABASE_URL=.*|DATABASE_URL=postgresql://coin:coin_dev@postgres:5432/coin|' .env
+          sed -i 's|REDIS_HOST=.*|REDIS_HOST=redis|' .env
+          sed -i 's|KAFKA_BROKERS=.*|KAFKA_BROKERS=kafka:29092|' .env
 
-      - name: Start services
-        run: docker compose up -d
+      - name: Build and start services
+        run: make prod
 
       - name: Wait for services to be healthy
         run: |
@@ -60,17 +66,20 @@ jobs:
             exit 1
           fi
 
-      - name: Run E2E tests
+      - name: Run Playwright E2E tests
         run: pnpm --filter web test:e2e
+
+      - name: Run API E2E tests
+        run: pnpm --filter api-server test:e2e
 
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
         with:
-          name: playwright-report
+          name: e2e-report
           path: apps/web/test-results/
           retention-days: 7
 
       - name: Stop services
         if: always()
-        run: docker compose down
+        run: make prod-down
