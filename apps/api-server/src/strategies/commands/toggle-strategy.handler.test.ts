@@ -15,7 +15,7 @@ describe('ToggleStrategyHandler', () => {
     handler = new ToggleStrategyHandler(mockPrisma as never);
   });
 
-  it('should toggle enabled from false to true', async () => {
+  it('enabled를 false에서 true로 토글해야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue({ id: 'strat-1', enabled: false });
     mockPrisma.strategy.update.mockResolvedValue({ id: 'strat-1', enabled: true });
 
@@ -26,7 +26,7 @@ describe('ToggleStrategyHandler', () => {
     );
   });
 
-  it('should toggle enabled from true to false', async () => {
+  it('enabled를 true에서 false로 토글해야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue({ id: 'strat-1', enabled: true });
     mockPrisma.strategy.update.mockResolvedValue({ id: 'strat-1', enabled: false });
 
@@ -34,7 +34,7 @@ describe('ToggleStrategyHandler', () => {
     expect(result).toEqual({ id: 'strat-1', enabled: false });
   });
 
-  it('should throw if strategy not found', async () => {
+  it('전략을 찾을 수 없으면 예외를 던져야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue(null);
 
     await expect(

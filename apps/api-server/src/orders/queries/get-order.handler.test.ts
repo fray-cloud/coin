@@ -13,7 +13,7 @@ describe('GetOrderHandler', () => {
     handler = new GetOrderHandler(mockPrisma as never);
   });
 
-  it('should return an order', async () => {
+  it('주문을 반환해야 한다', async () => {
     const order = { id: 'order-1', userId: 'user-1', symbol: 'KRW-BTC' };
     mockPrisma.order.findFirst.mockResolvedValue(order);
 
@@ -21,7 +21,7 @@ describe('GetOrderHandler', () => {
     expect(result).toEqual(order);
   });
 
-  it('should throw NotFoundException if not found', async () => {
+  it('찾을 수 없으면 NotFoundException을 던져야 한다', async () => {
     mockPrisma.order.findFirst.mockResolvedValue(null);
 
     await expect(handler.execute(new GetOrderQuery('user-1', 'non-existent'))).rejects.toThrow(

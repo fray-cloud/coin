@@ -55,26 +55,26 @@ describe('UpbitWebSocket', () => {
     return wsInstances[wsInstances.length - 1];
   }
 
-  it('should connect and call onConnected handler', async () => {
+  it('연결 후 onConnected 핸들러를 호출해야 한다', async () => {
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
     expect(onConnected).toHaveBeenCalledOnce();
   });
 
-  it('should report isConnected correctly after connect', async () => {
+  it('연결 후 isConnected가 올바른 값을 반환해야 한다', async () => {
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
     expect(ws.isConnected()).toBe(true);
   });
 
-  it('should disconnect and cleanup', async () => {
+  it('연결 해제 후 정리되어야 한다', async () => {
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
     ws.disconnect();
     expect(ws.isConnected()).toBe(false);
   });
 
-  it('should send subscription when subscribing after connect', async () => {
+  it('연결 후 구독 시 구독 메시지를 전송해야 한다', async () => {
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
 
@@ -86,7 +86,7 @@ describe('UpbitWebSocket', () => {
     expect(mockWs.send).toHaveBeenCalledWith(expect.stringContaining('KRW-BTC'));
   });
 
-  it('should normalize ticker data from message', async () => {
+  it('메시지에서 티커 데이터를 정규화해야 한다', async () => {
     const callback = vi.fn();
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
@@ -122,7 +122,7 @@ describe('UpbitWebSocket', () => {
     });
   });
 
-  it('should auto-reconnect on close after 3 seconds', async () => {
+  it('연결 종료 후 3초 뒤 자동 재연결해야 한다', async () => {
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
     const countBefore = wsInstances.length;
@@ -134,7 +134,7 @@ describe('UpbitWebSocket', () => {
     expect(wsInstances.length).toBeGreaterThan(countBefore);
   });
 
-  it('should call onError handler on error', async () => {
+  it('에러 발생 시 onError 핸들러를 호출해야 한다', async () => {
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
 
@@ -143,7 +143,7 @@ describe('UpbitWebSocket', () => {
     expect(onError).toHaveBeenCalledWith(error);
   });
 
-  it('should not create duplicate connections', async () => {
+  it('중복 연결을 생성하지 않아야 한다', async () => {
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
     const count = wsInstances.length;

@@ -15,7 +15,7 @@ describe('DeleteStrategyHandler', () => {
     handler = new DeleteStrategyHandler(mockPrisma as never);
   });
 
-  it('should delete a strategy', async () => {
+  it('전략을 삭제해야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue({ id: 'strat-1' });
     mockPrisma.strategy.delete.mockResolvedValue({ id: 'strat-1' });
 
@@ -23,7 +23,7 @@ describe('DeleteStrategyHandler', () => {
     expect(result).toEqual({ id: 'strat-1', deleted: true });
   });
 
-  it('should throw if strategy not found', async () => {
+  it('전략을 찾을 수 없으면 예외를 던져야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue(null);
 
     await expect(

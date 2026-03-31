@@ -16,7 +16,7 @@ describe('UpdateStrategyHandler', () => {
     handler = new UpdateStrategyHandler(mockPrisma as never);
   });
 
-  it('should update strategy fields', async () => {
+  it('전략 필드를 업데이트해야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue({ id: 'strat-1' });
     mockPrisma.strategy.update.mockResolvedValue({ id: 'strat-1', name: 'Updated' });
 
@@ -27,7 +27,7 @@ describe('UpdateStrategyHandler', () => {
     expect(result).toEqual({ id: 'strat-1', name: 'Updated' });
   });
 
-  it('should throw if strategy not found', async () => {
+  it('전략을 찾을 수 없으면 예외를 던져야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue(null);
 
     await expect(

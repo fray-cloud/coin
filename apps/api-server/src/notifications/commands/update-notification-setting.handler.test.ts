@@ -14,7 +14,7 @@ describe('UpdateNotificationSettingHandler', () => {
     handler = new UpdateNotificationSettingHandler(mockPrisma as never);
   });
 
-  it('should upsert notification setting', async () => {
+  it('알림 설정을 upsert해야 한다', async () => {
     const setting = { id: 'ns-1', telegramChatId: '12345', notifyOrders: true };
     mockPrisma.notificationSetting.upsert.mockResolvedValue(setting);
 

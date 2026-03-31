@@ -17,7 +17,7 @@ describe('GetStrategyPerformanceHandler', () => {
     handler = new GetStrategyPerformanceHandler(mockPrisma as never);
   });
 
-  it('should throw if strategy not found', async () => {
+  it('전략을 찾을 수 없으면 예외를 던져야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue(null);
 
     await expect(
@@ -25,7 +25,7 @@ describe('GetStrategyPerformanceHandler', () => {
     ).rejects.toThrow(NotFoundException);
   });
 
-  it('should return zero metrics when no logs exist', async () => {
+  it('로그가 없으면 0 메트릭을 반환해야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue({ id: 'strat-1', config: {} });
     mockPrisma.strategyLog.findMany.mockResolvedValue([]);
 
@@ -35,7 +35,7 @@ describe('GetStrategyPerformanceHandler', () => {
     expect(result.realizedPnl).toBe(0);
   });
 
-  it('should calculate performance from order logs', async () => {
+  it('주문 로그로부터 성과를 계산해야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue({ id: 'strat-1', config: {} });
     mockPrisma.strategyLog.findMany.mockResolvedValue([
       { action: 'order_placed', details: { orderId: 'o1' }, createdAt: new Date('2025-01-01') },

@@ -12,7 +12,7 @@ describe('GetStrategiesHandler', () => {
     handler = new GetStrategiesHandler(mockPrisma as never);
   });
 
-  it('should return all strategies for user', async () => {
+  it('사용자의 모든 전략을 반환해야 한다', async () => {
     const strategies = [
       { id: 'strat-1', name: 'RSI', type: 'rsi' },
       { id: 'strat-2', name: 'MACD', type: 'macd' },

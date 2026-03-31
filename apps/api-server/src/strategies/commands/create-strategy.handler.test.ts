@@ -16,7 +16,7 @@ describe('CreateStrategyHandler', () => {
     handler = new CreateStrategyHandler(mockPrisma as never);
   });
 
-  it('should create a paper strategy', async () => {
+  it('페이퍼 전략을 생성해야 한다', async () => {
     const created = { id: 'strat-1', name: 'RSI Test', type: 'rsi' };
     mockPrisma.strategy.create.mockResolvedValue(created);
 
@@ -36,7 +36,7 @@ describe('CreateStrategyHandler', () => {
     expect(mockPrisma.strategy.create).toHaveBeenCalled();
   });
 
-  it('should require exchangeKeyId for real tradingMode', async () => {
+  it('실거래 모드에서는 exchangeKeyId가 필요하다', async () => {
     await expect(
       handler.execute(
         new CreateStrategyCommand('user-1', {
@@ -52,7 +52,7 @@ describe('CreateStrategyHandler', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
-  it('should validate exchange key exists for real mode', async () => {
+  it('실거래 모드에서 거래소 키가 존재하는지 검증해야 한다', async () => {
     mockPrisma.exchangeKey.findFirst.mockResolvedValue(null);
 
     await expect(

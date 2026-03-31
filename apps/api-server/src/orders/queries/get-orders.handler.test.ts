@@ -12,7 +12,7 @@ describe('GetOrdersHandler', () => {
     handler = new GetOrdersHandler(mockPrisma as never);
   });
 
-  it('should return orders with pagination', async () => {
+  it('페이지네이션으로 주문 목록을 반환해야 한다', async () => {
     const orders = [
       { id: '1', createdAt: new Date('2025-01-02') },
       { id: '2', createdAt: new Date('2025-01-01') },
@@ -24,7 +24,7 @@ describe('GetOrdersHandler', () => {
     expect(result.nextCursor).toBeNull();
   });
 
-  it('should return nextCursor when hasMore', async () => {
+  it('더 많은 데이터가 있으면 nextCursor를 반환해야 한다', async () => {
     // Return limit + 1 items to indicate hasMore
     const orders = Array.from({ length: 21 }, (_, i) => ({
       id: `order-${i}`,
@@ -37,7 +37,7 @@ describe('GetOrdersHandler', () => {
     expect(result.nextCursor).toBeDefined();
   });
 
-  it('should apply filters', async () => {
+  it('필터를 적용해야 한다', async () => {
     mockPrisma.order.findMany.mockResolvedValue([]);
 
     await handler.execute(

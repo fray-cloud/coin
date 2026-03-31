@@ -16,7 +16,7 @@ describe('GetStrategySignalsHandler', () => {
     handler = new GetStrategySignalsHandler(mockPrisma as never);
   });
 
-  it('should return mapped signals', async () => {
+  it('매핑된 시그널을 반환해야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue({ id: 'strat-1' });
     mockPrisma.strategyLog.findMany.mockResolvedValue([
       {
@@ -33,7 +33,7 @@ describe('GetStrategySignalsHandler', () => {
     expect(result[0].price).toBe(50000000);
   });
 
-  it('should throw if strategy not found', async () => {
+  it('전략을 찾을 수 없으면 예외를 던져야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue(null);
 
     await expect(

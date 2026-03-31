@@ -13,7 +13,7 @@ describe('GetStrategyHandler', () => {
     handler = new GetStrategyHandler(mockPrisma as never);
   });
 
-  it('should return a strategy', async () => {
+  it('전략을 반환해야 한다', async () => {
     const strategy = { id: 'strat-1', name: 'RSI', userId: 'user-1' };
     mockPrisma.strategy.findFirst.mockResolvedValue(strategy);
 
@@ -21,7 +21,7 @@ describe('GetStrategyHandler', () => {
     expect(result).toEqual(strategy);
   });
 
-  it('should throw if not found', async () => {
+  it('찾을 수 없으면 예외를 던져야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue(null);
 
     await expect(handler.execute(new GetStrategyQuery('user-1', 'non-existent'))).rejects.toThrow(

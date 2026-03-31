@@ -16,7 +16,7 @@ describe('CancelOrderHandler', () => {
     handler = new CancelOrderHandler(mockPrisma as never);
   });
 
-  it('should cancel a pending paper order', async () => {
+  it('대기 중인 페이퍼 주문을 취소해야 한다', async () => {
     mockPrisma.order.findFirst.mockResolvedValue({
       id: 'order-1',
       userId: 'user-1',
@@ -29,7 +29,7 @@ describe('CancelOrderHandler', () => {
     expect(result).toEqual({ id: 'order-1', status: 'cancelled' });
   });
 
-  it('should throw if order not found', async () => {
+  it('주문을 찾을 수 없으면 예외를 던져야 한다', async () => {
     mockPrisma.order.findFirst.mockResolvedValue(null);
 
     await expect(handler.execute(new CancelOrderCommand('user-1', 'non-existent'))).rejects.toThrow(
@@ -37,7 +37,7 @@ describe('CancelOrderHandler', () => {
     );
   });
 
-  it('should throw if order is already filled', async () => {
+  it('이미 체결된 주문이면 예외를 던져야 한다', async () => {
     mockPrisma.order.findFirst.mockResolvedValue({
       id: 'order-1',
       userId: 'user-1',

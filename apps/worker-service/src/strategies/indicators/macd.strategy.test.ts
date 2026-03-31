@@ -36,7 +36,7 @@ function generateFlatPrices(length = 50): number[] {
 }
 
 describe('MacdStrategy', () => {
-  it('should return hold when not enough data', () => {
+  it('데이터가 부족하면 hold를 반환해야 한다', () => {
     const result = strategy.evaluate([100, 101], {
       fastPeriod: 12,
       slowPeriod: 26,
@@ -46,7 +46,7 @@ describe('MacdStrategy', () => {
     expect(result.reason).toContain('Not enough data');
   });
 
-  it('should detect bullish crossover (buy signal)', () => {
+  it('골든크로스(매수 시그널)를 감지해야 한다', () => {
     const prices = generateBullishCrossoverPrices(60);
     const result = strategy.evaluate(prices, { fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 });
     // We expect buy or hold depending on exact crossover timing
@@ -57,7 +57,7 @@ describe('MacdStrategy', () => {
     }
   });
 
-  it('should detect bearish crossover (sell signal)', () => {
+  it('데드크로스(매도 시그널)를 감지해야 한다', () => {
     const prices = generateBearishCrossoverPrices(60);
     const result = strategy.evaluate(prices, { fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 });
     expect(['sell', 'hold']).toContain(result.signal);
@@ -67,7 +67,7 @@ describe('MacdStrategy', () => {
     }
   });
 
-  it('should include MACD values in result', () => {
+  it('결과에 MACD 값이 포함되어야 한다', () => {
     const prices = generateFlatPrices(60);
     const result = strategy.evaluate(prices, { fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 });
     // Regardless of signal, should have valid indicator values
@@ -75,7 +75,7 @@ describe('MacdStrategy', () => {
     expect(result.reason).toBeDefined();
   });
 
-  it('should include indicator values', () => {
+  it('지표 값이 포함되어야 한다', () => {
     const prices = generateFlatPrices(60);
     const result = strategy.evaluate(prices, {});
     if (Object.keys(result.indicatorValues).length > 0) {
@@ -85,13 +85,13 @@ describe('MacdStrategy', () => {
     }
   });
 
-  it('should use default config', () => {
+  it('기본 설정을 사용해야 한다', () => {
     const prices = generateFlatPrices(60);
     const result = strategy.evaluate(prices, {});
     expect(result.signal).toBeDefined();
   });
 
-  it('should have type "macd"', () => {
+  it('타입이 "macd"여야 한다', () => {
     expect(strategy.type).toBe('macd');
   });
 });

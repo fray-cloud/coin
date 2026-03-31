@@ -16,7 +16,7 @@ describe('GetStrategyLogsHandler', () => {
     handler = new GetStrategyLogsHandler(mockPrisma as never);
   });
 
-  it('should return logs with pagination', async () => {
+  it('페이지네이션으로 로그를 반환해야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue({ id: 'strat-1' });
     mockPrisma.strategyLog.findMany.mockResolvedValue([
       { id: 'log-1', action: 'evaluate', createdAt: new Date('2025-01-01') },
@@ -27,7 +27,7 @@ describe('GetStrategyLogsHandler', () => {
     expect(result.nextCursor).toBeNull();
   });
 
-  it('should throw if strategy not found', async () => {
+  it('전략을 찾을 수 없으면 예외를 던져야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue(null);
 
     await expect(
@@ -35,7 +35,7 @@ describe('GetStrategyLogsHandler', () => {
     ).rejects.toThrow(NotFoundException);
   });
 
-  it('should apply action and signal filters', async () => {
+  it('action과 signal 필터를 적용해야 한다', async () => {
     mockPrisma.strategy.findFirst.mockResolvedValue({ id: 'strat-1' });
     mockPrisma.strategyLog.findMany.mockResolvedValue([]);
 

@@ -18,8 +18,8 @@ describe('RiskService', () => {
     service = new RiskService(mockPrisma as never);
   });
 
-  describe('checkRisk - all pass', () => {
-    it('should allow when no risk config is set', async () => {
+  describe('리스크 체크 - 모두 통과 (checkRisk - all pass)', () => {
+    it('리스크 설정이 없으면 허용해야 한다', async () => {
       const result = await service.checkRisk(
         'user-1',
         'upbit',
@@ -33,8 +33,8 @@ describe('RiskService', () => {
     });
   });
 
-  describe('stopLoss', () => {
-    it('should block buy when stop-loss triggered', async () => {
+  describe('스탑로스 (stopLoss)', () => {
+    it('스탑로스 발동 시 매수를 차단해야 한다', async () => {
       mockPrisma.order.findFirst.mockResolvedValue({
         filledPrice: '50000000', // Bought at 50M
       });
@@ -56,7 +56,7 @@ describe('RiskService', () => {
       expect(result.reason).toContain('Stop-loss triggered');
     });
 
-    it('should allow when loss is below threshold', async () => {
+    it('손실이 임계값 미만이면 허용해야 한다', async () => {
       mockPrisma.order.findFirst.mockResolvedValue({
         filledPrice: '50000000',
       });
@@ -77,7 +77,7 @@ describe('RiskService', () => {
       expect(result.allowed).toBe(true);
     });
 
-    it('should allow when no previous buy order exists', async () => {
+    it('이전 매수 주문이 없으면 허용해야 한다', async () => {
       mockPrisma.order.findFirst.mockResolvedValue(null);
 
       const result = await service.checkRisk(
@@ -95,7 +95,7 @@ describe('RiskService', () => {
       expect(result.allowed).toBe(true);
     });
 
-    it('should skip stop-loss check for sell signals', async () => {
+    it('매도 시그널에는 스탑로스 체크를 건너뛰어야 한다', async () => {
       const result = await service.checkRisk(
         'user-1',
         'upbit',
@@ -113,8 +113,8 @@ describe('RiskService', () => {
     });
   });
 
-  describe('dailyMaxLoss', () => {
-    it('should block when daily loss exceeds limit', async () => {
+  describe('일일 최대 손실 (dailyMaxLoss)', () => {
+    it('일일 손실이 한도를 초과하면 차단해야 한다', async () => {
       mockPrisma.order.findFirst.mockResolvedValue(null); // no stop-loss data
       mockPrisma.order.findMany.mockResolvedValue([
         { side: 'buy', filledPrice: '100', filledQuantity: '1', fee: '0.1' },
@@ -130,7 +130,7 @@ describe('RiskService', () => {
       expect(result.reason).toContain('Daily loss limit');
     });
 
-    it('should allow when daily loss is below limit', async () => {
+    it('일일 손실이 한도 미만이면 허용해야 한다', async () => {
       mockPrisma.order.findMany.mockResolvedValue([
         { side: 'buy', filledPrice: '100', filledQuantity: '1', fee: '0.1' },
         { side: 'sell', filledPrice: '98', filledQuantity: '1', fee: '0.1' },
@@ -144,8 +144,8 @@ describe('RiskService', () => {
     });
   });
 
-  describe('maxPositionSize', () => {
-    it('should block when position exceeds max size', async () => {
+  describe('최대 포지션 크기 (maxPositionSize)', () => {
+    it('포지션이 최대 크기를 초과하면 차단해야 한다', async () => {
       mockPrisma.order.findFirst.mockResolvedValue(null);
       mockPrisma.order.findMany.mockResolvedValue([
         { side: 'buy', filledQuantity: '0.5' },
@@ -162,7 +162,7 @@ describe('RiskService', () => {
       expect(result.reason).toContain('Position size limit');
     });
 
-    it('should allow when position is within limit', async () => {
+    it('포지션이 한도 내이면 허용해야 한다', async () => {
       mockPrisma.order.findFirst.mockResolvedValue(null);
       mockPrisma.order.findMany.mockResolvedValue([{ side: 'buy', filledQuantity: '0.3' }]);
 
@@ -173,7 +173,7 @@ describe('RiskService', () => {
       expect(result.allowed).toBe(true);
     });
 
-    it('should skip max position check for sell signals', async () => {
+    it('매도 시그널에는 최대 포지션 체크를 건너뛰어야 한다', async () => {
       mockPrisma.order.findMany.mockResolvedValue([]);
 
       const result = await service.checkRisk(

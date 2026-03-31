@@ -54,14 +54,14 @@ describe('BybitWebSocket', () => {
     return wsInstances[wsInstances.length - 1];
   }
 
-  it('should connect and call onConnected', async () => {
+  it('연결 후 onConnected 핸들러를 호출해야 한다', async () => {
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
     expect(onConnected).toHaveBeenCalledOnce();
     expect(ws.isConnected()).toBe(true);
   });
 
-  it('should start ping interval on connect', async () => {
+  it('연결 시 ping 인터벌을 시작해야 한다', async () => {
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
 
@@ -72,7 +72,7 @@ describe('BybitWebSocket', () => {
     expect(mockWs.send).toHaveBeenCalledWith(JSON.stringify({ op: 'ping' }));
   });
 
-  it('should subscribe to tickers', async () => {
+  it('티커를 구독해야 한다', async () => {
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
 
@@ -85,7 +85,7 @@ describe('BybitWebSocket', () => {
     );
   });
 
-  it('should normalize ticker data', async () => {
+  it('티커 데이터를 정규화해야 한다', async () => {
     const callback = vi.fn();
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
@@ -122,7 +122,7 @@ describe('BybitWebSocket', () => {
     });
   });
 
-  it('should ignore non-ticker messages', async () => {
+  it('티커가 아닌 메시지는 무시해야 한다', async () => {
     const callback = vi.fn();
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
@@ -132,7 +132,7 @@ describe('BybitWebSocket', () => {
     expect(callback).not.toHaveBeenCalled();
   });
 
-  it('should auto-reconnect on close', async () => {
+  it('연결 종료 시 자동 재연결해야 한다', async () => {
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
     const countBefore = wsInstances.length;
@@ -144,7 +144,7 @@ describe('BybitWebSocket', () => {
     expect(wsInstances.length).toBeGreaterThan(countBefore);
   });
 
-  it('should call onError on error event', async () => {
+  it('에러 이벤트 발생 시 onError를 호출해야 한다', async () => {
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
 
@@ -153,7 +153,7 @@ describe('BybitWebSocket', () => {
     expect(onError).toHaveBeenCalledWith(error);
   });
 
-  it('should disconnect and cleanup', async () => {
+  it('연결 해제 후 정리되어야 한다', async () => {
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
 
@@ -161,7 +161,7 @@ describe('BybitWebSocket', () => {
     expect(ws.isConnected()).toBe(false);
   });
 
-  it('should not duplicate connections', async () => {
+  it('중복 연결을 생성하지 않아야 한다', async () => {
     ws.connect();
     await vi.advanceTimersByTimeAsync(1);
     const count = wsInstances.length;

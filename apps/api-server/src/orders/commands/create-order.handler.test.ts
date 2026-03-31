@@ -14,7 +14,7 @@ describe('CreateOrderHandler', () => {
     handler = new CreateOrderHandler(mockPrisma as never, mockOrchestrator as never);
   });
 
-  it('should create a paper market order', async () => {
+  it('페이퍼 시장가 주문을 생성해야 한다', async () => {
     mockOrchestrator.startSaga.mockResolvedValue({ id: 'order-1', status: 'pending' });
 
     const result = await handler.execute(
@@ -32,7 +32,7 @@ describe('CreateOrderHandler', () => {
     expect(result).toEqual({ id: 'order-1', status: 'pending' });
   });
 
-  it('should require exchangeKeyId for real mode', async () => {
+  it('실거래 모드에서는 exchangeKeyId가 필요하다', async () => {
     await expect(
       handler.execute(
         new CreateOrderCommand('user-1', {
@@ -47,7 +47,7 @@ describe('CreateOrderHandler', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
-  it('should validate exchange key exists for real mode', async () => {
+  it('실거래 모드에서 거래소 키가 존재하는지 검증해야 한다', async () => {
     mockPrisma.exchangeKey.findFirst.mockResolvedValue(null);
 
     await expect(
@@ -65,7 +65,7 @@ describe('CreateOrderHandler', () => {
     ).rejects.toThrow(NotFoundException);
   });
 
-  it('should require price for limit orders', async () => {
+  it('지정가 주문에는 가격이 필요하다', async () => {
     await expect(
       handler.execute(
         new CreateOrderCommand('user-1', {
@@ -80,7 +80,7 @@ describe('CreateOrderHandler', () => {
     ).rejects.toThrow(BadRequestException);
   });
 
-  it('should strip commas from quantity', async () => {
+  it('수량에서 쉼표를 제거해야 한다', async () => {
     mockOrchestrator.startSaga.mockResolvedValue({ id: 'order-1' });
 
     await handler.execute(
