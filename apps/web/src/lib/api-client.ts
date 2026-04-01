@@ -478,6 +478,155 @@ export async function getExchangeRate(): Promise<ExchangeRate> {
   return res.json();
 }
 
+// --- Flows ---
+
+import type { FlowDefinition, BacktestSummary } from '@coin/types';
+
+export interface FlowItem {
+  id: string;
+  name: string;
+  description: string | null;
+  definition: FlowDefinition;
+  exchange: string;
+  symbol: string;
+  candleInterval: string;
+  enabled: boolean;
+  tradingMode: string;
+  riskConfig: Record<string, unknown> | null;
+  createdAt: string;
+  updatedAt: string;
+  backtests?: Array<{
+    id: string;
+    status: string;
+    summary: BacktestSummary | null;
+    createdAt: string;
+  }>;
+}
+
+export interface BacktestItem {
+  id: string;
+  flowId: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+  summary: BacktestSummary | null;
+  createdAt: string;
+}
+
+export interface BacktestTraceItem {
+  id: string;
+  timestamp: string;
+  nodeId: string;
+  input: Record<string, unknown>;
+  output: Record<string, unknown>;
+  fired: boolean;
+  durationMs: number;
+}
+
+export interface BacktestTraceResponse {
+  items: BacktestTraceItem[];
+  total: number;
+}
+
+export async function getFlows(): Promise<FlowItem[]> {
+  const res = await apiFetch('/flows');
+  if (!res.ok) throw new Error('Failed to fetch flows');
+  return res.json();
+}
+
+export async function getFlow(id: string): Promise<FlowItem> {
+  const res = await apiFetch(`/flows/${id}`);
+  if (!res.ok) throw new Error('Failed to fetch flow');
+  return res.json();
+}
+
+export interface CreateFlowInput {
+  name: string;
+  description?: string;
+  definition: FlowDefinition;
+  exchange: string;
+  symbol: string;
+  candleInterval?: string;
+  tradingMode?: string;
+  exchangeKeyId?: string;
+  riskConfig?: Record<string, unknown>;
+}
+
+export async function createFlow(data: CreateFlowInput): Promise<FlowItem> {
+  const res = await apiFetch('/flows', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to create flow');
+  }
+  return res.json();
+}
+
+export async function updateFlow(id: string, data: Partial<CreateFlowInput>): Promise<FlowItem> {
+  const res = await apiFetch(`/flows/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to update flow');
+  }
+  return res.json();
+}
+
+export async function toggleFlow(id: string): Promise<{ id: string; enabled: boolean }> {
+  const res = await apiFetch(`/flows/${id}/toggle`, { method: 'PATCH' });
+  if (!res.ok) throw new Error('Failed to toggle flow');
+  return res.json();
+}
+
+export async function deleteFlow(id: string): Promise<void> {
+  const res = await apiFetch(`/flows/${id}`, { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete flow');
+}
+
+export async function requestBacktest(
+  flowId: string,
+  data: { startDate: string; endDate: string },
+): Promise<{ backtestId: string }> {
+  const res = await apiFetch(`/flows/${flowId}/backtest`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to request backtest');
+  }
+  return res.json();
+}
+
+export async function getBacktests(flowId: string): Promise<BacktestItem[]> {
+  const res = await apiFetch(`/flows/${flowId}/backtests`);
+  if (!res.ok) throw new Error('Failed to fetch backtests');
+  return res.json();
+}
+
+export async function getBacktestTrace(
+  flowId: string,
+  backtestId: string,
+  params?: { from?: string; to?: string; limit?: number; offset?: number },
+): Promise<BacktestTraceResponse> {
+  const searchParams = new URLSearchParams();
+  if (params?.from) searchParams.set('from', params.from);
+  if (params?.to) searchParams.set('to', params.to);
+  if (params?.limit) searchParams.set('limit', String(params.limit));
+  if (params?.offset) searchParams.set('offset', String(params.offset));
+  const qs = searchParams.toString();
+  const res = await apiFetch(`/flows/${flowId}/backtests/${backtestId}/trace${qs ? `?${qs}` : ''}`);
+  if (!res.ok) throw new Error('Failed to fetch backtest trace');
+  return res.json();
+}
+
 // Activity
 export interface ActivityItem {
   id: string;

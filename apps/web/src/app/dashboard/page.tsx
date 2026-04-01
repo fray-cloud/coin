@@ -33,6 +33,7 @@ type WidgetId = (typeof DEFAULT_WIDGET_ORDER)[number];
 const STORAGE_KEY = 'dashboard-widget-order';
 
 function loadWidgetOrder(): WidgetId[] {
+  if (typeof window === 'undefined') return [...DEFAULT_WIDGET_ORDER];
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {

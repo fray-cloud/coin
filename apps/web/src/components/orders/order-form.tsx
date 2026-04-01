@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Dialog } from '@/components/ui/dialog';
 import { createOrder, type ExchangeKeyItem } from '@/lib/api-client';
 import { useOrderForm } from '@/hooks/use-order-form';
 import { useTranslations } from 'next-intl';
@@ -34,6 +35,7 @@ export function OrderForm({
   const [price, setPrice] = useState('');
   const [mode, setMode] = useState<'paper' | 'real'>('paper');
   const [error, setError] = useState('');
+  const [showRealConfirm, setShowRealConfirm] = useState(false);
   const t = useTranslations('orders');
 
   const { exchangeKeyId, quoteBalance, quoteCurrency, activeExchanges, activeSymbols } =
@@ -99,7 +101,9 @@ export function OrderForm({
               type="button"
               variant={mode === 'real' ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setMode('real')}
+              onClick={() => {
+                if (mode !== 'real') setShowRealConfirm(true);
+              }}
             >
               {t('real')}
             </Button>
@@ -280,6 +284,17 @@ export function OrderForm({
           )}
         </form>
       </CardContent>
+
+      <Dialog
+        open={showRealConfirm}
+        onClose={() => setShowRealConfirm(false)}
+        title={t('realModeConfirmTitle')}
+        description={t('realModeConfirmDesc')}
+        confirmLabel={t('realModeConfirmBtn')}
+        cancelLabel={t('realModeConfirmCancel')}
+        variant="destructive"
+        onConfirm={() => setMode('real')}
+      />
     </Card>
   );
 }

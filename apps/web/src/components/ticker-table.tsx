@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
@@ -14,6 +14,7 @@ import { cn } from '@/lib/utils';
 
 interface TickerTableProps {
   tickers: Ticker[];
+  onRowClick?: (ticker: Ticker) => void;
 }
 
 type SortKey = 'exchange' | 'symbol' | 'price' | 'change' | 'volume' | null;
@@ -32,7 +33,6 @@ function getDisplayPrices(
   const isBaseKrw = baseCurrency === 'KRW';
 
   if (isKrwExchange && isBaseKrw) {
-    // Upbit + KRW base: KRW is main, USD is sub
     const usd = num / krwPerUsd;
     return {
       main: `₩${formatPrice(price)}`,
@@ -40,7 +40,6 @@ function getDisplayPrices(
     };
   }
   if (isKrwExchange && !isBaseKrw) {
-    // Upbit + USD base: USD is main, KRW is sub
     const usd = num / krwPerUsd;
     return {
       main: `$${usd >= 1 ? usd.toLocaleString('en-US', { maximumFractionDigits: 2 }) : usd.toLocaleString('en-US', { maximumFractionDigits: 6 })}`,
@@ -48,14 +47,12 @@ function getDisplayPrices(
     };
   }
   if (!isKrwExchange && isBaseKrw) {
-    // Binance/Bybit + KRW base: KRW is main, USDT is sub
     const krw = num * krwPerUsd;
     return {
       main: `₩${krw.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`,
       sub: `$${formatPrice(price)}`,
     };
   }
-  // Binance/Bybit + USD base: USDT is main, no sub needed
   return { main: `$${formatPrice(price)}`, sub: null };
 }
 
@@ -76,7 +73,76 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
   );
 }
 
-export function TickerTable({ tickers }: TickerTableProps) {
+interface TickerRowProps {
+  tick: Ticker;
+  krwPerUsd: number;
+  baseCurrency: 'KRW' | 'USD';
+  onRowClick?: (ticker: Ticker) => void;
+}
+
+function TickerRow({ tick, krwPerUsd, baseCurrency, onRowClick }: TickerRowProps) {
+  const prevPrice = useRef(tick.price);
+  const [flashClass, setFlashClass] = useState('');
+
+  useEffect(() => {
+    if (tick.price !== prevPrice.current) {
+      const dir = Number(tick.price) > Number(prevPrice.current) ? 'flash-up' : 'flash-down';
+      prevPrice.current = tick.price;
+      setFlashClass(dir);
+      const timer = setTimeout(() => setFlashClass(''), 500);
+      return () => clearTimeout(timer);
+    }
+  }, [tick.price]);
+
+  const changeNum = Number(tick.changePercent24h);
+  const changeColor =
+    changeNum > 0 ? 'text-green-500' : changeNum < 0 ? 'text-red-500' : 'text-muted-foreground';
+  const { main: mainPrice, sub: subPrice } = getDisplayPrices(
+    tick.price,
+    tick.exchange,
+    krwPerUsd,
+    baseCurrency,
+  );
+
+  return (
+    <tr
+      key={`${tick.exchange}:${tick.symbol}`}
+      className={cn('border-b border-border cursor-pointer hover:bg-muted/50', flashClass)}
+      onClick={() => onRowClick?.(tick)}
+    >
+      <td className="p-2 font-semibold">
+        <span className="inline-flex items-center gap-1.5">
+          <ExchangeIcon exchange={tick.exchange} size={18} />
+          {tick.exchange.charAt(0).toUpperCase() + tick.exchange.slice(1)}
+        </span>
+      </td>
+      <td className="p-2">
+        <span className="inline-flex items-center gap-1.5">
+          <CoinIcon symbol={tick.symbol} size={18} />
+          {tick.symbol}
+        </span>
+      </td>
+      <td className="p-2 text-right">
+        <div className="font-bold">{mainPrice}</div>
+        {subPrice && <div className="text-xs text-muted-foreground">{subPrice}</div>}
+      </td>
+      <td className={`p-2 text-right ${changeColor}`}>
+        {changeNum > 0 ? '+' : ''}
+        {Number(tick.changePercent24h).toFixed(2)}%
+      </td>
+      <td className="p-2 text-right">{formatPrice(tick.high24h)}</td>
+      <td className="p-2 text-right">{formatPrice(tick.low24h)}</td>
+      <td className="p-2 text-right">{formatVolume(tick.volume24h)}</td>
+      <td className="p-2 text-center" onClick={(e) => e.stopPropagation()}>
+        <Link href={`/markets/${tick.exchange}/${encodeURIComponent(tick.symbol)}`}>
+          <MiniChart exchange={tick.exchange} symbol={tick.symbol} width={100} height={36} />
+        </Link>
+      </td>
+    </tr>
+  );
+}
+
+export function TickerTable({ tickers, onRowClick }: TickerTableProps) {
   const t = useTranslations('ticker');
   const { krwPerUsd } = useExchangeRate();
   const { currency: baseCurrency } = useBaseCurrency();
@@ -171,61 +237,15 @@ export function TickerTable({ tickers }: TickerTableProps) {
                 </td>
               </tr>
             ) : (
-              processed.map((tick) => {
-                const changeNum = Number(tick.changePercent24h);
-                const changeColor =
-                  changeNum > 0
-                    ? 'text-green-500'
-                    : changeNum < 0
-                      ? 'text-red-500'
-                      : 'text-muted-foreground';
-                const { main: mainPrice, sub: subPrice } = getDisplayPrices(
-                  tick.price,
-                  tick.exchange,
-                  krwPerUsd,
-                  baseCurrency,
-                );
-                return (
-                  <tr
-                    key={`${tick.exchange}:${tick.symbol}`}
-                    className="border-b border-border cursor-pointer hover:bg-muted/50"
-                  >
-                    <td className="p-2 font-semibold">
-                      <span className="inline-flex items-center gap-1.5">
-                        <ExchangeIcon exchange={tick.exchange} size={18} />
-                        {tick.exchange.charAt(0).toUpperCase() + tick.exchange.slice(1)}
-                      </span>
-                    </td>
-                    <td className="p-2">
-                      <span className="inline-flex items-center gap-1.5">
-                        <CoinIcon symbol={tick.symbol} size={18} />
-                        {tick.symbol}
-                      </span>
-                    </td>
-                    <td className="p-2 text-right">
-                      <div className="font-bold">{mainPrice}</div>
-                      {subPrice && <div className="text-xs text-muted-foreground">{subPrice}</div>}
-                    </td>
-                    <td className={`p-2 text-right ${changeColor}`}>
-                      {changeNum > 0 ? '+' : ''}
-                      {Number(tick.changePercent24h).toFixed(2)}%
-                    </td>
-                    <td className="p-2 text-right">{formatPrice(tick.high24h)}</td>
-                    <td className="p-2 text-right">{formatPrice(tick.low24h)}</td>
-                    <td className="p-2 text-right">{formatVolume(tick.volume24h)}</td>
-                    <td className="p-2 text-center">
-                      <Link href={`/markets/${tick.exchange}/${encodeURIComponent(tick.symbol)}`}>
-                        <MiniChart
-                          exchange={tick.exchange}
-                          symbol={tick.symbol}
-                          width={100}
-                          height={36}
-                        />
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })
+              processed.map((tick) => (
+                <TickerRow
+                  key={`${tick.exchange}:${tick.symbol}`}
+                  tick={tick}
+                  krwPerUsd={krwPerUsd}
+                  baseCurrency={baseCurrency}
+                  onRowClick={onRowClick}
+                />
+              ))
             )}
           </tbody>
         </table>
