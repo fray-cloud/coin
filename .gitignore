@@ -42,5 +42,5 @@ logs/
 backups/
 infra/nginx/certs/
 
-# tmp
 tmp/
+.gstack/
