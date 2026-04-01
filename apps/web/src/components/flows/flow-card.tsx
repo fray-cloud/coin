@@ -70,7 +70,7 @@ export function FlowCard({ flow, onDelete }: FlowCardProps) {
           >
             {t(latestBacktest.status as 'pending' | 'running' | 'completed' | 'failed')}
           </span>
-          {latestBacktest.summary && (
+          {latestBacktest.summary && latestBacktest.summary.winRate != null && (
             <span className="text-muted-foreground">
               Win {(latestBacktest.summary.winRate * 100).toFixed(0)}% · PnL{' '}
               <span
