@@ -83,7 +83,11 @@
     "avgCost": "Avg Cost",
     "current": "Current",
     "value": "Value",
-    "pnl": "P&L"
+    "pnl": "P&L",
+    "cardView": "Card View",
+    "tableView": "Table View",
+    "holdings": "Holdings",
+    "pnlPct": "Return"
   },
   "accounts": {
     "title": "Accounts",
@@ -136,6 +140,12 @@
     "edit": "Edit",
     "save": "Save",
     "cancel": "Cancel"
+  },
+  "notificationFeed": {
+    "label": "Notification feed",
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "clearAll": "Clear all"
   },
   "notifications": {
     "title": "Notification Settings",

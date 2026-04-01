@@ -83,7 +83,11 @@
     "avgCost": "평균 단가",
     "current": "현재가",
     "value": "가치",
-    "pnl": "손익"
+    "pnl": "손익",
+    "cardView": "카드 뷰",
+    "tableView": "테이블 뷰",
+    "holdings": "보유수량",
+    "pnlPct": "수익률"
   },
   "accounts": {
     "title": "계정",
@@ -136,6 +140,12 @@
     "edit": "수정",
     "save": "저장",
     "cancel": "취소"
+  },
+  "notificationFeed": {
+    "label": "알림 피드",
+    "title": "알림",
+    "empty": "알림이 없습니다",
+    "clearAll": "모두 지우기"
   },
   "notifications": {
     "title": "알림 설정",
