@@ -33,6 +33,11 @@ export interface PortDefinition {
   required?: boolean;
 }
 
+export interface ParamDefinition {
+  key: string;
+  required: boolean;
+}
+
 export interface NodeTypeInfo {
   subtype: string;
   type: FlowNodeDefinition['type'];
@@ -40,6 +45,16 @@ export interface NodeTypeInfo {
   inputs: PortDefinition[];
   outputs: PortDefinition[];
   defaultConfig: Record<string, unknown>;
+  params?: ParamDefinition[];
+}
+
+/** Returns initial config for a new node: only required params from defaultConfig. */
+export function getRequiredConfig(info: NodeTypeInfo): Record<string, unknown> {
+  if (!info.params) return { ...info.defaultConfig };
+  const requiredKeys = new Set(info.params.filter((p) => p.required).map((p) => p.key));
+  return Object.fromEntries(
+    Object.entries(info.defaultConfig).filter(([k]) => requiredKeys.has(k)),
+  );
 }
 
 export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
@@ -58,6 +73,10 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
     inputs: [{ name: 'candles', type: 'Candle[]', required: true }],
     outputs: [{ name: 'value', type: 'number' }],
     defaultConfig: { period: 14, source: 'close' },
+    params: [
+      { key: 'period', required: true },
+      { key: 'source', required: false },
+    ],
   },
   macd: {
     subtype: 'macd',
@@ -70,6 +89,11 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
       { name: 'histogram', type: 'number' },
     ],
     defaultConfig: { fastPeriod: 12, slowPeriod: 26, signalPeriod: 9 },
+    params: [
+      { key: 'fastPeriod', required: true },
+      { key: 'slowPeriod', required: true },
+      { key: 'signalPeriod', required: false },
+    ],
   },
   bollinger: {
     subtype: 'bollinger',
@@ -82,6 +106,10 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
       { name: 'lower', type: 'number' },
     ],
     defaultConfig: { period: 20, stdDev: 2 },
+    params: [
+      { key: 'period', required: true },
+      { key: 'stdDev', required: false },
+    ],
   },
   ema: {
     subtype: 'ema',
@@ -90,6 +118,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
     inputs: [{ name: 'candles', type: 'Candle[]', required: true }],
     outputs: [{ name: 'value', type: 'number' }],
     defaultConfig: { period: 20 },
+    params: [{ key: 'period', required: true }],
   },
   threshold: {
     subtype: 'threshold',
@@ -98,6 +127,10 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
     inputs: [{ name: 'value', type: 'number', required: true }],
     outputs: [{ name: 'result', type: 'boolean' }],
     defaultConfig: { operator: '<', threshold: 30 },
+    params: [
+      { key: 'operator', required: true },
+      { key: 'threshold', required: true },
+    ],
   },
   crossover: {
     subtype: 'crossover',
@@ -109,6 +142,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
     ],
     outputs: [{ name: 'result', type: 'boolean' }],
     defaultConfig: { direction: 'above' },
+    params: [{ key: 'direction', required: true }],
   },
   'and-or': {
     subtype: 'and-or',
@@ -120,6 +154,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
     ],
     outputs: [{ name: 'result', type: 'boolean' }],
     defaultConfig: { operator: 'AND' },
+    params: [{ key: 'operator', required: true }],
   },
   'market-order': {
     subtype: 'market-order',
@@ -128,6 +163,10 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
     inputs: [{ name: 'trigger', type: 'boolean', required: true }],
     outputs: [{ name: 'result', type: 'OrderResult' }],
     defaultConfig: { side: 'buy', amount: '0.001' },
+    params: [
+      { key: 'side', required: true },
+      { key: 'amount', required: true },
+    ],
   },
   alert: {
     subtype: 'alert',
@@ -136,6 +175,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
     inputs: [{ name: 'trigger', type: 'boolean', required: true }],
     outputs: [],
     defaultConfig: { message: '신호 발생!' },
+    params: [{ key: 'message', required: false }],
   },
 };
 

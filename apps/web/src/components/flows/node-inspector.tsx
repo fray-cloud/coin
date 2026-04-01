@@ -36,6 +36,40 @@ const PARAM_VALUE_LABELS: Record<string, string> = {
   low: '저가',
 };
 
+function ParamInput({
+  paramKey,
+  value,
+  onChange,
+}: {
+  paramKey: string;
+  value: unknown;
+  onChange: (val: unknown) => void;
+}) {
+  if (typeof value === 'boolean') {
+    return (
+      <button
+        onClick={() => onChange(!value)}
+        className={`rounded px-2 py-1 text-xs ${
+          value ? 'bg-emerald-900/30 text-emerald-400' : 'bg-muted text-muted-foreground'
+        }`}
+      >
+        {value ? 'true' : 'false'}
+      </button>
+    );
+  }
+  return (
+    <input
+      type={typeof value === 'number' ? 'number' : 'text'}
+      value={String(value)}
+      onChange={(e) =>
+        onChange(typeof value === 'number' ? Number(e.target.value) || 0 : e.target.value)
+      }
+      className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-primary"
+      placeholder={PARAM_VALUE_LABELS[String(value)] ?? String(value)}
+    />
+  );
+}
+
 export function NodeInspector() {
   const t = useTranslations('flows');
   const nodes = useFlowStore((s) => s.nodes);
@@ -66,6 +100,10 @@ export function NodeInspector() {
 
   const registry = NODE_TYPE_REGISTRY[node.data.subtype];
   const config = node.data.config || {};
+  const params = registry?.params;
+
+  const requiredParams = params?.filter((p) => p.required) ?? [];
+  const optionalParams = params?.filter((p) => !p.required) ?? [];
 
   return (
     <div className="flex h-full w-64 flex-col border-l border-border bg-card">
@@ -91,35 +129,89 @@ export function NodeInspector() {
         <h4 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           {t('parameters')}
         </h4>
-        <div className="flex flex-col gap-2">
-          {Object.entries(config).map(([key, val]) => (
-            <label key={key} className="flex flex-col gap-0.5">
-              <span className="text-[10px] text-muted-foreground">{PARAM_LABELS[key] ?? key}</span>
-              {typeof val === 'boolean' ? (
-                <button
-                  onClick={() => updateNodeConfig(node.id, { [key]: !val })}
-                  className={`rounded px-2 py-1 text-xs ${
-                    val ? 'bg-emerald-900/30 text-emerald-400' : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {val ? 'true' : 'false'}
-                </button>
-              ) : (
-                <input
-                  type={typeof val === 'number' ? 'number' : 'text'}
-                  value={String(val)}
-                  onChange={(e) =>
-                    updateNodeConfig(node.id, {
-                      [key]: typeof val === 'number' ? Number(e.target.value) || 0 : e.target.value,
-                    })
-                  }
-                  className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-primary"
-                  placeholder={PARAM_VALUE_LABELS[String(val)] ?? String(val)}
+
+        {params ? (
+          <div className="flex flex-col gap-2">
+            {/* Required params — always shown */}
+            {requiredParams.map(({ key }) => (
+              <label key={key} className="flex flex-col gap-0.5">
+                <span className="text-[10px] text-muted-foreground">
+                  {PARAM_LABELS[key] ?? key}
+                </span>
+                <ParamInput
+                  paramKey={key}
+                  value={config[key] ?? registry.defaultConfig[key]}
+                  onChange={(val) => updateNodeConfig(node.id, { [key]: val })}
                 />
-              )}
-            </label>
-          ))}
-        </div>
+              </label>
+            ))}
+
+            {/* Optional params — toggle to enable/disable */}
+            {optionalParams.length > 0 && (
+              <>
+                <div className="mt-1 border-t border-border pt-2">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/60">
+                    선택적 파라미터
+                  </span>
+                </div>
+                {optionalParams.map(({ key }) => {
+                  const isEnabled = key in config;
+                  const defaultVal = registry.defaultConfig[key];
+                  return (
+                    <div key={key} className="flex flex-col gap-0.5">
+                      <label className="flex cursor-pointer items-center gap-1.5">
+                        <input
+                          type="checkbox"
+                          checked={isEnabled}
+                          onChange={() => {
+                            if (isEnabled) {
+                              updateNodeConfig(node.id, { [key]: undefined });
+                            } else {
+                              updateNodeConfig(node.id, { [key]: defaultVal });
+                            }
+                          }}
+                          className="h-3 w-3 accent-primary"
+                        />
+                        <span
+                          className={`text-[10px] ${isEnabled ? 'text-muted-foreground' : 'text-muted-foreground/50'}`}
+                        >
+                          {PARAM_LABELS[key] ?? key}
+                        </span>
+                      </label>
+                      {isEnabled ? (
+                        <ParamInput
+                          paramKey={key}
+                          value={config[key]}
+                          onChange={(val) => updateNodeConfig(node.id, { [key]: val })}
+                        />
+                      ) : (
+                        <span className="rounded border border-border/40 bg-muted/40 px-2 py-1 text-xs text-muted-foreground/40">
+                          기본값: {PARAM_VALUE_LABELS[String(defaultVal)] ?? String(defaultVal)}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        ) : (
+          /* Fallback: no params metadata — render all config keys as before */
+          <div className="flex flex-col gap-2">
+            {Object.entries(config).map(([key, val]) => (
+              <label key={key} className="flex flex-col gap-0.5">
+                <span className="text-[10px] text-muted-foreground">
+                  {PARAM_LABELS[key] ?? key}
+                </span>
+                <ParamInput
+                  paramKey={key}
+                  value={val}
+                  onChange={(v) => updateNodeConfig(node.id, { [key]: v })}
+                />
+              </label>
+            ))}
+          </div>
+        )}
 
         {/* Ports info */}
         {registry && (

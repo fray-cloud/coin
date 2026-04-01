@@ -11,7 +11,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { NODE_TYPE_REGISTRY } from '@coin/types';
+import { NODE_TYPE_REGISTRY, getRequiredConfig } from '@coin/types';
 import { useFlowStore, type FlowNodeData } from '@/stores/use-flow-store';
 import { customNodeTypes } from './nodes/base-node';
 
@@ -110,7 +110,7 @@ export function FlowCanvas() {
           label: info.label,
           subtype: info.subtype,
           nodeType: info.type,
-          config: { ...info.defaultConfig },
+          config: getRequiredConfig(info),
         },
       });
     },
