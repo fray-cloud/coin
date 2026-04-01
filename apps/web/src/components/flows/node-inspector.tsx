@@ -14,8 +14,17 @@ export function NodeInspector() {
   const deleteNode = useFlowStore((s) => s.deleteNode);
   const traceData = useFlowStore((s) => s.traceData);
   const timelineIndex = useFlowStore((s) => s.timelineIndex);
+  const backtestStatus = useFlowStore((s) => s.backtestStatus);
 
   const node = nodes.find((n) => n.id === selectedNodeId);
+
+  const currentTrace = useMemo(() => {
+    if (!node || backtestStatus !== 'completed' || traceData.length === 0) return null;
+    const timestamps = [...new Set(traceData.map((t) => t.timestamp))].sort();
+    const currentTs = timestamps[timelineIndex];
+    if (!currentTs) return null;
+    return traceData.find((t) => t.nodeId === node.id && t.timestamp === currentTs) ?? null;
+  }, [node, traceData, timelineIndex, backtestStatus]);
 
   if (!node) {
     return (
@@ -27,16 +36,6 @@ export function NodeInspector() {
 
   const registry = NODE_TYPE_REGISTRY[node.data.subtype];
   const config = node.data.config || {};
-  const backtestStatus = useFlowStore((s) => s.backtestStatus);
-
-  // Find trace entry for this node at current timeline position
-  const currentTrace = useMemo(() => {
-    if (backtestStatus !== 'completed' || traceData.length === 0) return null;
-    const timestamps = [...new Set(traceData.map((t) => t.timestamp))].sort();
-    const currentTs = timestamps[timelineIndex];
-    if (!currentTs) return null;
-    return traceData.find((t) => t.nodeId === node.id && t.timestamp === currentTs) ?? null;
-  }, [traceData, timelineIndex, backtestStatus, node.id]);
 
   return (
     <div className="flex h-full w-64 flex-col border-l border-border bg-card">
