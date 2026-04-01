@@ -126,3 +126,38 @@ body {
 .flash-down {
   animation: flash-down 0.5s ease-out;
 }
+
+/* Flow canvas — connection guide UX */
+/* Dim handles that can't accept the current connection */
+.react-flow__handle {
+  transition:
+    opacity 0.15s,
+    box-shadow 0.15s;
+}
+.react-flow__handle.connectingfrom,
+.react-flow__handle.connectingto {
+  opacity: 0.3;
+}
+/* Highlight valid target handles while dragging */
+.react-flow__handle-connecting {
+  opacity: 1 !important;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+.react-flow__handle-valid {
+  opacity: 1 !important;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.4);
+  animation: handle-pulse 0.8s ease-in-out infinite;
+}
+@keyframes handle-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(34, 197, 94, 0.15);
+  }
+}
+/* Invalid connection line */
+.react-flow__connection-path.invalid {
+  stroke: #ef4444 !important;
+}

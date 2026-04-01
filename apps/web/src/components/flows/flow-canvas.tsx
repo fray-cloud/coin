@@ -11,7 +11,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
-import { NODE_TYPE_REGISTRY } from '@coin/types';
+import { NODE_TYPE_REGISTRY, getRequiredConfig } from '@coin/types';
 import { useFlowStore, type FlowNodeData } from '@/stores/use-flow-store';
 import { customNodeTypes } from './nodes/base-node';
 
@@ -110,15 +110,52 @@ export function FlowCanvas() {
           label: info.label,
           subtype: info.subtype,
           nodeType: info.type,
-          config: { ...info.defaultConfig },
+          config: getRequiredConfig(info),
         },
       });
     },
     [addNode],
   );
 
+  const isEmpty = nodes.length === 0;
+
   return (
-    <div ref={reactFlowWrapper} className="flex-1" onDragOver={handleDragOver} onDrop={handleDrop}>
+    <div
+      ref={reactFlowWrapper}
+      className="flex-1 relative"
+      onDragOver={handleDragOver}
+      onDrop={handleDrop}
+    >
+      {/* Empty canvas guide overlay */}
+      {isEmpty && (
+        <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+          <div className="text-center px-6 py-8 rounded-xl border border-dashed border-border/50 bg-card/40 backdrop-blur-sm max-w-sm">
+            <div className="text-3xl mb-3">🔗</div>
+            <h3 className="text-sm font-semibold text-foreground mb-1">플로우를 시작해보세요</h3>
+            <p className="text-[11px] text-muted-foreground leading-relaxed mb-3">
+              왼쪽 패널에서 노드를 클릭하거나 캔버스로 드래그해 추가하세요.
+            </p>
+            <div className="space-y-1 text-left">
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-blue-400 shrink-0" />
+                <span>데이터 노드로 시작 (예: 캔들 데이터)</span>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-purple-400 shrink-0" />
+                <span>지표 노드로 RSI, MACD 등 계산</span>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-amber-400 shrink-0" />
+                <span>조건 노드로 매매 신호 정의</span>
+              </div>
+              <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
+                <span>주문 노드로 자동 매매 실행</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -132,6 +169,7 @@ export function FlowCanvas() {
         nodeTypes={customNodeTypes}
         fitView
         proOptions={{ hideAttribution: true }}
+        connectionLineStyle={{ stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '5 3' }}
         defaultEdgeOptions={{
           type: 'smoothstep',
           style: { stroke: '#4b5563', strokeWidth: 2 },
