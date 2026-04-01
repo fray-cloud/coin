@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ComponentType } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -15,6 +15,7 @@ import {
   Bell,
   Settings,
   X,
+  LayoutDashboard,
 } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
 
@@ -25,9 +26,15 @@ const TABS = [
   { href: '/portfolio', icon: PieChart, labelKey: 'portfolio' as const },
 ];
 
-const MORE_ITEMS = [
-  { href: '/activity', icon: Activity, labelKey: 'activity' as const },
-  { href: '/settings', icon: Settings, labelKey: 'settings' as const },
+const MORE_ITEMS: Array<{
+  href: string;
+  icon: ComponentType<{ size?: number }>;
+  label?: string;
+  labelKey?: 'activity' | 'settings';
+}> = [
+  { href: '/dashboard', icon: LayoutDashboard, label: '대시보드' },
+  { href: '/activity', icon: Activity, labelKey: 'activity' },
+  { href: '/settings', icon: Settings, labelKey: 'settings' },
 ];
 
 export function MobileTabBar() {
@@ -68,7 +75,7 @@ export function MobileTabBar() {
                   }`}
                 >
                   <item.icon size={18} />
-                  {t(item.labelKey)}
+                  {item.label ?? (item.labelKey ? t(item.labelKey) : '')}
                 </Link>
               );
             })}
