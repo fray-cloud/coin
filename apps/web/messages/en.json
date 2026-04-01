@@ -62,7 +62,11 @@
     "noOrders": "No orders yet",
     "loadMore": "Load More",
     "openOrders": "Open",
-    "closedOrders": "Completed"
+    "closedOrders": "Completed",
+    "realModeConfirmTitle": "Switch to Live Trading?",
+    "realModeConfirmDesc": "You are about to place a REAL order using your actual exchange funds. This action cannot be undone. Please confirm you want to proceed with live trading.",
+    "realModeConfirmBtn": "Yes, Use Live Trading",
+    "realModeConfirmCancel": "Stay in Paper"
   },
   "portfolio": {
     "title": "Portfolio",
