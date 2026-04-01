@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { useTickers } from '@/hooks/use-tickers';
 import { TickerTable } from '@/components/ticker-table';
+import { TickerCardList } from '@/components/markets/ticker-card-list';
 import { ExchangeRateBadge } from '@/components/exchange-rate-badge';
 
 export default function MarketsPage() {
@@ -24,7 +25,15 @@ export default function MarketsPage() {
         </div>
       </div>
 
-      <TickerTable tickers={tickers} />
+      {/* Mobile: card view */}
+      <div className="md:hidden">
+        <TickerCardList tickers={tickers} />
+      </div>
+
+      {/* Desktop: table view */}
+      <div className="hidden md:block">
+        <TickerTable tickers={tickers} />
+      </div>
     </main>
   );
 }
