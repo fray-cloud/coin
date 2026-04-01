@@ -60,7 +60,7 @@ export function NodePalette() {
                 draggable
                 onDragStart={(e) => onDragStart(e, info)}
                 onClick={() => handleAdd(info)}
-                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-foreground transition hover:bg-muted"
+                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-foreground transition hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
               >
                 <span
                   className="h-2 w-2 shrink-0 rounded-full"

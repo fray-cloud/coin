@@ -75,7 +75,7 @@ export function FlowToolbar() {
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.push('/flows')}
-          className="rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          className="rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           aria-label="뒤로"
         >
           <ArrowLeft size={18} />

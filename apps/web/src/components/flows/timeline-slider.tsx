@@ -57,21 +57,21 @@ export function TimelineSlider() {
       <div className="flex items-center gap-1">
         <button
           onClick={() => setTimelineIndex(Math.max(0, timelineIndex - 1))}
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           aria-label="이전"
         >
           <SkipBack size={14} />
         </button>
         <button
           onClick={playing ? () => setPlaying(false) : handlePlay}
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           aria-label={playing ? '일시정지' : '재생'}
         >
           {playing ? <Pause size={14} /> : <Play size={14} />}
         </button>
         <button
           onClick={() => setTimelineIndex(Math.min(maxIndex, timelineIndex + 1))}
-          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           aria-label="다음"
         >
           <SkipForward size={14} />

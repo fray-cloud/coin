@@ -25,7 +25,7 @@ export function FlowCard({ flow, onDelete }: FlowCardProps) {
   return (
     <Link
       href={`/flows/${flow.id}`}
-      className="group block rounded-lg border border-border bg-card p-4 transition hover:border-primary/30 hover:shadow-md"
+      className="group block rounded-lg border border-border bg-card p-4 transition hover:border-primary/30 hover:shadow-md focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
     >
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">

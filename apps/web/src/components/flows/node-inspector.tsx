@@ -48,7 +48,7 @@ export function NodeInspector() {
         </div>
         <button
           onClick={() => deleteNode(node.id)}
-          className="rounded p-1 text-muted-foreground transition hover:bg-red-900/30 hover:text-red-400"
+          className="rounded p-1 text-muted-foreground transition hover:bg-red-900/30 hover:text-red-400 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
           aria-label="노드 삭제"
         >
           <Trash2 size={14} />
