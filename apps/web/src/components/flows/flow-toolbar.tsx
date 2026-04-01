@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { ArrowLeft, Save, Play, Loader2 } from 'lucide-react';
 import { useFlowStore } from '@/stores/use-flow-store';
 import { useToastStore } from '@/stores/use-toast-store';
@@ -9,6 +10,7 @@ import { updateFlow, requestBacktest } from '@/lib/api-client';
 import { useQueryClient } from '@tanstack/react-query';
 
 export function FlowToolbar() {
+  const t = useTranslations('flows');
   const router = useRouter();
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
@@ -34,9 +36,9 @@ export function FlowToolbar() {
       markClean();
       queryClient.invalidateQueries({ queryKey: ['flow', flowId] });
       queryClient.invalidateQueries({ queryKey: ['flows'] });
-      addToast({ type: 'success', title: '저장됨', message: '플로우가 저장되었습니다.' });
+      addToast({ type: 'success', title: t('saved'), message: t('saved') });
     } catch (err: any) {
-      addToast({ type: 'error', title: '저장 실패', message: err.message });
+      addToast({ type: 'error', title: t('saveFailed'), message: err.message });
     } finally {
       setSaving(false);
     }
@@ -44,7 +46,6 @@ export function FlowToolbar() {
 
   const handleBacktest = async () => {
     if (!flowId) return;
-    // Save first if dirty
     if (isDirty) await handleSave();
 
     try {
@@ -60,11 +61,11 @@ export function FlowToolbar() {
       queryClient.invalidateQueries({ queryKey: ['backtests', flowId] });
       addToast({
         type: 'info',
-        title: '백테스트 시작',
-        message: '백테스트가 요청되었습니다. 완료 시 알림을 받습니다.',
+        title: t('backtestStarted'),
+        message: t('backtestStartedDesc'),
       });
     } catch (err: any) {
-      addToast({ type: 'error', title: '백테스트 실패', message: err.message });
+      addToast({ type: 'error', title: t('backtestFailed'), message: err.message });
     }
   };
 
@@ -76,7 +77,7 @@ export function FlowToolbar() {
         <button
           onClick={() => router.push('/flows')}
           className="rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          aria-label="뒤로"
+          aria-label={t('back')}
         >
           <ArrowLeft size={18} />
         </button>
@@ -84,9 +85,9 @@ export function FlowToolbar() {
           value={flowName}
           onChange={(e) => setFlowName(e.target.value)}
           className="border-b border-transparent bg-transparent text-sm font-medium text-foreground outline-none focus:border-primary"
-          placeholder="플로우 이름"
+          placeholder={t('flowName')}
         />
-        {isDirty && <span className="text-[10px] text-amber-400">수정됨</span>}
+        {isDirty && <span className="text-[10px] text-amber-400">{t('modified')}</span>}
       </div>
       <div className="flex items-center gap-2">
         <button
@@ -95,7 +96,7 @@ export function FlowToolbar() {
           className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-muted/80 disabled:opacity-40"
         >
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-          저장
+          {t('save')}
         </button>
         <button
           onClick={handleBacktest}
@@ -103,7 +104,7 @@ export function FlowToolbar() {
           className="flex items-center gap-1.5 rounded-md bg-emerald-700 px-3 py-1.5 text-xs text-white transition hover:bg-emerald-600 disabled:opacity-40"
         >
           {backtestRunning ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />}
-          백테스트
+          {t('backtest')}
         </button>
       </div>
     </div>

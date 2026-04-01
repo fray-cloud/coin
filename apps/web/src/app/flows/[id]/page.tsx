@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
+import { useTranslations } from 'next-intl';
 import { useFlow } from '@/hooks/use-flows';
 import { useUser } from '@/hooks/use-user';
 import { useBacktestWs } from '@/hooks/use-backtest-ws';
@@ -19,6 +20,7 @@ import { FlowToolbar } from '@/components/flows/flow-toolbar';
 import { TimelineSlider } from '@/components/flows/timeline-slider';
 
 export default function FlowBuilderPage() {
+  const t = useTranslations('flows');
   const { id } = useParams<{ id: string }>();
   const { user } = useUser();
   const { data: flow, isLoading } = useFlow(id);
@@ -38,7 +40,7 @@ export default function FlowBuilderPage() {
   if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <div className="text-sm text-muted-foreground">로딩 중...</div>
+        <div className="text-sm text-muted-foreground">{t('loading', { ns: 'common' })}</div>
       </div>
     );
   }
@@ -47,7 +49,7 @@ export default function FlowBuilderPage() {
     <div className="flex h-[calc(100vh-3.5rem)] flex-col">
       {/* Mobile read-only banner */}
       <div className="block border-b border-amber-800 bg-amber-900/20 px-4 py-2 text-center text-xs text-amber-400 lg:hidden">
-        플로우 편집은 데스크탑에서 가능합니다.
+        {t('mobileReadOnly')}
       </div>
 
       <FlowToolbar />

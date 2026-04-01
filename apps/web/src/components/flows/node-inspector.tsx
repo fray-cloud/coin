@@ -1,11 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useTranslations } from 'next-intl';
 import { useFlowStore } from '@/stores/use-flow-store';
 import { NODE_TYPE_REGISTRY } from '@coin/types';
 import { Trash2 } from 'lucide-react';
 
 export function NodeInspector() {
+  const t = useTranslations('flows');
   const nodes = useFlowStore((s) => s.nodes);
   const selectedNodeId = useFlowStore((s) => s.selectedNodeId);
   const updateNodeConfig = useFlowStore((s) => s.updateNodeConfig);
@@ -18,7 +20,7 @@ export function NodeInspector() {
   if (!node) {
     return (
       <div className="flex h-full w-64 items-center justify-center border-l border-border bg-card p-4">
-        <p className="text-xs text-muted-foreground">노드를 선택하세요</p>
+        <p className="text-xs text-muted-foreground">{t('selectNode')}</p>
       </div>
     );
   }
@@ -49,7 +51,7 @@ export function NodeInspector() {
         <button
           onClick={() => deleteNode(node.id)}
           className="rounded p-1 text-muted-foreground transition hover:bg-red-900/30 hover:text-red-400 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-          aria-label="노드 삭제"
+          aria-label={t('deleteNode')}
         >
           <Trash2 size={14} />
         </button>
@@ -58,7 +60,7 @@ export function NodeInspector() {
       {/* Parameters */}
       <div className="flex-1 overflow-y-auto p-3">
         <h4 className="mb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          파라미터
+          {t('parameters')}
         </h4>
         <div className="flex flex-col gap-2">
           {Object.entries(config).map(([key, val]) => (
@@ -93,11 +95,11 @@ export function NodeInspector() {
         {registry && (
           <div className="mt-4">
             <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              포트
+              {t('ports')}
             </h4>
             {registry.inputs.length > 0 && (
               <div className="mb-1">
-                <span className="text-[10px] text-muted-foreground/60">입력:</span>
+                <span className="text-[10px] text-muted-foreground/60">{t('inputs')}:</span>
                 {registry.inputs.map((p) => (
                   <span key={p.name} className="ml-1 text-[10px] text-muted-foreground">
                     {p.name}({p.type})
@@ -107,7 +109,7 @@ export function NodeInspector() {
             )}
             {registry.outputs.length > 0 && (
               <div>
-                <span className="text-[10px] text-muted-foreground/60">출력:</span>
+                <span className="text-[10px] text-muted-foreground/60">{t('outputs')}:</span>
                 {registry.outputs.map((p) => (
                   <span key={p.name} className="ml-1 text-[10px] text-muted-foreground">
                     {p.name}({p.type})
@@ -122,7 +124,7 @@ export function NodeInspector() {
         {currentTrace && (
           <div className="mt-4">
             <h4 className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-              실행 트레이스
+              {t('executionTrace')}
             </h4>
             <div
               className={`rounded p-2 text-[10px] ${
