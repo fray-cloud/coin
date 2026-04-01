@@ -342,7 +342,8 @@ function determineFired(nodeDef: FlowNodeDefinition, output: Record<string, unkn
     case 'data':
       return true;
     case 'indicator':
-      return typeof output.value === 'number' && !isNaN(output.value);
+      // Single-output indicators use 'value'; multi-output (MACD, Bollinger) check any number output
+      return Object.values(output).some((v) => typeof v === 'number' && !isNaN(v));
     case 'condition':
       return output.result === true;
     case 'order':
