@@ -128,10 +128,10 @@ export function FlowCanvas() {
           type: 'smoothstep',
           style: { stroke: '#4b5563', strokeWidth: 2 },
         }}
-        style={{ backgroundColor: '#0f1117' }}
+        style={{ backgroundColor: 'var(--color-background)' }}
       >
-        <Background color="#1f2937" gap={20} />
-        <Controls className="!bg-zinc-900 !border-zinc-700 [&>button]:!bg-zinc-800 [&>button]:!border-zinc-700 [&>button]:!text-zinc-400 [&>button:hover]:!bg-zinc-700" />
+        <Background color="var(--color-border)" gap={20} />
+        <Controls className="!bg-card !border-border [&>button]:!bg-muted [&>button]:!border-border [&>button]:!text-muted-foreground [&>button:hover]:!bg-muted/80" />
         <MiniMap
           nodeColor={(n) => {
             const type = (n.data as FlowNodeData)?.nodeType;
@@ -141,7 +141,7 @@ export function FlowCanvas() {
             if (type === 'order') return '#10b981';
             return '#64748b';
           }}
-          style={{ backgroundColor: '#0f1117' }}
+          style={{ backgroundColor: 'var(--color-background)' }}
           maskColor="rgba(0,0,0,0.6)"
         />
       </ReactFlow>

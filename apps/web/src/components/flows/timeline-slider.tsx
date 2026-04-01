@@ -52,26 +52,26 @@ export function TimelineSlider() {
     : '';
 
   return (
-    <div className="flex items-center gap-3 border-t border-zinc-800 bg-[#0f1117] px-4 py-2">
+    <div className="flex items-center gap-3 border-t border-border bg-card px-4 py-2">
       {/* Playback controls */}
       <div className="flex items-center gap-1">
         <button
           onClick={() => setTimelineIndex(Math.max(0, timelineIndex - 1))}
-          className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
           aria-label="이전"
         >
           <SkipBack size={14} />
         </button>
         <button
           onClick={playing ? () => setPlaying(false) : handlePlay}
-          className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
           aria-label={playing ? '일시정지' : '재생'}
         >
           {playing ? <Pause size={14} /> : <Play size={14} />}
         </button>
         <button
           onClick={() => setTimelineIndex(Math.min(maxIndex, timelineIndex + 1))}
-          className="rounded p-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+          className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
           aria-label="다음"
         >
           <SkipForward size={14} />
@@ -88,11 +88,11 @@ export function TimelineSlider() {
           setPlaying(false);
           setTimelineIndex(Number(e.target.value));
         }}
-        className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-zinc-700 accent-emerald-500"
+        className="h-1 flex-1 cursor-pointer appearance-none rounded-full bg-muted accent-emerald-500"
       />
 
       {/* Timestamp display */}
-      <span className="min-w-[120px] text-right text-[10px] text-zinc-400">
+      <span className="min-w-[120px] text-right text-[10px] text-muted-foreground">
         {formattedDate} ({timelineIndex + 1}/{timestamps.length})
       </span>
     </div>

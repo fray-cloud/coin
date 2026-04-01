@@ -54,7 +54,7 @@ export function FlowCard({ flow, onDelete }: FlowCardProps) {
         <span>{nodeCount} nodes</span>
         <span>·</span>
         <span
-          className={`rounded px-1.5 py-0.5 text-[10px] ${flow.enabled ? 'bg-green-900/30 text-green-400' : 'bg-zinc-800 text-zinc-500'}`}
+          className={`rounded px-1.5 py-0.5 text-[10px] ${flow.enabled ? 'bg-green-900/30 text-green-400' : 'bg-muted text-muted-foreground'}`}
         >
           {flow.enabled ? 'ON' : 'OFF'}
         </span>
@@ -66,7 +66,7 @@ export function FlowCard({ flow, onDelete }: FlowCardProps) {
       {latestBacktest ? (
         <div className="mt-2 flex items-center gap-2 text-xs">
           <span
-            className={`rounded px-1.5 py-0.5 text-[10px] ${STATUS_STYLES[latestBacktest.status] || 'bg-zinc-800 text-zinc-500'}`}
+            className={`rounded px-1.5 py-0.5 text-[10px] ${STATUS_STYLES[latestBacktest.status] || 'bg-muted text-muted-foreground'}`}
           >
             {t(latestBacktest.status as 'pending' | 'running' | 'completed' | 'failed')}
           </span>

@@ -70,23 +70,27 @@ function BaseNode({ id, data, selected }: NodeProps & { data: FlowNodeData }) {
 
   return (
     <div
-      className={`min-w-[160px] rounded-lg border ${style.border} bg-[#1a1a24] shadow-md transition-shadow duration-300 ${glowStyle} ${
+      className={`min-w-[160px] rounded-lg border ${style.border} bg-card shadow-md transition-shadow duration-300 ${glowStyle} ${
         selected ? 'ring-2 ring-white/30' : ''
       }`}
     >
       {/* Header */}
       <div className={`flex items-center gap-2 rounded-t-lg px-3 py-1.5 ${style.headerBg}`}>
         <span className={`h-2 w-2 rounded-full ${style.dot}`} />
-        <span className="text-xs font-medium text-white">{registry?.label || data.subtype}</span>
+        <span className="text-xs font-medium text-foreground">
+          {registry?.label || data.subtype}
+        </span>
         {traceState && (
-          <span className="ml-auto text-[9px] text-zinc-400">{traceState.durationMs}ms</span>
+          <span className="ml-auto text-[9px] text-muted-foreground">
+            {traceState.durationMs}ms
+          </span>
         )}
       </div>
 
       {/* Config preview or trace value */}
       <div className="px-3 py-2">
         {traceValue != null ? (
-          <div className="text-center text-sm font-mono font-medium text-zinc-100">
+          <div className="text-center text-sm font-mono font-medium text-foreground">
             {traceValue}
           </div>
         ) : (
@@ -94,8 +98,8 @@ function BaseNode({ id, data, selected }: NodeProps & { data: FlowNodeData }) {
             .slice(0, 3)
             .map(([key, val]) => (
               <div key={key} className="flex justify-between text-[10px]">
-                <span className="text-zinc-500">{key}</span>
-                <span className="text-zinc-300">{String(val)}</span>
+                <span className="text-muted-foreground/60">{key}</span>
+                <span className="text-muted-foreground">{String(val)}</span>
               </div>
             ))
         )}
@@ -113,7 +117,7 @@ function BaseNode({ id, data, selected }: NodeProps & { data: FlowNodeData }) {
             background: handleColor,
             width: 10,
             height: 10,
-            border: '2px solid #1a1a24',
+            border: '2px solid var(--color-card)',
           }}
         />
       ))}
@@ -130,7 +134,7 @@ function BaseNode({ id, data, selected }: NodeProps & { data: FlowNodeData }) {
             background: handleColor,
             width: 10,
             height: 10,
-            border: '2px solid #1a1a24',
+            border: '2px solid var(--color-card)',
           }}
         />
       ))}

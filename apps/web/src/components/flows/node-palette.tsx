@@ -46,8 +46,8 @@ export function NodePalette() {
   }, []);
 
   return (
-    <div className="flex h-full w-48 flex-col gap-3 overflow-y-auto border-r border-zinc-800 bg-[#0f1117] p-3">
-      <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-500">노드</h3>
+    <div className="flex h-full w-48 flex-col gap-3 overflow-y-auto border-r border-border bg-card p-3">
+      <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">노드</h3>
       {grouped.map((cat) => (
         <div key={cat.type}>
           <h4 className={`mb-1.5 text-[10px] font-semibold uppercase tracking-wider ${cat.color}`}>
@@ -60,7 +60,7 @@ export function NodePalette() {
                 draggable
                 onDragStart={(e) => onDragStart(e, info)}
                 onClick={() => handleAdd(info)}
-                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-zinc-300 transition hover:bg-zinc-800"
+                className="flex items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs text-foreground transition hover:bg-muted"
               >
                 <span
                   className="h-2 w-2 shrink-0 rounded-full"

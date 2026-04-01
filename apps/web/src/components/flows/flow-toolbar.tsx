@@ -71,11 +71,11 @@ export function FlowToolbar() {
   const backtestRunning = backtestStatus === 'pending' || backtestStatus === 'running';
 
   return (
-    <div className="flex items-center justify-between border-b border-zinc-800 bg-[#0f1117] px-4 py-2">
+    <div className="flex items-center justify-between border-b border-border bg-card px-4 py-2">
       <div className="flex items-center gap-3">
         <button
           onClick={() => router.push('/flows')}
-          className="rounded p-1 text-zinc-400 transition hover:bg-zinc-800 hover:text-zinc-200"
+          className="rounded p-1 text-muted-foreground transition hover:bg-muted hover:text-foreground"
           aria-label="뒤로"
         >
           <ArrowLeft size={18} />
@@ -83,7 +83,7 @@ export function FlowToolbar() {
         <input
           value={flowName}
           onChange={(e) => setFlowName(e.target.value)}
-          className="border-b border-transparent bg-transparent text-sm font-medium text-zinc-200 outline-none focus:border-zinc-500"
+          className="border-b border-transparent bg-transparent text-sm font-medium text-foreground outline-none focus:border-primary"
           placeholder="플로우 이름"
         />
         {isDirty && <span className="text-[10px] text-amber-400">수정됨</span>}
@@ -92,7 +92,7 @@ export function FlowToolbar() {
         <button
           onClick={handleSave}
           disabled={saving || !isDirty}
-          className="flex items-center gap-1.5 rounded-md bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 transition hover:bg-zinc-700 disabled:opacity-40"
+          className="flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-xs text-muted-foreground transition hover:bg-muted/80 disabled:opacity-40"
         >
           {saving ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
           저장
