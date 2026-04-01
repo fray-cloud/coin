@@ -25,6 +25,7 @@ import {
   UpdateStrategyCommand,
   ToggleStrategyCommand,
   DeleteStrategyCommand,
+  ReorderStrategiesCommand,
 } from './commands';
 import {
   GetStrategiesQuery,
@@ -35,6 +36,7 @@ import {
 } from './queries';
 import { CreateStrategyDto } from './dto/create-strategy.dto';
 import { UpdateStrategyDto } from './dto/update-strategy.dto';
+import { ReorderStrategiesDto } from './dto/reorder-strategies.dto';
 import {
   StrategyResponse,
   StrategyPerformanceResponse,
@@ -134,6 +136,20 @@ export class StrategiesController {
   @ApiParam({ name: 'id', description: '전략 ID' })
   async toggle(@CurrentUser() user: User, @Param('id') id: string) {
     return this.commandBus.execute(new ToggleStrategyCommand(user.id, id));
+  }
+
+  @Patch('reorder')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: '전략 카드 순서 일괄 업데이트',
+    description:
+      '전략 목록의 표시 순서를 업데이트합니다. DnD 후 변경된 순서를 저장할 때 사용합니다.',
+  })
+  @ApiResponse({ status: 204, description: '순서 업데이트 성공' })
+  @ApiResponse({ status: 400, description: '잘못된 전략 ID 또는 권한 없음' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  async reorder(@CurrentUser() user: User, @Body() dto: ReorderStrategiesDto) {
+    return this.commandBus.execute(new ReorderStrategiesCommand(user.id, dto));
   }
 
   @Delete(':id')
