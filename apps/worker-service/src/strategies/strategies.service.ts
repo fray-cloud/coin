@@ -3,12 +3,18 @@ import { Kafka, Producer } from 'kafkajs';
 import Redis from 'ioredis';
 import { PrismaService } from '../prisma/prisma.service';
 import { RiskService, type RiskConfig } from './risk/risk.service';
-import type { ITradingStrategy, StrategySignal } from './strategy.interface';
+import type {
+  ITradingStrategy,
+  StrategySignal,
+  CandleOHLCV,
+  MultiTimeframeData,
+} from './strategy.interface';
 import { RsiStrategy } from './indicators/rsi.strategy';
 import { MacdStrategy } from './indicators/macd.strategy';
 import { BollingerStrategy } from './indicators/bollinger.strategy';
 import { CombinationStrategy } from './indicators/combination.strategy';
 import { TrendRegimeStrategy } from './indicators/trend-regime.strategy';
+import { MultiTimeframeStrategy } from './indicators/multi-timeframe.strategy';
 import { executeAutoTradeSaga } from './sagas/strategy-auto-trade-steps';
 import { UpbitRest, BinanceRest, BybitRest, IExchangeRest } from '@coin/exchange-adapters';
 import type { ExchangeId } from '@coin/types';
@@ -61,6 +67,7 @@ export class StrategiesService implements OnModuleInit, OnModuleDestroy {
     ['bollinger', new BollingerStrategy()],
     ['combination', new CombinationStrategy()],
     ['trend-regime', new TrendRegimeStrategy()],
+    ['multi-timeframe', new MultiTimeframeStrategy()],
   ]);
 
   constructor(
@@ -151,17 +158,41 @@ export class StrategiesService implements OnModuleInit, OnModuleDestroy {
         return;
       }
 
+      const primaryInterval = strategy.candleInterval || '1h';
       const closePrices = await this.getCandleClosePrices(
         strategy.exchange,
         strategy.symbol,
-        strategy.candleInterval || '1h',
+        primaryInterval,
       );
       if (closePrices.length === 0) {
         return;
       }
 
+      // Fetch optional OHLCV and multi-timeframe data for strategies that need them
+      let candleOHLCV: CandleOHLCV | undefined;
+      let multiTimeframe: MultiTimeframeData | undefined;
+
+      if (strategy.type === 'multi-timeframe') {
+        candleOHLCV = await this.getCandleOHLCV(
+          strategy.exchange,
+          strategy.symbol,
+          primaryInterval,
+        );
+
+        const htf1Interval = (strategy.config.htf1Interval as string) || '4h';
+        const htf2Interval = (strategy.config.htf2Interval as string) || '1d';
+        const [htf1Close, htf2Close] = await Promise.all([
+          this.getCandleClosePrices(strategy.exchange, strategy.symbol, htf1Interval),
+          this.getCandleClosePrices(strategy.exchange, strategy.symbol, htf2Interval),
+        ]);
+        multiTimeframe = {
+          htf1: htf1Close.length > 0 ? { close: htf1Close } : undefined,
+          htf2: htf2Close.length > 0 ? { close: htf2Close } : undefined,
+        };
+      }
+
       // Signal deduplication (before saga to avoid unnecessary work)
-      const evaluation = impl.evaluate(closePrices, strategy.config);
+      const evaluation = impl.evaluate(closePrices, strategy.config, candleOHLCV, multiTimeframe);
       const lastSignal = this.lastSignals.get(strategy.id);
       if (evaluation.signal === lastSignal) {
         return;
@@ -217,6 +248,43 @@ export class StrategiesService implements OnModuleInit, OnModuleDestroy {
       this.logger.warn(`Failed to fetch candles for ${exchange}:${symbol}:${interval}: ${err}`);
       return [];
     }
+  }
+
+  private async getCandleOHLCV(
+    exchange: string,
+    symbol: string,
+    interval: string,
+  ): Promise<CandleOHLCV | undefined> {
+    const cacheKey = `candles:${exchange}:${symbol}:${interval}`;
+    const cached = await this.redis.get(cacheKey);
+
+    let raw: Array<{ open: string; high: string; low: string; close: string; volume: string }>;
+
+    if (cached) {
+      raw = JSON.parse(cached);
+    } else {
+      const adapterFactory = REST_ADAPTERS[exchange as ExchangeId];
+      if (!adapterFactory) return undefined;
+      try {
+        const adapter = adapterFactory();
+        raw = await adapter.getCandles(symbol, interval, 200);
+        const ttl = CANDLE_CACHE_TTL[interval] || 600;
+        await this.redis.set(cacheKey, JSON.stringify(raw), 'EX', ttl);
+      } catch (err) {
+        this.logger.warn(
+          `Failed to fetch OHLCV candles for ${exchange}:${symbol}:${interval}: ${err}`,
+        );
+        return undefined;
+      }
+    }
+
+    return {
+      open: raw.map((c) => parseFloat(c.open)),
+      high: raw.map((c) => parseFloat(c.high)),
+      low: raw.map((c) => parseFloat(c.low)),
+      close: raw.map((c) => parseFloat(c.close)),
+      volume: raw.map((c) => parseFloat(c.volume)),
+    };
   }
 
   private async createLog(
