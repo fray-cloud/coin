@@ -245,6 +245,7 @@ export interface StrategyItem {
   riskConfig: Record<string, unknown>;
   intervalSeconds: number;
   candleInterval: string;
+  order: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -344,6 +345,15 @@ export async function toggleStrategy(id: string): Promise<{ id: string; enabled:
 export async function deleteStrategy(id: string): Promise<void> {
   const res = await apiFetch(`/strategies/${id}`, { method: 'DELETE' });
   if (!res.ok) throw new Error('Failed to delete strategy');
+}
+
+export async function reorderStrategies(orders: { id: string; order: number }[]): Promise<void> {
+  const res = await apiFetch('/strategies/reorder', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ orders }),
+  });
+  if (!res.ok) throw new Error('Failed to reorder strategies');
 }
 
 export async function getStrategyLogs(
