@@ -21,6 +21,7 @@ import { TimelineSlider } from '@/components/flows/timeline-slider';
 
 export default function FlowBuilderPage() {
   const t = useTranslations('flows');
+  const tc = useTranslations('common');
   const { id } = useParams<{ id: string }>();
   const { user } = useUser();
   const { data: flow, isLoading } = useFlow(id);
@@ -40,7 +41,7 @@ export default function FlowBuilderPage() {
   if (isLoading) {
     return (
       <div className="flex h-[calc(100vh-3.5rem)] items-center justify-center">
-        <div className="text-sm text-muted-foreground">{t('loading', { ns: 'common' })}</div>
+        <div className="text-sm text-muted-foreground">{tc('loading')}</div>
       </div>
     );
   }

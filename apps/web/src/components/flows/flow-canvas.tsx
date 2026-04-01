@@ -39,6 +39,13 @@ export function FlowCanvas() {
     setSelectedNode(null);
   }, [setSelectedNode]);
 
+  const handleNodeDoubleClick = useCallback(
+    (_: React.MouseEvent, node: { id: string }) => {
+      setSelectedNode(node.id);
+    },
+    [setSelectedNode],
+  );
+
   // Validate connections by checking port type compatibility
   const isValidConnection: IsValidConnection = useCallback(
     (
@@ -119,6 +126,7 @@ export function FlowCanvas() {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         onNodeClick={handleNodeClick}
+        onNodeDoubleClick={handleNodeDoubleClick}
         onPaneClick={handlePaneClick}
         isValidConnection={isValidConnection}
         nodeTypes={customNodeTypes}
