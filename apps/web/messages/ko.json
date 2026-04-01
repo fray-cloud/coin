@@ -13,7 +13,8 @@
     "settings": "설정",
     "login": "로그인",
     "signup": "회원가입",
-    "logout": "로그아웃"
+    "logout": "로그아웃",
+    "help": "도움말"
   },
   "markets": {
     "title": "마켓",
@@ -59,7 +60,9 @@
     "cancel": "취소",
     "loading": "로딩 중...",
     "noOrders": "아직 주문이 없습니다",
-    "loadMore": "더 보기"
+    "loadMore": "더 보기",
+    "openOrders": "미체결",
+    "closedOrders": "체결 완료"
   },
   "portfolio": {
     "title": "포트폴리오",
@@ -213,5 +216,37 @@
   },
   "common": {
     "loading": "로딩 중..."
+  },
+  "onboarding": {
+    "stepLabel": "{current}/{total} 단계",
+    "skip": "건너뛰기",
+    "back": "이전",
+    "next": "다음",
+    "finish": "시작하기",
+    "step1Title": "Coin 플랫폼에 오신 것을 환영합니다",
+    "step1Desc": "Coin은 암호화폐 자동 트레이딩 플랫폼입니다. 실제 자금을 투입하기 전에 Paper Trading으로 안전하게 시작해 보세요.",
+    "step1b1": "Paper Trading으로 위험 없이 전략 테스트",
+    "step1b2": "실시간 시세 및 차트 확인",
+    "step1b3": "자동화된 알고리즘 트레이딩 전략 운영",
+    "step2Title": "API 키 등록",
+    "step2Desc": "거래소 API 키를 등록하면 실제 잔고 조회와 실거래가 가능합니다. API 키 없이도 Paper Trading은 이용할 수 있습니다.",
+    "step2b1": "계정 메뉴에서 거래소 API 키 등록",
+    "step2b2": "Upbit, Binance 등 주요 거래소 지원",
+    "step2b3": "API 키는 암호화되어 안전하게 보관됩니다",
+    "step3Title": "Paper Trading 전략 만들기",
+    "step3Desc": "전략 페이지에서 RSI, MACD 등 다양한 알고리즘 전략을 모의 거래 모드로 생성할 수 있습니다.",
+    "step3b1": "전략 페이지 → 새 전략 버튼 클릭",
+    "step3b2": "모드를 '모의'로 설정하여 안전하게 시작",
+    "step3b3": "손절, 최대 포지션 등 리스크 설정 가능",
+    "step4Title": "Markets 페이지 살펴보기",
+    "step4Desc": "Markets 페이지에서 실시간 시세를 확인하고 차트를 분석할 수 있습니다.",
+    "step4b1": "실시간 호가 및 가격 변동 확인",
+    "step4b2": "심볼 클릭 시 상세 캔들 차트 표시",
+    "step4b3": "심볼 검색으로 원하는 코인 빠르게 찾기",
+    "step5Title": "모의 거래 vs 실거래",
+    "step5Desc": "처음에는 반드시 모의 거래(Paper Trading)로 시작하세요. 전략이 안정적임을 확인한 후 실거래로 전환하세요.",
+    "step5b1": "모의 거래: 가상 자금으로 전략 검증",
+    "step5b2": "실거래: 거래소 실계좌와 연동, 실제 자금 사용",
+    "step5b3": "전략 생성 시 실거래 선택 시 추가 확인 요청"
   }
 }

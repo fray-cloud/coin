@@ -13,6 +13,7 @@ import { ExchangeIcon, CoinIcon } from '@/components/icons';
 
 type SortKey = 'createdAt' | 'exchange' | 'symbol' | 'status';
 type SortDir = 'asc' | 'desc';
+type MobileTab = 'open' | 'closed';
 
 function SortIcon({
   column,
@@ -41,6 +42,8 @@ const STATUS_VARIANT: Record<string, 'warning' | 'info' | 'success' | 'cyan' | '
     failed: 'error',
   };
 
+const OPEN_STATUSES = new Set(['pending', 'placed']);
+
 export function OrdersTable() {
   const t = useTranslations('orders');
   const queryClient = useQueryClient();
@@ -49,6 +52,7 @@ export function OrdersTable() {
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [modeFilter, setModeFilter] = useState<string>('all');
+  const [mobileTab, setMobileTab] = useState<MobileTab>('open');
 
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useOrders();
 
@@ -76,6 +80,12 @@ export function OrdersTable() {
     return result;
   }, [orders, statusFilter, modeFilter, sortKey, sortDir]);
 
+  const mobileOrders = useMemo(() => {
+    return filteredOrders.filter((o) =>
+      mobileTab === 'open' ? OPEN_STATUSES.has(o.status) : !OPEN_STATUSES.has(o.status),
+    );
+  }, [filteredOrders, mobileTab]);
+
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -94,6 +104,7 @@ export function OrdersTable() {
         <CardTitle className="text-lg">{t('history')}</CardTitle>
       </CardHeader>
       <CardContent>
+        {/* Filters */}
         <div className="space-y-2 mb-4">
           <div>
             <span className="text-xs text-muted-foreground mr-2">{t('status')}:</span>
@@ -129,8 +140,9 @@ export function OrdersTable() {
 
         {isLoading && <p className="text-sm text-muted-foreground">{t('loading')}</p>}
 
+        {/* Desktop table — hidden on mobile */}
         {filteredOrders.length > 0 && (
-          <div className="overflow-x-auto">
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
@@ -236,8 +248,99 @@ export function OrdersTable() {
           </div>
         )}
 
+        {/* Mobile card view — visible only on mobile */}
+        <div className="md:hidden">
+          {/* Tabs */}
+          <div className="flex border-b mb-3">
+            <button
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                mobileTab === 'open'
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-muted-foreground'
+              }`}
+              onClick={() => setMobileTab('open')}
+            >
+              {t('openOrders')}
+            </button>
+            <button
+              className={`flex-1 py-2 text-sm font-medium transition-colors ${
+                mobileTab === 'closed'
+                  ? 'border-b-2 border-primary text-primary'
+                  : 'text-muted-foreground'
+              }`}
+              onClick={() => setMobileTab('closed')}
+            >
+              {t('closedOrders')}
+            </button>
+          </div>
+
+          {/* Cards */}
+          {mobileOrders.length === 0 && !isLoading && (
+            <p className="text-center text-muted-foreground py-8">{t('noOrders')}</p>
+          )}
+          <div className="space-y-2">
+            {mobileOrders.map((order) => (
+              <div key={order.id} className="border rounded-lg p-3 space-y-2">
+                {/* Top row: symbol + status */}
+                <div className="flex items-center justify-between">
+                  <span className="flex items-center gap-1.5 font-medium">
+                    <CoinIcon symbol={order.symbol} size={16} />
+                    {order.symbol}
+                  </span>
+                  <Badge variant={STATUS_VARIANT[order.status] ?? 'muted'}>{order.status}</Badge>
+                </div>
+
+                {/* Middle row: side + qty + price */}
+                <div className="flex items-center gap-3 text-sm">
+                  <span
+                    className={`font-semibold ${order.side === 'buy' ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}
+                  >
+                    {order.side === 'buy' ? t('buy') : t('sell')}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {t('qty')}:{' '}
+                    <span className="text-foreground tabular-nums">{order.quantity}</span>
+                  </span>
+                  <span className="text-muted-foreground">
+                    {t('priceLabel')}:{' '}
+                    <span className="text-foreground tabular-nums">
+                      {order.type === 'market' ? '-' : order.price || '-'}
+                    </span>
+                  </span>
+                </div>
+
+                {/* Bottom row: exchange + time + cancel */}
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span className="flex items-center gap-1">
+                    <ExchangeIcon exchange={order.exchange} size={12} />
+                    <span className="capitalize">{order.exchange}</span>
+                    <span
+                      className={`ml-1 ${order.mode === 'paper' ? 'text-purple-600 dark:text-purple-400' : 'text-orange-600 dark:text-orange-400'}`}
+                    >
+                      {order.mode}
+                    </span>
+                  </span>
+                  <span>{new Date(order.createdAt).toLocaleString()}</span>
+                </div>
+
+                {['pending', 'placed'].includes(order.status) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive h-7 text-xs w-full"
+                    onClick={() => cancelMutation.mutate(order.id)}
+                    disabled={cancelMutation.isPending}
+                  >
+                    {t('cancel')}
+                  </Button>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
         {!isLoading && filteredOrders.length === 0 && (
-          <p className="text-center text-muted-foreground py-8">{t('noOrders')}</p>
+          <p className="text-center text-muted-foreground py-8 hidden md:block">{t('noOrders')}</p>
         )}
 
         {hasNextPage && (
