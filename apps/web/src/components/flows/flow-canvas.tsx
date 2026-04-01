@@ -132,6 +132,7 @@ export function FlowCanvas() {
         nodeTypes={customNodeTypes}
         fitView
         proOptions={{ hideAttribution: true }}
+        connectionLineStyle={{ stroke: '#6366f1', strokeWidth: 2, strokeDasharray: '5 3' }}
         defaultEdgeOptions={{
           type: 'smoothstep',
           style: { stroke: '#4b5563', strokeWidth: 2 },
