@@ -1,13 +1,17 @@
 'use client';
 
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useTickers } from '@/hooks/use-tickers';
 import { TickerTable } from '@/components/ticker-table';
 import { ExchangeRateBadge } from '@/components/exchange-rate-badge';
+import { QuickOrderPanel } from '@/components/orders/quick-order-panel';
+import type { Ticker } from '@coin/types';
 
 export default function MarketsPage() {
   const { tickers, connected } = useTickers();
   const t = useTranslations('markets');
+  const [selectedTicker, setSelectedTicker] = useState<Ticker | null>(null);
 
   return (
     <main className="max-w-6xl mx-auto p-4 md:p-6">
@@ -24,7 +28,9 @@ export default function MarketsPage() {
         </div>
       </div>
 
-      <TickerTable tickers={tickers} />
+      <TickerTable tickers={tickers} onRowClick={setSelectedTicker} />
+
+      <QuickOrderPanel ticker={selectedTicker} onClose={() => setSelectedTicker(null)} />
     </main>
   );
 }

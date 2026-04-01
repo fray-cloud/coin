@@ -6,6 +6,7 @@ import {
   BarChart3,
   ShoppingCart,
   BrainCircuit,
+  Workflow,
   PieChart,
   Activity,
   Settings,
@@ -57,6 +58,13 @@ export function NavBar() {
               >
                 <BrainCircuit size={15} />
                 {t('strategies')}
+              </Link>
+              <Link
+                href="/flows"
+                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"
+              >
+                <Workflow size={15} />
+                {t('flows')}
               </Link>
               <Link
                 href="/portfolio"

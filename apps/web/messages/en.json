@@ -8,11 +8,13 @@
     "accounts": "Accounts",
     "activity": "Activity",
     "alerts": "Alerts",
+    "flows": "Flows",
     "more": "More",
     "settings": "Settings",
     "login": "Login",
     "signup": "Sign up",
-    "logout": "Logout"
+    "logout": "Logout",
+    "help": "Help"
   },
   "markets": {
     "title": "Markets",
@@ -58,7 +60,13 @@
     "cancel": "Cancel",
     "loading": "Loading...",
     "noOrders": "No orders yet",
-    "loadMore": "Load More"
+    "loadMore": "Load More",
+    "openOrders": "Open",
+    "closedOrders": "Completed",
+    "realModeConfirmTitle": "Switch to Live Trading?",
+    "realModeConfirmDesc": "You are about to place a REAL order using your actual exchange funds. This action cannot be undone. Please confirm you want to proceed with live trading.",
+    "realModeConfirmBtn": "Yes, Use Live Trading",
+    "realModeConfirmCancel": "Stay in Paper"
   },
   "portfolio": {
     "title": "Portfolio",
@@ -79,7 +87,11 @@
     "avgCost": "Avg Cost",
     "current": "Current",
     "value": "Value",
-    "pnl": "P&L"
+    "pnl": "P&L",
+    "cardView": "Card View",
+    "tableView": "Table View",
+    "holdings": "Holdings",
+    "pnlPct": "Return"
   },
   "accounts": {
     "title": "Accounts",
@@ -133,6 +145,12 @@
     "save": "Save",
     "cancel": "Cancel"
   },
+  "notificationFeed": {
+    "label": "Notification feed",
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "clearAll": "Clear all"
+  },
   "notifications": {
     "title": "Notification Settings",
     "telegram": "Telegram",
@@ -168,7 +186,81 @@
     "createAccount": "Create account",
     "hasAccount": "Already have an account?"
   },
+  "flows": {
+    "title": "Flows",
+    "newFlow": "Create New Flow",
+    "noFlows": "No flows yet.",
+    "emptyDesc": "Drag & drop strategy nodes to build your own trading flow.",
+    "createFirst": "Create First Flow",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this flow?",
+    "backtestLatest": "Latest Backtest",
+    "noBacktest": "No backtest",
+    "pending": "Pending",
+    "running": "Running",
+    "completed": "Completed",
+    "failed": "Failed",
+    "mobileReadOnly": "Flow editing is only available on desktop.",
+    "save": "Save",
+    "saving": "Saving...",
+    "saved": "Flow saved.",
+    "saveFailed": "Save failed",
+    "backtest": "Backtest",
+    "backtestStarted": "Backtest started",
+    "backtestStartedDesc": "Backtest requested. You will be notified when complete.",
+    "backtestFailed": "Backtest failed",
+    "backtestComplete": "Backtest complete",
+    "backtestCompleteDesc": "Check the results. You can scrub the timeline.",
+    "modified": "Modified",
+    "back": "Back",
+    "flowName": "Flow name",
+    "nodes": "Nodes",
+    "selectNode": "Select a node",
+    "parameters": "Parameters",
+    "ports": "Ports",
+    "inputs": "Inputs",
+    "outputs": "Outputs",
+    "executionTrace": "Execution Trace",
+    "deleteNode": "Delete node",
+    "emptyCanvas": "Drag nodes from the palette",
+    "prev": "Previous",
+    "next": "Next",
+    "play": "Play",
+    "pause": "Pause"
+  },
   "common": {
     "loading": "Loading..."
+  },
+  "onboarding": {
+    "stepLabel": "Step {current} of {total}",
+    "skip": "Skip",
+    "back": "Back",
+    "next": "Next",
+    "finish": "Get Started",
+    "step1Title": "Welcome to Coin Platform",
+    "step1Desc": "Coin is a crypto auto-trading platform. Start safely with Paper Trading before committing real funds.",
+    "step1b1": "Test strategies risk-free with Paper Trading",
+    "step1b2": "Monitor real-time prices and charts",
+    "step1b3": "Run automated algorithmic trading strategies",
+    "step2Title": "Register API Keys",
+    "step2Desc": "Register exchange API keys to view real balances and execute live trades. Paper Trading works without API keys.",
+    "step2b1": "Go to Accounts to register exchange API keys",
+    "step2b2": "Supports major exchanges: Upbit, Binance, and more",
+    "step2b3": "Keys are encrypted and stored securely",
+    "step3Title": "Create a Paper Trading Strategy",
+    "step3Desc": "In the Strategies page, create algorithm strategies like RSI or MACD in paper trading mode.",
+    "step3b1": "Strategies page → click New Strategy",
+    "step3b2": "Set mode to 'Paper' to start safely",
+    "step3b3": "Configure stop-loss and max position risk settings",
+    "step4Title": "Explore the Markets Page",
+    "step4Desc": "The Markets page shows live prices and lets you analyze charts for any trading pair.",
+    "step4b1": "View real-time prices and 24h changes",
+    "step4b2": "Click a symbol to open a detailed candle chart",
+    "step4b3": "Search symbols to quickly find the coin you want",
+    "step5Title": "Paper Trading vs Live Trading",
+    "step5Desc": "Always start with Paper Trading. Switch to live trading only after validating your strategy is stable.",
+    "step5b1": "Paper Trading: validate strategies with virtual funds",
+    "step5b2": "Live Trading: connected to your real exchange account",
+    "step5b3": "Creating a live strategy requires an extra confirmation"
   }
 }

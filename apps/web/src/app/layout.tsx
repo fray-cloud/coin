@@ -6,6 +6,7 @@ import { NavBar } from '@/components/nav-bar';
 import { MobileTabBar } from '@/components/mobile-tab-bar';
 import { AuthDebug } from '@/components/auth-debug';
 import { ToastContainer } from '@/components/toast';
+import { OnboardingWizard } from '@/components/onboarding-wizard';
 import { Providers } from './providers';
 
 export const metadata: Metadata = {
@@ -45,6 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <main className="pb-16 md:pb-0">{children}</main>
             <MobileTabBar />
             <ToastContainer />
+            <OnboardingWizard />
             <AuthDebug accessTtl={accessTtl} />
           </Providers>
         </NextIntlClientProvider>
