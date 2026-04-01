@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslations } from 'next-intl';
 import {
@@ -99,12 +99,12 @@ export default function StrategiesPage() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['strategies'] }),
   });
 
-  const sortedStrategies = useCallback(() => {
+  const sortedStrategies = useMemo(() => {
     if (!localOrder) return [...strategies].sort((a, b) => a.order - b.order);
     return localOrder
       .map((id) => strategies.find((s) => s.id === id))
       .filter(Boolean) as StrategyItem[];
-  }, [strategies, localOrder])();
+  }, [strategies, localOrder]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
