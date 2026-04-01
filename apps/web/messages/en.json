@@ -8,6 +8,7 @@
     "accounts": "Accounts",
     "activity": "Activity",
     "alerts": "Alerts",
+    "flows": "Flows",
     "more": "More",
     "settings": "Settings",
     "login": "Login",
@@ -167,6 +168,22 @@
     "creatingAccount": "Creating account...",
     "createAccount": "Create account",
     "hasAccount": "Already have an account?"
+  },
+  "flows": {
+    "title": "Flows",
+    "newFlow": "Create New Flow",
+    "noFlows": "No flows yet.",
+    "emptyDesc": "Drag & drop strategy nodes to build your own trading flow.",
+    "createFirst": "Create First Flow",
+    "delete": "Delete",
+    "deleteConfirm": "Delete this flow?",
+    "backtestLatest": "Latest Backtest",
+    "noBacktest": "No backtest",
+    "pending": "Pending",
+    "running": "Running",
+    "completed": "Completed",
+    "failed": "Failed",
+    "mobileReadOnly": "Flow editing is only available on desktop."
   },
   "common": {
     "loading": "Loading..."

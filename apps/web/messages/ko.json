@@ -8,6 +8,7 @@
     "accounts": "계정",
     "activity": "활동",
     "alerts": "알림",
+    "flows": "플로우",
     "more": "더보기",
     "settings": "설정",
     "login": "로그인",
@@ -167,6 +168,22 @@
     "creatingAccount": "계정 생성 중...",
     "createAccount": "계정 생성",
     "hasAccount": "이미 계정이 있으신가요?"
+  },
+  "flows": {
+    "title": "플로우",
+    "newFlow": "새 플로우 만들기",
+    "noFlows": "아직 플로우가 없습니다.",
+    "emptyDesc": "전략 노드를 드래그&드롭으로 연결해서 나만의 트레이딩 플로우를 만들어보세요.",
+    "createFirst": "첫 플로우 만들기",
+    "delete": "삭제",
+    "deleteConfirm": "이 플로우를 삭제하시겠습니까?",
+    "backtestLatest": "최근 백테스트",
+    "noBacktest": "백테스트 없음",
+    "pending": "대기 중",
+    "running": "실행 중",
+    "completed": "완료",
+    "failed": "실패",
+    "mobileReadOnly": "플로우 편집은 데스크탑에서 가능합니다."
   },
   "common": {
     "loading": "로딩 중..."

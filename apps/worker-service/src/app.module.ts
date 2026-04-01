@@ -4,6 +4,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { ExchangesModule } from './exchanges/exchanges.module';
 import { OrdersModule } from './orders/orders.module';
 import { StrategiesModule } from './strategies/strategies.module';
+import { BacktestsModule } from './backtests/backtests.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { StrategiesModule } from './strategies/strategies.module';
     OrdersModule,
     ExchangesModule,
     StrategiesModule,
+    BacktestsModule,
   ],
 })
 export class AppModule {}
