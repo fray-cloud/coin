@@ -7,6 +7,8 @@ import type { ITradingStrategy, StrategySignal } from './strategy.interface';
 import { RsiStrategy } from './indicators/rsi.strategy';
 import { MacdStrategy } from './indicators/macd.strategy';
 import { BollingerStrategy } from './indicators/bollinger.strategy';
+import { CombinationStrategy } from './indicators/combination.strategy';
+import { TrendRegimeStrategy } from './indicators/trend-regime.strategy';
 import { executeAutoTradeSaga } from './sagas/strategy-auto-trade-steps';
 import { UpbitRest, BinanceRest, BybitRest, IExchangeRest } from '@coin/exchange-adapters';
 import type { ExchangeId } from '@coin/types';
@@ -57,6 +59,8 @@ export class StrategiesService implements OnModuleInit, OnModuleDestroy {
     ['rsi', new RsiStrategy()],
     ['macd', new MacdStrategy()],
     ['bollinger', new BollingerStrategy()],
+    ['combination', new CombinationStrategy()],
+    ['trend-regime', new TrendRegimeStrategy()],
   ]);
 
   constructor(
