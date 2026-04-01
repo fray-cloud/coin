@@ -46,7 +46,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
   'candle-stream': {
     subtype: 'candle-stream',
     type: 'data',
-    label: 'Candle Stream',
+    label: '캔들 데이터',
     inputs: [],
     outputs: [{ name: 'candles', type: 'Candle[]' }],
     defaultConfig: {},
@@ -54,7 +54,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
   rsi: {
     subtype: 'rsi',
     type: 'indicator',
-    label: 'RSI',
+    label: 'RSI 지표',
     inputs: [{ name: 'candles', type: 'Candle[]', required: true }],
     outputs: [{ name: 'value', type: 'number' }],
     defaultConfig: { period: 14, source: 'close' },
@@ -62,7 +62,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
   macd: {
     subtype: 'macd',
     type: 'indicator',
-    label: 'MACD',
+    label: 'MACD 지표',
     inputs: [{ name: 'candles', type: 'Candle[]', required: true }],
     outputs: [
       { name: 'macd', type: 'number' },
@@ -74,7 +74,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
   bollinger: {
     subtype: 'bollinger',
     type: 'indicator',
-    label: 'Bollinger Bands',
+    label: '볼린저 밴드',
     inputs: [{ name: 'candles', type: 'Candle[]', required: true }],
     outputs: [
       { name: 'upper', type: 'number' },
@@ -86,7 +86,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
   ema: {
     subtype: 'ema',
     type: 'indicator',
-    label: 'EMA',
+    label: 'EMA (지수이동평균)',
     inputs: [{ name: 'candles', type: 'Candle[]', required: true }],
     outputs: [{ name: 'value', type: 'number' }],
     defaultConfig: { period: 20 },
@@ -94,7 +94,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
   threshold: {
     subtype: 'threshold',
     type: 'condition',
-    label: 'Threshold',
+    label: '기준값 조건',
     inputs: [{ name: 'value', type: 'number', required: true }],
     outputs: [{ name: 'result', type: 'boolean' }],
     defaultConfig: { operator: '<', threshold: 30 },
@@ -102,7 +102,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
   crossover: {
     subtype: 'crossover',
     type: 'condition',
-    label: 'Crossover',
+    label: '크로스 조건',
     inputs: [
       { name: 'value_a', type: 'number', required: true },
       { name: 'value_b', type: 'number', required: true },
@@ -113,7 +113,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
   'and-or': {
     subtype: 'and-or',
     type: 'condition',
-    label: 'AND / OR',
+    label: 'AND / OR 조건',
     inputs: [
       { name: 'a', type: 'boolean', required: true },
       { name: 'b', type: 'boolean', required: true },
@@ -124,7 +124,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
   'market-order': {
     subtype: 'market-order',
     type: 'order',
-    label: 'Market Order',
+    label: '시장가 주문',
     inputs: [{ name: 'trigger', type: 'boolean', required: true }],
     outputs: [{ name: 'result', type: 'OrderResult' }],
     defaultConfig: { side: 'buy', amount: '0.001' },
@@ -132,10 +132,10 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
   alert: {
     subtype: 'alert',
     type: 'order',
-    label: 'Alert',
+    label: '알림',
     inputs: [{ name: 'trigger', type: 'boolean', required: true }],
     outputs: [],
-    defaultConfig: { message: 'Signal triggered!' },
+    defaultConfig: { message: '신호 발생!' },
   },
 };
 

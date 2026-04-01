@@ -6,6 +6,36 @@ import { useFlowStore } from '@/stores/use-flow-store';
 import { NODE_TYPE_REGISTRY } from '@coin/types';
 import { Trash2 } from 'lucide-react';
 
+const PARAM_LABELS: Record<string, string> = {
+  period: '기간',
+  source: '기준가',
+  fastPeriod: '단기 기간',
+  slowPeriod: '장기 기간',
+  signalPeriod: '시그널 기간',
+  stdDev: '표준편차 배수',
+  operator: '연산자',
+  threshold: '기준값',
+  direction: '방향',
+  side: '매매 방향',
+  amount: '수량',
+  message: '알림 메시지',
+  overbought: '과매수 기준',
+  oversold: '과매도 기준',
+};
+
+const PARAM_VALUE_LABELS: Record<string, string> = {
+  buy: '매수',
+  sell: '매도',
+  above: '상향 돌파 (골든크로스)',
+  below: '하향 돌파 (데드크로스)',
+  AND: 'AND (모두 참일 때)',
+  OR: 'OR (하나라도 참일 때)',
+  close: '종가',
+  open: '시가',
+  high: '고가',
+  low: '저가',
+};
+
 export function NodeInspector() {
   const t = useTranslations('flows');
   const nodes = useFlowStore((s) => s.nodes);
@@ -64,7 +94,7 @@ export function NodeInspector() {
         <div className="flex flex-col gap-2">
           {Object.entries(config).map(([key, val]) => (
             <label key={key} className="flex flex-col gap-0.5">
-              <span className="text-[10px] text-muted-foreground">{key}</span>
+              <span className="text-[10px] text-muted-foreground">{PARAM_LABELS[key] ?? key}</span>
               {typeof val === 'boolean' ? (
                 <button
                   onClick={() => updateNodeConfig(node.id, { [key]: !val })}
@@ -84,6 +114,7 @@ export function NodeInspector() {
                     })
                   }
                   className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-primary"
+                  placeholder={PARAM_VALUE_LABELS[String(val)] ?? String(val)}
                 />
               )}
             </label>

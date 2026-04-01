@@ -28,6 +28,54 @@ const PORT_TYPE_LABELS: Record<string, string> = {
   OrderResult: '주문결과',
 };
 
+// Korean display labels for port names
+const PORT_NAME_LABELS: Record<string, string> = {
+  candles: '캔들',
+  value: '값',
+  macd: 'MACD 값',
+  signal: '시그널 값',
+  histogram: '히스토그램',
+  upper: '상단 밴드',
+  middle: '중간 밴드',
+  lower: '하단 밴드',
+  result: '조건 결과',
+  trigger: '트리거',
+  a: '조건 A',
+  b: '조건 B',
+  value_a: '비교값 A',
+  value_b: '기준값 B',
+};
+
+// Korean display labels for config parameter keys
+const PARAM_LABELS: Record<string, string> = {
+  period: '기간',
+  source: '기준가',
+  fastPeriod: '단기 기간',
+  slowPeriod: '장기 기간',
+  signalPeriod: '시그널 기간',
+  stdDev: '표준편차 배수',
+  operator: '연산자',
+  threshold: '기준값',
+  direction: '방향',
+  side: '매매 방향',
+  amount: '수량',
+  message: '알림 메시지',
+};
+
+// Korean display labels for config parameter values
+const PARAM_VALUE_LABELS: Record<string, string> = {
+  buy: '매수',
+  sell: '매도',
+  above: '상향 돌파',
+  below: '하향 돌파',
+  AND: 'AND',
+  OR: 'OR',
+  close: '종가',
+  open: '시가',
+  high: '고가',
+  low: '저가',
+};
+
 const NODE_STYLES: Record<string, { border: string; headerBg: string; dot: string }> = {
   data: { border: 'border-blue-500', headerBg: 'bg-blue-900/60', dot: 'bg-blue-400' },
   indicator: { border: 'border-purple-500', headerBg: 'bg-purple-900/60', dot: 'bg-purple-400' },
@@ -67,7 +115,9 @@ function InputPort({ port }: { port: PortDefinition }) {
         }}
         className="flow-handle"
       />
-      <span className="truncate max-w-[72px] text-[10px] text-muted-foreground">{port.name}</span>
+      <span className="truncate max-w-[72px] text-[10px] text-muted-foreground">
+        {PORT_NAME_LABELS[port.name] ?? port.name}
+      </span>
       {port.required && <span className="text-[9px] font-bold leading-none text-amber-400">*</span>}
 
       {showTooltip && (
@@ -78,7 +128,9 @@ function InputPort({ port }: { port: PortDefinition }) {
             border: `1px solid ${color}`,
           }}
         >
-          <div className="text-[11px] font-semibold text-slate-100">{port.name}</div>
+          <div className="text-[11px] font-semibold text-slate-100">
+            {PORT_NAME_LABELS[port.name] ?? port.name}
+          </div>
           <div className="text-[10px]" style={{ color }}>
             {typeLabel}
           </div>
@@ -122,7 +174,9 @@ function OutputPort({ port }: { port: PortDefinition }) {
         }}
         className="flow-handle"
       />
-      <span className="truncate max-w-[72px] text-[10px] text-muted-foreground">{port.name}</span>
+      <span className="truncate max-w-[72px] text-[10px] text-muted-foreground">
+        {PORT_NAME_LABELS[port.name] ?? port.name}
+      </span>
 
       {showTooltip && (
         <div
@@ -132,7 +186,9 @@ function OutputPort({ port }: { port: PortDefinition }) {
             border: `1px solid ${color}`,
           }}
         >
-          <div className="text-[11px] font-semibold text-slate-100">{port.name}</div>
+          <div className="text-[11px] font-semibold text-slate-100">
+            {PORT_NAME_LABELS[port.name] ?? port.name}
+          </div>
           <div className="text-[10px]" style={{ color }}>
             {typeLabel}
           </div>
@@ -219,8 +275,10 @@ function BaseNode({ id, data, selected }: NodeProps & { data: FlowNodeData }) {
               .slice(0, 3)
               .map(([key, val]) => (
                 <div key={key} className="flex justify-between text-[10px]">
-                  <span className="text-muted-foreground/60">{key}</span>
-                  <span className="text-muted-foreground">{String(val)}</span>
+                  <span className="text-muted-foreground/60">{PARAM_LABELS[key] ?? key}</span>
+                  <span className="text-muted-foreground">
+                    {PARAM_VALUE_LABELS[String(val)] ?? String(val)}
+                  </span>
                 </div>
               ))}
           </div>
