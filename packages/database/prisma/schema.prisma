@@ -21,6 +21,7 @@ model User {
   exchangeKeys  ExchangeKey[]
   orders              Order[]
   strategies          Strategy[]
+  flows               Flow[]
   notificationSetting NotificationSetting?
   loginHistory        LoginHistory[]
 }
@@ -59,6 +60,7 @@ model ExchangeKey {
   updatedAt DateTime @updatedAt
   orders     Order[]
   strategies Strategy[]
+  flows      Flow[]
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, exchange])
@@ -172,4 +174,56 @@ model LoginHistory {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, createdAt])
+}
+
+model Flow {
+  id             String        @id @default(cuid())
+  userId         String
+  name           String
+  description    String?
+  definition     Json
+  exchange       String
+  symbol         String
+  candleInterval String        @default("1h")
+  enabled        Boolean       @default(false)
+  tradingMode    String        @default("paper")
+  exchangeKeyId  String?
+  riskConfig     Json?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exchangeKey    ExchangeKey?  @relation(fields: [exchangeKeyId], references: [id])
+  backtests      Backtest[]
+
+  @@index([userId])
+  @@index([userId, enabled])
+}
+
+model Backtest {
+  id           String          @id @default(cuid())
+  flowId       String
+  startDate    DateTime
+  endDate      DateTime
+  status       String          @default("pending")
+  summary      Json?
+  createdAt    DateTime        @default(now())
+  flow         Flow            @relation(fields: [flowId], references: [id], onDelete: Cascade)
+  traceEntries BacktestTrace[]
+
+  @@index([flowId])
+  @@index([flowId, createdAt])
+}
+
+model BacktestTrace {
+  id         String   @id @default(cuid())
+  backtestId String
+  timestamp  DateTime
+  nodeId     String
+  input      Json
+  output     Json
+  fired      Boolean
+  durationMs Int
+  backtest   Backtest @relation(fields: [backtestId], references: [id], onDelete: Cascade)
+
+  @@index([backtestId, timestamp])
 }
