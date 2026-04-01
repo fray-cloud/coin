@@ -3,6 +3,7 @@
 import { memo, useMemo } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
+import { CheckCircle2, XCircle } from 'lucide-react';
 import { NODE_TYPE_REGISTRY } from '@coin/types';
 import { useFlowStore, type FlowNodeData } from '@/stores/use-flow-store';
 
@@ -81,7 +82,12 @@ function BaseNode({ id, data, selected }: NodeProps & { data: FlowNodeData }) {
           {registry?.label || data.subtype}
         </span>
         {traceState && (
-          <span className="ml-auto text-[9px] text-muted-foreground">
+          <span className="ml-auto flex items-center gap-1 text-[9px] text-muted-foreground">
+            {traceState.fired ? (
+              <CheckCircle2 size={10} className="text-emerald-400" aria-label="Fired" />
+            ) : (
+              <XCircle size={10} className="text-red-400" aria-label="Blocked" />
+            )}
             {traceState.durationMs}ms
           </span>
         )}
