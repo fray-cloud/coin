@@ -227,3 +227,21 @@ model BacktestTrace {
 
   @@index([backtestId, timestamp])
 }
+
+model Candle {
+  id        String   @id @default(cuid())
+  exchange  String
+  symbol    String
+  interval  String
+  open      Float
+  high      Float
+  low       Float
+  close     Float
+  volume    Float
+  timestamp BigInt
+  createdAt DateTime @default(now())
+
+  @@unique([exchange, symbol, interval, timestamp])
+  @@index([exchange, symbol, interval])
+  @@index([exchange, symbol, interval, timestamp])
+}
