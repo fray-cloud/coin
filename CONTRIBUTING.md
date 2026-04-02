@@ -124,6 +124,32 @@ Closes #<이슈번호>
 
 ---
 
+## 브랜치 정리 (Branch Cleanup)
+
+### PR 머지 후 브랜치 삭제 원칙
+
+- **feat/fix 브랜치는 PR 머지(승인) 즉시 삭제합니다.**
+  - `feat/#N` 또는 `fix/#N` 브랜치가 `dev`에 머지되면 해당 브랜치를 원격 및 로컬에서 삭제합니다.
+  - GitHub PR 머지 버튼 하단 "Delete branch" 옵션을 반드시 클릭합니다.
+- `main`, `dev` 브랜치는 영구 보호 브랜치로 절대 삭제하지 않습니다.
+- `hotfix/*`, `release/*` 브랜치도 `main` 머지 후 즉시 삭제합니다.
+
+### 로컬 브랜치 정리 명령어
+
+```bash
+# 원격에 삭제된 브랜치 정리 (origin 동기화)
+git fetch --prune
+
+# main 또는 dev에 머지된 로컬 브랜치 목록 확인
+git branch --merged origin/main
+git branch --merged origin/dev
+
+# 불필요한 로컬 브랜치 삭제
+git branch -d feat/#N
+```
+
+---
+
 ## CI/CD 파이프라인
 
 | 워크플로우           | 트리거            | 목적                       |
