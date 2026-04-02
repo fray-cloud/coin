@@ -90,11 +90,18 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
   updateNodeConfig: (nodeId, config) =>
     set((state) => ({
-      nodes: state.nodes.map((n) =>
-        n.id === nodeId
-          ? { ...n, data: { ...n.data, config: { ...n.data.config, ...config } } }
-          : n,
-      ),
+      nodes: state.nodes.map((n) => {
+        if (n.id !== nodeId) return n;
+        const merged = { ...n.data.config };
+        for (const [k, v] of Object.entries(config)) {
+          if (v === undefined) {
+            delete merged[k];
+          } else {
+            merged[k] = v;
+          }
+        }
+        return { ...n, data: { ...n.data, config: merged } };
+      }),
       isDirty: true,
     })),
 

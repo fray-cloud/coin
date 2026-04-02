@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import { NODE_TYPE_REGISTRY } from '@coin/types';
+import { NODE_TYPE_REGISTRY, getRequiredConfig } from '@coin/types';
 import type { NodeTypeInfo } from '@coin/types';
 import { useFlowStore } from '@/stores/use-flow-store';
 
@@ -33,7 +33,7 @@ export function NodePalette() {
           label: info.label,
           subtype: info.subtype,
           nodeType: info.type,
-          config: { ...info.defaultConfig },
+          config: getRequiredConfig(info),
         },
       });
     },

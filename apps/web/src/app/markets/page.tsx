@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useTickers } from '@/hooks/use-tickers';
 import { TickerTable } from '@/components/ticker-table';
+import { TickerCardList } from '@/components/markets/ticker-card-list';
 import { ExchangeRateBadge } from '@/components/exchange-rate-badge';
 import { QuickOrderPanel } from '@/components/orders/quick-order-panel';
 import type { Ticker } from '@coin/types';
@@ -28,9 +29,16 @@ export default function MarketsPage() {
         </div>
       </div>
 
-      <TickerTable tickers={tickers} onRowClick={setSelectedTicker} />
+      {/* Mobile: card view (QuickOrderPanel handled internally via swipe) */}
+      <div className="md:hidden">
+        <TickerCardList tickers={tickers} />
+      </div>
 
-      <QuickOrderPanel ticker={selectedTicker} onClose={() => setSelectedTicker(null)} />
+      {/* Desktop: table view */}
+      <div className="hidden md:block">
+        <TickerTable tickers={tickers} onRowClick={setSelectedTicker} />
+        <QuickOrderPanel ticker={selectedTicker} onClose={() => setSelectedTicker(null)} />
+      </div>
     </main>
   );
 }

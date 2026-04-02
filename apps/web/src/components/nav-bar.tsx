@@ -14,6 +14,7 @@ import {
   LogIn,
   UserPlus,
   Coins,
+  LayoutDashboard,
 } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { useUser, useLogout } from '@/hooks/use-user';
@@ -45,6 +46,13 @@ export function NavBar() {
           </Link>
           {user && (
             <>
+              <Link
+                href="/dashboard"
+                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"
+              >
+                <LayoutDashboard size={15} />
+                대시보드
+              </Link>
               <Link
                 href="/orders"
                 className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"

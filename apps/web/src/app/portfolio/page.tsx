@@ -10,6 +10,7 @@ import { formatKrw } from '@/lib/utils';
 import { PnlValue } from '@/components/shared/pnl-value';
 import { PnlChart } from '@/components/shared/pnl-chart';
 import { AssetTable } from '@/components/portfolio/asset-table';
+import { AssetCardList } from '@/components/portfolio/asset-card-list';
 import { Skeleton, SkeletonCard, SkeletonChart, SkeletonTable } from '@/components/ui/skeleton';
 
 const MODES = ['all', 'real', 'paper'] as const;
@@ -130,8 +131,16 @@ export default function PortfolioPage() {
         </Card>
       )}
 
-      {/* Assets Table */}
-      <Card>
+      {/* Assets — card view on mobile, table on desktop */}
+      <div className="md:hidden space-y-2">
+        <h2 className="text-base font-semibold">{t('assets')}</h2>
+        {data.assets.length > 0 ? (
+          <AssetCardList assets={data.assets} />
+        ) : (
+          <p className="text-center text-muted-foreground py-8">{t('noAssets')}</p>
+        )}
+      </div>
+      <Card className="hidden md:block">
         <CardHeader>
           <CardTitle className="text-lg">{t('assets')}</CardTitle>
         </CardHeader>

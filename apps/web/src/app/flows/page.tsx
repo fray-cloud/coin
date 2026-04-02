@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { useTranslations } from 'next-intl';
@@ -9,6 +10,8 @@ import { useFlows } from '@/hooks/use-flows';
 import { useToastStore } from '@/stores/use-toast-store';
 import { FlowCard } from '@/components/flows/flow-card';
 import { SkeletonCard } from '@/components/ui/skeleton';
+import { TemplatePickerModal } from '@/components/flows/template-picker-modal';
+import type { FlowTemplate } from '@/lib/flow-templates';
 
 export default function FlowsPage() {
   const t = useTranslations('flows');
@@ -16,14 +19,15 @@ export default function FlowsPage() {
   const queryClient = useQueryClient();
   const addToast = useToastStore((s) => s.addToast);
   const { data: flows = [], isLoading } = useFlows();
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
 
   const createMutation = useMutation({
-    mutationFn: () =>
+    mutationFn: (template: FlowTemplate | null) =>
       createFlow({
-        name: '새 플로우',
-        definition: { nodes: [], edges: [] },
+        name: template ? template.name : '새 플로우',
+        definition: template ? template.definition : { nodes: [], edges: [] },
         exchange: 'binance',
-        symbol: 'BTC/USDT',
+        symbol: template ? (template.recommendedPairs[0] ?? 'BTC/USDT') : 'BTC/USDT',
       }),
     onSuccess: (flow) => {
       queryClient.invalidateQueries({ queryKey: ['flows'] });
@@ -42,12 +46,21 @@ export default function FlowsPage() {
     },
   });
 
+  function handleOpenPicker() {
+    setShowTemplatePicker(true);
+  }
+
+  function handleTemplateSelect(template: FlowTemplate | null) {
+    setShowTemplatePicker(false);
+    createMutation.mutate(template);
+  }
+
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 md:p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t('title')}</h1>
         <button
-          onClick={() => createMutation.mutate()}
+          onClick={handleOpenPicker}
           disabled={createMutation.isPending}
           className="flex items-center gap-1.5 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground transition hover:bg-primary/90"
         >
@@ -72,7 +85,7 @@ export default function FlowsPage() {
             <p className="mt-1 text-sm text-muted-foreground">{t('emptyDesc')}</p>
           </div>
           <button
-            onClick={() => createMutation.mutate()}
+            onClick={handleOpenPicker}
             disabled={createMutation.isPending}
             className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground transition hover:bg-primary/90"
           >
@@ -95,6 +108,13 @@ export default function FlowsPage() {
             />
           ))}
         </div>
+      )}
+
+      {showTemplatePicker && (
+        <TemplatePickerModal
+          onSelect={handleTemplateSelect}
+          onClose={() => setShowTemplatePicker(false)}
+        />
       )}
     </div>
   );

@@ -13,6 +13,18 @@ import { IExchangeRest } from '../interfaces/exchange-rest';
 
 const BASE_URL = 'https://api.upbit.com';
 
+function parseIntervalMs(interval: string): number {
+  const INTERVAL_MS: Record<string, number> = {
+    '1m': 60_000,
+    '5m': 300_000,
+    '15m': 900_000,
+    '1h': 3_600_000,
+    '4h': 14_400_000,
+    '1d': 86_400_000,
+  };
+  return INTERVAL_MS[interval] ?? 60_000;
+}
+
 interface UpbitTrade {
   market: string;
   uuid: string;
@@ -175,6 +187,78 @@ export class UpbitRest implements IExchangeRest {
       volume: String(k.candle_acc_trade_volume),
       timestamp: k.timestamp,
     }));
+  }
+
+  async getCandlesByRange(
+    symbol: string,
+    interval: string,
+    startTime: number,
+    endTime: number,
+  ): Promise<Candle[]> {
+    const INTERVAL_MAP: Record<string, string> = {
+      '1m': 'minutes/1',
+      '5m': 'minutes/5',
+      '15m': 'minutes/15',
+      '1h': 'minutes/60',
+      '4h': 'minutes/240',
+      '1d': 'days',
+    };
+    const path = INTERVAL_MAP[interval] || 'minutes/1';
+    const intervalMs = parseIntervalMs(interval);
+    const PAGE_LIMIT = 200;
+    const allCandles: Candle[] = [];
+    // Upbit paginates backward via `to` (exclusive end, ISO 8601)
+    let pageEnd = endTime;
+    const MAX_PAGES = 100;
+
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const toParam = new Date(pageEnd + 1).toISOString();
+      const res = await fetch(
+        `${BASE_URL}/v1/candles/${path}?market=${symbol}&count=${PAGE_LIMIT}&to=${toParam}`,
+      );
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`Upbit API error ${res.status}: ${body}`);
+      }
+      const data = (await res.json()) as Array<{
+        candle_date_time_utc: string;
+        opening_price: number;
+        high_price: number;
+        low_price: number;
+        trade_price: number;
+        candle_acc_trade_volume: number;
+        timestamp: number;
+      }>;
+      if (data.length === 0) break;
+
+      // data is newest-first; filter to range and prepend to result
+      const inRange: Candle[] = [];
+      for (const k of data) {
+        if (k.timestamp < startTime) continue;
+        if (k.timestamp > endTime) continue;
+        inRange.push({
+          exchange: this.exchangeId,
+          symbol,
+          interval,
+          open: String(k.opening_price),
+          high: String(k.high_price),
+          low: String(k.low_price),
+          close: String(k.trade_price),
+          volume: String(k.candle_acc_trade_volume),
+          timestamp: k.timestamp,
+        });
+      }
+      // prepend so final array is chronological
+      allCandles.unshift(...inRange.reverse());
+
+      const oldestInPage = data[data.length - 1].timestamp;
+      if (oldestInPage <= startTime) break;
+      if (data.length < PAGE_LIMIT) break;
+      pageEnd = oldestInPage - intervalMs;
+      if (pageEnd < startTime) break;
+    }
+
+    return allCandles;
   }
 
   private mapOrderResponse(o: UpbitOrderResponse): OrderResult {

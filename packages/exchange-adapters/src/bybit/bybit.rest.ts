@@ -12,6 +12,18 @@ import { IExchangeRest } from '../interfaces/exchange-rest';
 const BASE_URL = 'https://api.bybit.com';
 const RECV_WINDOW = '5000';
 
+function parseIntervalMs(interval: string): number {
+  const INTERVAL_MS: Record<string, number> = {
+    '1m': 60_000,
+    '5m': 300_000,
+    '15m': 900_000,
+    '1h': 3_600_000,
+    '4h': 14_400_000,
+    '1d': 86_400_000,
+  };
+  return INTERVAL_MS[interval] ?? 60_000;
+}
+
 export class BybitRest implements IExchangeRest {
   readonly exchangeId = 'bybit' as const;
 
@@ -212,6 +224,68 @@ export class BybitRest implements IExchangeRest {
       volume: k[5],
       timestamp: Number(k[0]),
     }));
+  }
+
+  async getCandlesByRange(
+    symbol: string,
+    interval: string,
+    startTime: number,
+    endTime: number,
+  ): Promise<Candle[]> {
+    const INTERVAL_MAP: Record<string, string> = {
+      '1m': '1',
+      '5m': '5',
+      '15m': '15',
+      '1h': '60',
+      '4h': '240',
+      '1d': 'D',
+    };
+    const bybitInterval = INTERVAL_MAP[interval] || '1';
+    const intervalMs = parseIntervalMs(interval);
+    const PAGE_LIMIT = 1000;
+    const allCandles: Candle[] = [];
+    let pageStart = startTime;
+    const MAX_PAGES = 100;
+
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const res = await fetch(
+        `${BASE_URL}/v5/market/kline?category=spot&symbol=${symbol}&interval=${bybitInterval}&limit=${PAGE_LIMIT}&start=${pageStart}&end=${endTime}`,
+      );
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`Bybit API error ${res.status}: ${body}`);
+      }
+      const data = (await res.json()) as {
+        retCode: number;
+        retMsg: string;
+        result: { list: Array<[string, string, string, string, string, string, string]> };
+      };
+      if (data.retCode !== 0) {
+        throw new Error(`Bybit API error: ${data.retMsg}`);
+      }
+      const list = data.result?.list ?? [];
+      if (list.length === 0) break;
+
+      // Bybit returns newest-first; reverse to chronological
+      const page_candles = list.reverse().map((k) => ({
+        exchange: this.exchangeId,
+        symbol,
+        interval,
+        open: k[1],
+        high: k[2],
+        low: k[3],
+        close: k[4],
+        volume: k[5],
+        timestamp: Number(k[0]),
+      }));
+      allCandles.push(...page_candles);
+
+      if (list.length < PAGE_LIMIT) break;
+      pageStart = page_candles[page_candles.length - 1].timestamp + intervalMs;
+      if (pageStart > endTime) break;
+    }
+
+    return allCandles;
   }
 
   private mapOrder(o: BybitOrder): OrderResult {
