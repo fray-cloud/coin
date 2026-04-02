@@ -212,8 +212,7 @@ export class BacktestsService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Fetch historical candles by paginating through exchange API.
-   * 200 candles per request, walking backwards from endDate.
+   * Fetch historical candles for the given date range using paginated exchange API calls.
    */
   private async fetchHistoricalCandles(
     exchange: ExchangeId,
@@ -233,36 +232,18 @@ export class BacktestsService implements OnModuleInit, OnModuleDestroy {
     if (!adapterFactory) throw new Error(`Unsupported exchange: ${exchange}`);
 
     const adapter = adapterFactory();
-    const allCandles: Candle[] = [];
-    const startMs = startDate.getTime();
-    const endMs = endDate.getTime();
+    const candles = await adapter.getCandlesByRange(
+      symbol,
+      interval,
+      startDate.getTime(),
+      endDate.getTime(),
+    );
 
-    // Fetch in pages of 200 candles
-    // Most exchanges return candles in reverse chronological order,
-    // but our adapter reverses them to chronological
-    let fetchedCandles = await adapter.getCandles(symbol, interval, 200);
-
-    // Filter to date range
-    for (const c of fetchedCandles) {
-      if (c.timestamp >= startMs && c.timestamp <= endMs) {
-        allCandles.push(c);
-      }
+    if (candles.length > 0) {
+      await this.redis.set(cacheKey, JSON.stringify(candles), 'EX', CANDLE_CACHE_TTL);
     }
 
-    // If we need more historical data, paginate
-    // This is a simplified approach — for a production system we'd
-    // use exchange-specific pagination parameters (e.g., `endTime`)
-    if (allCandles.length > 0) {
-      // Sort chronologically
-      allCandles.sort((a, b) => a.timestamp - b.timestamp);
-    }
-
-    // Cache for reuse
-    if (allCandles.length > 0) {
-      await this.redis.set(cacheKey, JSON.stringify(allCandles), 'EX', CANDLE_CACHE_TTL);
-    }
-
-    return allCandles;
+    return candles;
   }
 
   /**
