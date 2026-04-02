@@ -30,6 +30,7 @@ export class DataService {
     startTime: number,
     endTime: number,
   ): Promise<OhlcvCandle[]> {
+    symbol = symbol.toUpperCase();
     const stored = await this.loadFromDb(exchange, symbol, interval, startTime, endTime);
     if (stored.length > 0) {
       return stored;
