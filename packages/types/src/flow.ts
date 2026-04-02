@@ -36,6 +36,7 @@ export interface PortDefinition {
 export interface ParamDefinition {
   key: string;
   required: boolean;
+  options?: string[];
 }
 
 export interface NodeTypeInfo {
@@ -75,7 +76,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
     defaultConfig: { period: 14, source: 'close' },
     params: [
       { key: 'period', required: true },
-      { key: 'source', required: false },
+      { key: 'source', required: false, options: ['close', 'open', 'high', 'low'] },
     ],
   },
   macd: {
@@ -128,7 +129,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
     outputs: [{ name: 'result', type: 'boolean' }],
     defaultConfig: { operator: '<', threshold: 30 },
     params: [
-      { key: 'operator', required: true },
+      { key: 'operator', required: true, options: ['<', '>', '<=', '>=', '=='] },
       { key: 'threshold', required: true },
     ],
   },
@@ -142,7 +143,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
     ],
     outputs: [{ name: 'result', type: 'boolean' }],
     defaultConfig: { direction: 'above' },
-    params: [{ key: 'direction', required: true }],
+    params: [{ key: 'direction', required: true, options: ['above', 'below'] }],
   },
   'and-or': {
     subtype: 'and-or',
@@ -154,7 +155,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
     ],
     outputs: [{ name: 'result', type: 'boolean' }],
     defaultConfig: { operator: 'AND' },
-    params: [{ key: 'operator', required: true }],
+    params: [{ key: 'operator', required: true, options: ['AND', 'OR'] }],
   },
   'market-order': {
     subtype: 'market-order',
@@ -164,7 +165,7 @@ export const NODE_TYPE_REGISTRY: Record<string, NodeTypeInfo> = {
     outputs: [{ name: 'result', type: 'OrderResult' }],
     defaultConfig: { side: 'buy', amount: '0.001' },
     params: [
-      { key: 'side', required: true },
+      { key: 'side', required: true, options: ['buy', 'sell'] },
       { key: 'amount', required: true },
     ],
   },

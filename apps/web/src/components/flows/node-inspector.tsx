@@ -40,11 +40,28 @@ function ParamInput({
   paramKey,
   value,
   onChange,
+  options,
 }: {
   paramKey: string;
   value: unknown;
   onChange: (val: unknown) => void;
+  options?: string[];
 }) {
+  if (options && options.length > 0) {
+    return (
+      <select
+        value={String(value)}
+        onChange={(e) => onChange(e.target.value)}
+        className="rounded border border-border bg-background px-2 py-1 text-xs text-foreground outline-none focus:border-primary"
+      >
+        {options.map((opt) => (
+          <option key={opt} value={opt}>
+            {PARAM_VALUE_LABELS[opt] ?? opt}
+          </option>
+        ))}
+      </select>
+    );
+  }
   if (typeof value === 'boolean') {
     return (
       <button
@@ -133,7 +150,7 @@ export function NodeInspector() {
         {params ? (
           <div className="flex flex-col gap-2">
             {/* Required params — always shown */}
-            {requiredParams.map(({ key }) => (
+            {requiredParams.map(({ key, options }) => (
               <label key={key} className="flex flex-col gap-0.5">
                 <span className="text-[10px] text-muted-foreground">
                   {PARAM_LABELS[key] ?? key}
@@ -142,6 +159,7 @@ export function NodeInspector() {
                   paramKey={key}
                   value={config[key] ?? registry.defaultConfig[key]}
                   onChange={(val) => updateNodeConfig(node.id, { [key]: val })}
+                  options={options}
                 />
               </label>
             ))}
@@ -154,7 +172,7 @@ export function NodeInspector() {
                     선택적 파라미터
                   </span>
                 </div>
-                {optionalParams.map(({ key }) => {
+                {optionalParams.map(({ key, options }) => {
                   const isEnabled = key in config;
                   const defaultVal = registry.defaultConfig[key];
                   return (
@@ -183,6 +201,7 @@ export function NodeInspector() {
                           paramKey={key}
                           value={config[key]}
                           onChange={(val) => updateNodeConfig(node.id, { [key]: val })}
+                          options={options}
                         />
                       ) : (
                         <span className="rounded border border-border/40 bg-muted/40 px-2 py-1 text-xs text-muted-foreground/40">
