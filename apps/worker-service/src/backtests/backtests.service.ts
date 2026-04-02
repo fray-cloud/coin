@@ -221,7 +221,7 @@ export class BacktestsService implements OnModuleInit, OnModuleDestroy {
     startDate: Date,
     endDate: Date,
   ): Promise<Candle[]> {
-    symbol = symbol.toUpperCase();
+    symbol = symbol.toUpperCase().replace(/\//g, '');
     const cacheKey = `backtest:candles:${exchange}:${symbol}:${interval}:${startDate.toISOString()}:${endDate.toISOString()}`;
     const cached = await this.redis.get(cacheKey);
     if (cached) {
