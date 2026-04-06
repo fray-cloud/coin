@@ -8,7 +8,7 @@ import {
   PieChart,
   Coins,
   ArrowRight,
-  Github,
+  ExternalLink,
 } from 'lucide-react';
 
 const FEATURES = [
@@ -111,7 +111,7 @@ export default function DemoLandingPage() {
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-border text-sm font-medium hover:bg-muted transition-colors"
             >
-              <Github size={18} />
+              <ExternalLink size={18} />
               GitHub
             </a>
           </div>
