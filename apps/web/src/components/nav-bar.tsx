@@ -20,17 +20,28 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { useUser, useLogout } from '@/hooks/use-user';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { isDemo } from '@/lib/demo';
+
+const DEMO_HIDDEN_PATHS = ['/settings'];
 
 export function NavBar() {
   const { user } = useUser();
   const logout = useLogout();
   const t = useTranslations('nav');
 
+  const showAuthLinks = !isDemo && !user;
+  const showUserMenu = !isDemo && user;
+  // In demo mode, show nav links without requiring auth
+  const showNavLinks = user || isDemo;
+
   return (
     <nav className="border-b bg-card/80 backdrop-blur-sm sticky top-0 z-20">
       <div className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between">
         {/* Logo — always visible */}
-        <Link href="/markets" className="font-semibold text-lg flex items-center gap-1.5 shrink-0">
+        <Link
+          href={isDemo ? '/demo' : '/markets'}
+          className="font-semibold text-lg flex items-center gap-1.5 shrink-0"
+        >
           <Coins size={22} />
           {t('brand')}
         </Link>
@@ -44,7 +55,7 @@ export function NavBar() {
             <BarChart3 size={15} />
             {t('markets')}
           </Link>
-          {user && (
+          {showNavLinks && (
             <>
               <Link
                 href="/dashboard"
@@ -88,13 +99,15 @@ export function NavBar() {
                 <Activity size={15} />
                 {t('activity')}
               </Link>
-              <Link
-                href="/settings"
-                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"
-              >
-                <Settings size={15} />
-                {t('settings')}
-              </Link>
+              {!isDemo && (
+                <Link
+                  href="/settings"
+                  className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"
+                >
+                  <Settings size={15} />
+                  {t('settings')}
+                </Link>
+              )}
             </>
           )}
         </div>
@@ -103,7 +116,7 @@ export function NavBar() {
         <div className="flex items-center gap-1.5 shrink-0">
           <ThemeToggle />
           <LanguageSwitcher />
-          {user ? (
+          {showUserMenu && (
             <>
               <span className="text-sm text-muted-foreground hidden sm:inline">
                 {user.nickname || user.email}
@@ -113,7 +126,8 @@ export function NavBar() {
                 <span className="hidden sm:inline">{t('logout')}</span>
               </Button>
             </>
-          ) : (
+          )}
+          {showAuthLinks && (
             <>
               <Link
                 href="/login"
@@ -127,6 +141,9 @@ export function NavBar() {
                 <span className="hidden sm:inline">{t('signup')}</span>
               </Link>
             </>
+          )}
+          {isDemo && (
+            <span className="text-sm text-muted-foreground hidden sm:inline ml-1">Demo</span>
           )}
         </div>
       </div>

@@ -70,6 +70,38 @@ export const handlers = [
   // Activity
   http.get('/api/activity', () => HttpResponse.json({ items: demoActivity, nextCursor: null })),
 
+  // Markets - tickers (initial snapshot, WS handles live updates)
+  http.get('/api/markets/tickers', () => HttpResponse.json([])),
+
+  // Markets - candles (proxy to real exchange public APIs)
+  http.get('/api/markets/candles/:exchange/:symbol', async ({ params, request }) => {
+    const exchange = params.exchange as string;
+    const symbol = decodeURIComponent(params.symbol as string);
+    const url = new URL(request.url);
+    const interval = url.searchParams.get('interval') || '5m';
+    const limit = url.searchParams.get('limit') || '200';
+
+    try {
+      if (exchange === 'upbit') {
+        const { fetchUpbitCandles } = await import('@/lib/demo-ws');
+        const candles = await fetchUpbitCandles(symbol, interval, Number(limit));
+        return HttpResponse.json(
+          candles.map((c) => ({ ...c, exchange: 'upbit', symbol, interval })),
+        );
+      }
+      if (exchange === 'binance') {
+        const { fetchBinanceCandles } = await import('@/lib/demo-ws');
+        const candles = await fetchBinanceCandles(symbol, interval, Number(limit));
+        return HttpResponse.json(
+          candles.map((c) => ({ ...c, exchange: 'binance', symbol, interval })),
+        );
+      }
+      return HttpResponse.json([]);
+    } catch {
+      return HttpResponse.json([]);
+    }
+  }),
+
   // Exchange rate
   http.get('/api/markets/exchange-rate', () =>
     HttpResponse.json({ krwPerUsd: 1430, source: 'demo', updatedAt: new Date().toISOString() }),
