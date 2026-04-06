@@ -1,17 +1,9 @@
 import type { Metadata } from 'next';
-import { headers } from 'next/headers';
 import { NextIntlClientProvider } from 'next-intl';
 import { getLocale, getMessages } from 'next-intl/server';
 import './globals.css';
-import { NavBar } from '@/components/nav-bar';
-import { MobileTabBar } from '@/components/mobile-tab-bar';
-import { AuthDebug } from '@/components/auth-debug';
-import { ToastContainer } from '@/components/toast';
-import { OnboardingWizard } from '@/components/onboarding-wizard';
-import { DemoBanner } from '@/components/demo-banner';
 import { Providers } from './providers';
-
-const isDemo = process.env.NEXT_PUBLIC_DEMO === 'true';
+import { AppShell } from '@/components/app-shell';
 
 export const metadata: Metadata = {
   title: 'Coin Trading Platform',
@@ -37,31 +29,15 @@ function parseExpiresIn(value: string): number {
 }
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const accessTtl = parseExpiresIn(process.env.JWT_ACCESS_EXPIRES_IN || '15m');
   const locale = await getLocale();
   const messages = await getMessages();
-  const headersList = await headers();
-  const pathname = headersList.get('x-pathname') || '';
-  const isDemoLanding = pathname.startsWith('/demo');
 
   return (
     <html lang={locale}>
       <body>
         <NextIntlClientProvider messages={messages}>
           <Providers>
-            {isDemoLanding ? (
-              children
-            ) : (
-              <>
-                {isDemo && <DemoBanner />}
-                <NavBar />
-                <main className="pb-16 md:pb-0">{children}</main>
-                <MobileTabBar />
-                <ToastContainer />
-                {!isDemo && <OnboardingWizard />}
-                {!isDemo && <AuthDebug accessTtl={accessTtl} />}
-              </>
-            )}
+            <AppShell>{children}</AppShell>
           </Providers>
         </NextIntlClientProvider>
       </body>
