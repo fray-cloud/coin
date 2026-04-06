@@ -1,4 +1,9 @@
+import { isDemo } from '@/lib/demo';
+
 const API_BASE = '/api';
+
+const DEMO_BLOCKED_METHODS = ['POST', 'PUT', 'PATCH', 'DELETE'];
+const DEMO_ALLOWED_PATHS = ['/auth/refresh', '/auth/logout'];
 
 let isRefreshing = false;
 let refreshPromise: Promise<boolean> | null = null;
@@ -26,6 +31,16 @@ async function tryRefresh(): Promise<boolean> {
 }
 
 export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  // Demo mode: block mutations with a friendly error
+  const method = (options.method || 'GET').toUpperCase();
+  if (
+    isDemo &&
+    DEMO_BLOCKED_METHODS.includes(method) &&
+    !DEMO_ALLOWED_PATHS.some((p) => path.startsWith(p))
+  ) {
+    throw new Error('데모에서는 사용할 수 없습니다');
+  }
+
   const url = `${API_BASE}${path}`;
   const res = await fetch(url, { credentials: 'same-origin', ...options });
 
