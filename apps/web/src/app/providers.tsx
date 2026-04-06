@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { isDemo } from '@/lib/demo';
 
 function AuthRefreshListener({ queryClient }: { queryClient: QueryClient }) {
   useEffect(() => {
@@ -26,10 +27,25 @@ export function Providers({ children }: { children: React.ReactNode }) {
         },
       }),
   );
+  const [mswReady, setMswReady] = useState(!isDemo);
+
+  useEffect(() => {
+    if (!isDemo) return;
+
+    import('@/mocks/browser').then(({ worker }) => {
+      worker.start({ onUnhandledRequest: 'bypass' }).then(() => {
+        setMswReady(true);
+      });
+    });
+  }, []);
+
+  if (!mswReady) {
+    return null;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthRefreshListener queryClient={queryClient} />
+      {!isDemo && <AuthRefreshListener queryClient={queryClient} />}
       {children}
     </QueryClientProvider>
   );
