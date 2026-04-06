@@ -11,6 +11,18 @@ import { IExchangeRest } from '../interfaces/exchange-rest';
 
 const BASE_URL = 'https://api.binance.com';
 
+function parseIntervalMs(interval: string): number {
+  const INTERVAL_MS: Record<string, number> = {
+    '1m': 60_000,
+    '5m': 300_000,
+    '15m': 900_000,
+    '1h': 3_600_000,
+    '4h': 14_400_000,
+    '1d': 86_400_000,
+  };
+  return INTERVAL_MS[interval] ?? 60_000;
+}
+
 interface BinanceOrderResponse {
   orderId: number;
   symbol: string;
@@ -166,6 +178,66 @@ export class BinanceRest implements IExchangeRest {
       volume: k[5],
       timestamp: k[0],
     }));
+  }
+
+  async getCandlesByRange(
+    symbol: string,
+    interval: string,
+    startTime: number,
+    endTime: number,
+  ): Promise<Candle[]> {
+    const PAGE_LIMIT = 1000;
+    const intervalMs = parseIntervalMs(interval);
+    const allCandles: Candle[] = [];
+    let pageStart = startTime;
+    const MAX_PAGES = 100;
+
+    for (let page = 0; page < MAX_PAGES; page++) {
+      const res = await fetch(
+        `${BASE_URL}/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${PAGE_LIMIT}&startTime=${pageStart}&endTime=${endTime}`,
+      );
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`Binance API error ${res.status}: ${body}`);
+      }
+      const data = (await res.json()) as Array<
+        [
+          number,
+          string,
+          string,
+          string,
+          string,
+          string,
+          number,
+          string,
+          number,
+          string,
+          string,
+          string,
+        ]
+      >;
+      if (data.length === 0) break;
+
+      for (const k of data) {
+        allCandles.push({
+          exchange: this.exchangeId,
+          symbol,
+          interval,
+          open: k[1],
+          high: k[2],
+          low: k[3],
+          close: k[4],
+          volume: k[5],
+          timestamp: k[0],
+        });
+      }
+
+      if (data.length < PAGE_LIMIT) break;
+      pageStart = data[data.length - 1][0] + intervalMs;
+      if (pageStart > endTime) break;
+    }
+
+    return allCandles;
   }
 
   private mapOrderResult(o: BinanceOrderResponse): OrderResult {

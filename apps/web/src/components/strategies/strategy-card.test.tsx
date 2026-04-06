@@ -9,9 +9,24 @@ vi.mock('next/link', () => ({
   ),
 }));
 
+// Mock next-intl
+vi.mock('next-intl', () => ({
+  useTranslations: () => (key: string) => key,
+}));
+
+// Mock hooks with external dependencies
+vi.mock('@/hooks/use-strategy-runtime', () => ({
+  useStrategyRuntime: () => ({ status: 'idle', lastActivityAt: null, realizedPnl: null }),
+}));
+
 // Mock components that use complex dependencies
 vi.mock('@/components/mini-chart', () => ({
   MiniChart: () => <div data-testid="mini-chart" />,
+}));
+
+vi.mock('@/components/icons', () => ({
+  ExchangeIcon: ({ exchange }: { exchange: string }) => <span>{exchange}</span>,
+  CoinIcon: ({ symbol }: { symbol: string }) => <span>{symbol}</span>,
 }));
 
 import { StrategyCard } from './strategy-card';
@@ -38,7 +53,8 @@ describe('StrategyCard', () => {
   it('거래소와 심볼 정보를 표시해야 한다', () => {
     render(<StrategyCard strategy={strategy} onToggle={vi.fn()} onDelete={vi.fn()} />);
 
-    expect(screen.getByText(/KRW-BTC/)).toBeInTheDocument();
+    const matches = screen.getAllByText(/KRW-BTC/);
+    expect(matches.length).toBeGreaterThan(0);
   });
 
   it('전략 상세 페이지 링크를 포함해야 한다', () => {

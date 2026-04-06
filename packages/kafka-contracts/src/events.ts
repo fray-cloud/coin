@@ -36,3 +36,19 @@ export interface NotificationEvent {
   message: string;
   data?: Record<string, unknown>;
 }
+
+export interface BacktestRequestedEvent {
+  backtestId: string;
+  flowId: string;
+  userId: string;
+  startDate: string;
+  endDate: string;
+}
+
+export interface BacktestCompletedEvent {
+  backtestId: string;
+  flowId: string;
+  userId: string;
+  status: 'completed' | 'failed';
+  error?: string;
+}

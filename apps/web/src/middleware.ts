@@ -1,10 +1,20 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-const PUBLIC_PATHS = ['/', '/login', '/signup', '/markets'];
+const isDemo = process.env.NEXT_PUBLIC_DEMO === 'true';
+
+const PUBLIC_PATHS = ['/', '/login', '/signup', '/markets', '/demo'];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Demo mode: skip all auth, redirect login/signup to /demo
+  if (isDemo) {
+    if (pathname === '/login' || pathname === '/signup') {
+      return NextResponse.redirect(new URL('/demo', request.url));
+    }
+    return NextResponse.next();
+  }
 
   if (
     PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(p + '/')) ||

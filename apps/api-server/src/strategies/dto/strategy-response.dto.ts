@@ -37,6 +37,9 @@ export class StrategyResponse {
   @ApiProperty({ description: '캔들 간격' })
   candleInterval!: string;
 
+  @ApiProperty({ description: '표시 순서' })
+  order!: number;
+
   @ApiProperty({ description: '생성일시' })
   createdAt!: string;
 

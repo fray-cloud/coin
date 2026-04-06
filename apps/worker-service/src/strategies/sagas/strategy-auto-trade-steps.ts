@@ -96,6 +96,8 @@ export class RiskCheckStep implements SagaStep {
       ...context,
       riskAllowed: riskResult.allowed,
       riskReason: riskResult.reason,
+      // Apply volatility/Kelly-adjusted quantity when provided
+      quantity: riskResult.adjustedQuantity ?? context.quantity,
     };
   }
 

@@ -25,4 +25,10 @@ export interface IExchangeRest {
   ): Promise<OrderResult>;
   getMarkets(): Promise<Market[]>;
   getCandles(symbol: string, interval: string, limit?: number): Promise<Candle[]>;
+  getCandlesByRange(
+    symbol: string,
+    interval: string,
+    startTime: number,
+    endTime: number,
+  ): Promise<Candle[]>;
 }

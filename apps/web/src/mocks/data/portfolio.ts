@@ -1,0 +1,63 @@
+import type { PortfolioSummary } from '@/lib/api-client';
+
+export const demoPortfolio: PortfolioSummary = {
+  totalValueKrw: 15_420_000,
+  realizedPnl: 2_850_000,
+  unrealizedPnl: 680_000,
+  assets: [
+    {
+      exchange: 'upbit',
+      currency: 'BTC',
+      quantity: '0.007',
+      avgCost: 134_250_000,
+      currentPrice: 136_500_000,
+      valueKrw: 955_500,
+      pnl: 15_750,
+    },
+    {
+      exchange: 'upbit',
+      currency: 'ETH',
+      quantity: '0.1',
+      avgCost: 5_200_000,
+      currentPrice: 5_350_000,
+      valueKrw: 535_000,
+      pnl: 15_000,
+    },
+    {
+      exchange: 'upbit',
+      currency: 'SOL',
+      quantity: '5',
+      avgCost: 220_000,
+      currentPrice: 228_000,
+      valueKrw: 1_140_000,
+      pnl: 40_000,
+    },
+    {
+      exchange: 'upbit',
+      currency: 'XRP',
+      quantity: '500',
+      avgCost: 3_150,
+      currentPrice: 3_280,
+      valueKrw: 1_640_000,
+      pnl: 65_000,
+    },
+    {
+      exchange: 'binance',
+      currency: 'USDT',
+      quantity: '5000',
+      avgCost: 1,
+      currentPrice: 1,
+      valueKrw: 7_150_000,
+      pnl: 0,
+    },
+  ],
+  dailyPnl: [
+    { date: '2026-03-31', pnl: 150_000 },
+    { date: '2026-04-01', pnl: 470_000 },
+    { date: '2026-04-02', pnl: 390_000 },
+    { date: '2026-04-03', pnl: 930_000 },
+    { date: '2026-04-04', pnl: 1_110_000 },
+    { date: '2026-04-05', pnl: 990_000 },
+    { date: '2026-04-06', pnl: 1_400_000 },
+  ],
+};

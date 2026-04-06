@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { isDemo } from '@/lib/demo';
 
 interface ExchangeIconProps {
   exchange: string;
@@ -30,7 +31,7 @@ export function ExchangeIcon({ exchange, size = 20, className }: ExchangeIconPro
   const logoUrl = EXCHANGE_LOGOS[key];
   const [error, setError] = useState(false);
 
-  if (!logoUrl || error) {
+  if (!logoUrl || error || isDemo) {
     return <Fallback char={exchange.charAt(0).toUpperCase()} size={size} />;
   }
 

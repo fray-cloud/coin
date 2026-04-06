@@ -9,6 +9,7 @@ import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { MarketsService } from './markets.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { FlowsKafkaConsumer } from '../flows/flows-kafka.consumer';
 
 @WebSocketGateway({
   path: '/ws',
@@ -31,6 +32,7 @@ export class MarketsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
   constructor(
     private readonly marketsService: MarketsService,
     private readonly notificationsService: NotificationsService,
+    private readonly flowsKafkaConsumer: FlowsKafkaConsumer,
   ) {}
 
   afterInit() {
@@ -65,6 +67,15 @@ export class MarketsGateway implements OnGatewayInit, OnGatewayConnection, OnGat
         type: payload.type,
         title: payload.title,
         message: payload.message,
+      });
+    });
+
+    this.flowsKafkaConsumer.onBacktestCompleted((payload) => {
+      this.server.to(`user:${payload.userId}`).emit('backtest:completed', {
+        backtestId: payload.backtestId,
+        flowId: payload.flowId,
+        status: payload.status,
+        error: payload.error,
       });
     });
 

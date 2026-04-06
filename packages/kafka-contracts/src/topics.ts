@@ -7,6 +7,8 @@ export const KAFKA_TOPICS = {
   TRADING_POSITION_UPDATED: 'trading.position.updated',
   NOTIFICATION_SEND: 'notification.send',
   USER_EXCHANGE_KEYS_UPDATED: 'user.exchange-keys.updated',
+  FLOW_BACKTEST_REQUESTED: 'flow.backtest.requested',
+  FLOW_BACKTEST_COMPLETED: 'flow.backtest.completed',
 } as const;
 
 export type KafkaTopic = (typeof KAFKA_TOPICS)[keyof typeof KAFKA_TOPICS];

@@ -9,7 +9,7 @@ export class GetStrategiesHandler implements IQueryHandler<GetStrategiesQuery> {
   async execute(query: GetStrategiesQuery): Promise<unknown[]> {
     return this.prisma.strategy.findMany({
       where: { userId: query.userId },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ order: 'asc' }, { createdAt: 'asc' }],
     });
   }
 }

@@ -2,6 +2,10 @@ import { create } from 'zustand';
 import { io, Socket } from 'socket.io-client';
 import type { QueryClient } from '@tanstack/react-query';
 import { useToastStore } from './use-toast-store';
+import {
+  useNotificationFeedStore,
+  type NotificationEventType,
+} from './use-notification-feed-store';
 
 interface OrderUpdatesState {
   _socket: Socket | null;
@@ -47,19 +51,28 @@ export const useOrderUpdatesStore = create<OrderUpdatesState>((set, get) => ({
       queryClient.invalidateQueries({ queryKey: ['strategies'] });
     });
 
-    socket.on('notification:received', (data: { type: string; title: string; message: string }) => {
-      const toastType =
-        data.type === 'order_filled' || data.type === 'strategy_signal'
-          ? 'success'
-          : data.type === 'order_failed'
-            ? 'error'
-            : 'warning';
-      useToastStore.getState().addToast({
-        type: toastType,
-        title: data.title,
-        message: data.message,
-      });
-    });
+    socket.on(
+      'notification:received',
+      (data: { type: string; title: string; message: string; href?: string }) => {
+        const toastType =
+          data.type === 'order_filled' || data.type === 'strategy_signal'
+            ? 'success'
+            : data.type === 'order_failed'
+              ? 'error'
+              : 'warning';
+        useToastStore.getState().addToast({
+          type: toastType,
+          title: data.title,
+          message: data.message,
+        });
+        useNotificationFeedStore.getState().addNotification({
+          type: data.type as NotificationEventType,
+          title: data.title,
+          message: data.message,
+          href: data.href,
+        });
+      },
+    );
 
     set({ _socket: socket, _userId: userId });
   },
