@@ -96,7 +96,11 @@ function ArchNode({
       <Handle type="target" position={Position.Left} id="left" style={hiddenHandle} />
       <Handle type="source" position={Position.Bottom} id="bottom" style={hiddenHandle} />
       <Handle type="source" position={Position.Right} id="right" style={hiddenHandle} />
-      {Icon && <Icon size={s.iconSize} style={{ color: '#00d992', flexShrink: 0 }} />}
+      {Icon && (
+        <span style={{ color: '#00d992', flexShrink: 0, display: 'inline-flex' }}>
+          <Icon size={s.iconSize} />
+        </span>
+      )}
       <div>
         {data.label}
         {data.sub && (
