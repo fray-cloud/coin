@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import {
   BarChart3,
@@ -10,97 +13,226 @@ import {
   ArrowRight,
   ExternalLink,
 } from 'lucide-react';
+import ArchitectureFlow from './architecture-flow';
+import './demo.css';
+
+// --- Data ---
 
 const FEATURES = [
   {
     icon: BarChart3,
     title: 'Real-time Market Data',
-    description: '업비트, 바이낸스, 바이비트 실시간 시세를 WebSocket으로 수신',
+    desc: '업비트, 바이낸스, 바이비트 실시간 시세를 WebSocket으로 수신',
   },
   {
     icon: BrainCircuit,
     title: 'Strategy Automation',
-    description: 'RSI, MACD, 볼린저밴드 등 지표 기반 자동매매 전략 실행',
+    desc: 'RSI, MACD, 볼린저밴드 등 지표 기반 자동매매 전략 실행',
   },
   {
     icon: Workflow,
     title: 'Visual Flow Builder',
-    description: '노드 기반 비주얼 에디터로 트레이딩 로직을 드래그앤드롭으로 구성',
+    desc: '노드 기반 비주얼 에디터로 트레이딩 로직을 드래그앤드롭으로 구성',
   },
   {
     icon: LineChart,
     title: 'Backtesting',
-    description: '과거 데이터 기반 전략 시뮬레이션과 성과 분석',
+    desc: '과거 데이터 기반 전략 시뮬레이션과 성과 분석',
   },
   {
     icon: Globe,
     title: 'Multi-Exchange',
-    description: 'Upbit, Binance, Bybit 멀티 거래소 통합 지원',
+    desc: 'Upbit, Binance, Bybit 멀티 거래소 통합 지원',
   },
   {
     icon: PieChart,
     title: 'Portfolio Management',
-    description: '보유 자산, 실현/미실현 손익, 일별 수익률 추적',
+    desc: '보유 자산, 실현/미실현 손익, 일별 수익률 추적',
   },
 ];
 
-const TECH_STACK = {
-  Frontend: [
-    'Next.js 15',
-    'React 19',
-    'TanStack Query',
-    'Zustand',
-    'TailwindCSS 4',
-    'lightweight-charts',
-  ],
-  Backend: ['NestJS 11', 'Prisma 6', 'PostgreSQL 16', 'Passport JWT'],
-  Infra: ['Docker', 'Kafka', 'Redis', 'Nginx', 'Turborepo', 'pnpm'],
-};
-
-const ARCH_LAYERS = [
-  { label: 'Web (Next.js)', items: ['SSR/CSR', 'Socket.IO Client', 'TanStack Query'] },
-  { label: 'API Server (NestJS)', items: ['REST API', 'WebSocket Gateway', 'CQRS/Saga'] },
-  { label: 'Worker Service', items: ['Kafka Consumer', 'Strategy Engine', 'Exchange Adapters'] },
-  { label: 'Infrastructure', items: ['PostgreSQL', 'Redis', 'Kafka', 'Nginx'] },
+// Tech logos — devicons CDN with wordmark variants
+const TECH_LOGOS: { name: string; src: string; invert?: boolean }[] = [
+  {
+    name: 'React',
+    src: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original-wordmark.svg',
+  },
+  {
+    name: 'Next.js',
+    src: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nextjs/nextjs-original-wordmark.svg',
+    invert: true,
+  },
+  {
+    name: 'TypeScript',
+    src: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-plain.svg',
+  },
+  {
+    name: 'NestJS',
+    src: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nestjs/nestjs-original-wordmark.svg',
+  },
+  {
+    name: 'TailwindCSS',
+    src: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/tailwindcss/tailwindcss-original.svg',
+  },
+  {
+    name: 'Prisma',
+    src: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/prisma/prisma-original-wordmark.svg',
+    invert: true,
+  },
+  {
+    name: 'PostgreSQL',
+    src: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/postgresql/postgresql-original-wordmark.svg',
+  },
+  {
+    name: 'Docker',
+    src: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/docker/docker-original-wordmark.svg',
+  },
+  {
+    name: 'Kafka',
+    src: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/apachekafka/apachekafka-original-wordmark.svg',
+    invert: true,
+  },
+  {
+    name: 'Redis',
+    src: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/redis/redis-original-wordmark.svg',
+  },
+  {
+    name: 'Nginx',
+    src: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nginx/nginx-original.svg',
+  },
+  {
+    name: 'Socket.IO',
+    src: 'https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/socketio/socketio-original-wordmark.svg',
+    invert: true,
+  },
 ];
 
-export default function DemoLandingPage() {
+// --- Hooks ---
+
+function useFadeIn() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          el.classList.add('visible');
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.15 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  return ref;
+}
+
+// --- Components ---
+
+function TechMarquee() {
+  const items = [...TECH_LOGOS, ...TECH_LOGOS];
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="demo-marquee">
+      <div className="demo-marquee-track">
+        {items.map((tech, i) => (
+          <div
+            key={`${tech.name}-${i}`}
+            className="shrink-0 flex items-center justify-center"
+            style={{ height: 80, padding: '0 28px' }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={tech.src}
+              alt={tech.name}
+              style={{
+                height: 64,
+                width: 'auto',
+                ...(tech.invert ? { filter: 'brightness(0) invert(1)' } : {}),
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// --- Page ---
+
+export default function DemoLandingPage() {
+  const heroRef = useFadeIn();
+  const overviewRef = useFadeIn();
+  const archRef = useFadeIn();
+  const techRef = useFadeIn();
+  const featRef = useFadeIn();
+  const ctaRef = useFadeIn();
+
+  return (
+    <div className="demo-landing min-h-screen">
       {/* Header */}
-      <header className="border-b border-border/50 sticky top-0 z-50 bg-background/80 backdrop-blur-sm">
+      <header
+        className="sticky top-0 z-50 backdrop-blur-sm"
+        style={{
+          background: 'rgba(5,5,7,0.8)',
+          borderBottom: '1px solid var(--demo-border)',
+        }}
+      >
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2 font-semibold text-lg">
-            <Coins size={22} />
+          <div
+            className="flex items-center gap-2 font-semibold text-lg"
+            style={{ color: 'var(--demo-text)' }}
+          >
+            <Coins size={22} style={{ color: 'var(--demo-accent)' }} />
             Coin Platform
           </div>
-          <Link
-            href="/markets"
-            className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            데모 체험하기
-            <ArrowRight size={16} />
-          </Link>
+          <div className="flex items-center gap-3">
+            <a
+              href="https://github.com/fray-cloud/coin"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm flex items-center gap-1.5 px-3 py-1.5 rounded-full transition-colors"
+              style={{ color: 'var(--demo-muted)', border: '1px solid var(--demo-border)' }}
+            >
+              <ExternalLink size={14} />
+              GitHub
+            </a>
+            <Link
+              href="/markets"
+              className="demo-btn-glow inline-flex items-center gap-2 px-5 py-2 text-sm"
+            >
+              데모 체험하기
+              <ArrowRight size={16} />
+            </Link>
+          </div>
         </div>
       </header>
 
       {/* Hero */}
-      <section className="py-24 sm:py-32 px-6">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight">
+      <section className="relative overflow-hidden demo-dots py-28 sm:py-40 px-6">
+        <div className="demo-glow-orb absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        <div
+          ref={heroRef}
+          className="demo-fade-section relative z-10 max-w-3xl mx-auto text-center"
+        >
+          <h1 className="text-5xl sm:text-7xl font-black tracking-tight" style={{ color: '#fff' }}>
             Real-time Crypto
             <br />
-            Trading Platform
+            <span style={{ color: 'var(--demo-accent)' }}>Trading Platform</span>
           </h1>
-          <p className="mt-6 text-lg sm:text-xl text-muted-foreground max-w-xl mx-auto">
+          <p
+            className="mt-6 text-lg sm:text-xl max-w-xl mx-auto"
+            style={{ color: 'var(--demo-muted)' }}
+          >
             멀티 거래소 암호화폐 자동매매 플랫폼.
             <br />
             실시간 시세, 전략 자동화, 비주얼 플로우 빌더.
           </p>
-          <div className="mt-10 flex items-center justify-center gap-4">
+          <div className="mt-10 flex items-center justify-center gap-4 flex-wrap">
             <Link
               href="/markets"
-              className="inline-flex items-center gap-2 px-8 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
+              className="demo-btn-glow inline-flex items-center gap-2 px-8 py-3 text-base"
             >
               데모 체험하기
               <ArrowRight size={18} />
@@ -109,7 +241,8 @@ export default function DemoLandingPage() {
               href="https://github.com/fray-cloud/coin"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full border border-border text-sm font-medium hover:bg-muted transition-colors"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium transition-colors"
+              style={{ border: '1px solid var(--demo-border)', color: 'var(--demo-text)' }}
             >
               <ExternalLink size={18} />
               GitHub
@@ -119,91 +252,64 @@ export default function DemoLandingPage() {
       </section>
 
       {/* Overview */}
-      <section className="py-20 px-6 bg-muted/30">
-        <div className="max-w-3xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Overview</h2>
-          <p className="mt-6 text-muted-foreground leading-relaxed">
+      <section className="py-20 px-6" style={{ background: 'var(--demo-surface)' }}>
+        <div ref={overviewRef} className="demo-fade-section max-w-3xl mx-auto text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: '#fff' }}>
+            Overview
+          </h2>
+          <p className="mt-6 leading-relaxed" style={{ color: 'var(--demo-muted)' }}>
             Turborepo 기반 모노레포로 구성된 풀스택 암호화폐 트레이딩 플랫폼입니다. NestJS API
             서버와 Next.js 프론트엔드, Kafka 기반 워커 서비스로 이루어진 MSA 아키텍처로, 실시간 시세
-            수신부터 전략 실행, 주문 처리까지 자동화된 파이프라인을 제공합니다. 페이퍼 트레이딩으로
-            리스크 없이 전략을 검증할 수 있습니다.
+            수신부터 전략 실행, 주문 처리까지 자동화된 파이프라인을 제공합니다.
           </p>
         </div>
       </section>
 
-      {/* Architecture */}
-      <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center">
+      {/* Architecture Flow */}
+      <section className="py-20 px-6 demo-dots">
+        <div ref={archRef} className="demo-fade-section max-w-4xl mx-auto">
+          <h2
+            className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-16"
+            style={{ color: '#fff' }}
+          >
             Architecture
           </h2>
-          <div className="mt-12 grid gap-4 sm:grid-cols-2">
-            {ARCH_LAYERS.map((layer, i) => (
-              <div key={layer.label} className="rounded-xl border border-border bg-card p-6">
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">
-                    {i + 1}
-                  </span>
-                  <h3 className="font-semibold">{layer.label}</h3>
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  {layer.items.map((item) => (
-                    <span
-                      key={item}
-                      className="rounded-full px-2.5 py-0.5 text-xs bg-muted text-muted-foreground"
-                    >
-                      {item}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-          <p className="mt-6 text-center text-sm text-muted-foreground">
-            Web → API Server (REST/WebSocket) → Kafka → Worker → Exchange APIs
-          </p>
+          <ArchitectureFlow />
         </div>
       </section>
 
-      {/* Tech Stack */}
-      <section className="py-20 px-6 bg-muted/30">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center">Tech Stack</h2>
-          <div className="mt-12 grid gap-8 sm:grid-cols-3">
-            {Object.entries(TECH_STACK).map(([category, techs]) => (
-              <div key={category}>
-                <h3 className="text-sm font-semibold uppercase tracking-wider text-primary mb-3">
-                  {category}
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  {techs.map((tech) => (
-                    <span
-                      key={tech}
-                      className="rounded-full px-3 py-1 text-xs font-medium border border-border bg-card"
-                    >
-                      {tech}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Tech Stack Marquee */}
+      <section className="py-20 px-6" style={{ background: 'var(--demo-surface)' }}>
+        <div ref={techRef} className="demo-fade-section">
+          <h2
+            className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-12"
+            style={{ color: '#fff' }}
+          >
+            Tech Stack
+          </h2>
+          <TechMarquee />
         </div>
       </section>
 
       {/* Features */}
-      <section className="py-20 px-6">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-center">Features</h2>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ icon: Icon, title, description }) => (
-              <div
-                key={title}
-                className="rounded-xl border border-border bg-card p-6 hover:border-primary/30 transition-colors"
-              >
-                <Icon size={24} className="text-primary mb-3" />
-                <h3 className="font-semibold mb-2">{title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+      <section className="py-20 px-6 demo-dots">
+        <div ref={featRef} className="demo-fade-section max-w-4xl mx-auto">
+          <h2
+            className="text-2xl sm:text-3xl font-bold tracking-tight text-center mb-12"
+            style={{ color: '#fff' }}
+          >
+            Features
+          </h2>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {FEATURES.map(({ icon: Icon, title, desc }) => (
+              <div key={title} className="demo-glow-card p-6">
+                <Icon size={24} className="mb-3" style={{ color: 'var(--demo-accent)' }} />
+                <h3 className="font-semibold mb-2" style={{ color: '#fff' }}>
+                  {title}
+                </h3>
+                <p className="text-sm leading-relaxed" style={{ color: 'var(--demo-muted)' }}>
+                  {desc}
+                </p>
               </div>
             ))}
           </div>
@@ -211,15 +317,18 @@ export default function DemoLandingPage() {
       </section>
 
       {/* CTA */}
-      <section className="py-20 px-6 bg-muted/30">
-        <div className="max-w-xl mx-auto text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">직접 체험해보세요</h2>
-          <p className="mt-4 text-muted-foreground">
+      <section className="relative overflow-hidden py-24 px-6 demo-dots">
+        <div className="demo-glow-orb absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        <div ref={ctaRef} className="demo-fade-section relative z-10 max-w-xl mx-auto text-center">
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight" style={{ color: '#fff' }}>
+            직접 체험해보세요
+          </h2>
+          <p className="mt-4" style={{ color: 'var(--demo-muted)' }}>
             페이퍼 트레이딩 모드로 실제 시세 기반 데모를 제공합니다.
           </p>
           <Link
             href="/markets"
-            className="mt-8 inline-flex items-center gap-2 px-8 py-3 rounded-full bg-primary text-primary-foreground font-medium hover:opacity-90 transition-opacity"
+            className="demo-btn-glow mt-8 inline-flex items-center gap-2 px-8 py-3 text-base"
           >
             데모 체험하기
             <ArrowRight size={18} />
@@ -228,15 +337,18 @@ export default function DemoLandingPage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-border py-8 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+      <footer style={{ borderTop: '1px solid var(--demo-border)' }} className="py-8 px-6">
+        <div
+          className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm"
+          style={{ color: 'var(--demo-muted)' }}
+        >
           <span>&copy; 2026 Woohyun Kim</span>
           <div className="flex items-center gap-4">
             <a
               href="https://github.com/fray-cloud/coin"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-foreground transition-colors"
+              className="transition-colors hover:text-white"
             >
               GitHub
             </a>
@@ -244,7 +356,7 @@ export default function DemoLandingPage() {
               href="https://portfolio-fray-cloud.vercel.app"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-foreground transition-colors"
+              className="transition-colors hover:text-white"
             >
               Portfolio
             </a>

@@ -44,3 +44,4 @@ infra/nginx/certs/
 
 # tmp
 tmp/
+image.png
