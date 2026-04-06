@@ -10,14 +10,13 @@ import {
   BrainCircuit,
   PieChart,
   MoreHorizontal,
-  KeyRound,
   Activity,
-  Bell,
   Settings,
   X,
   LayoutDashboard,
 } from 'lucide-react';
 import { useUser } from '@/hooks/use-user';
+import { isDemo } from '@/lib/demo';
 
 const TABS = [
   { href: '/markets', icon: BarChart3, labelKey: 'markets' as const },
@@ -31,10 +30,11 @@ const MORE_ITEMS: Array<{
   icon: ComponentType<{ size?: number }>;
   label?: string;
   labelKey?: 'activity' | 'settings';
+  hideInDemo?: boolean;
 }> = [
   { href: '/dashboard', icon: LayoutDashboard, label: '대시보드' },
   { href: '/activity', icon: Activity, labelKey: 'activity' },
-  { href: '/settings', icon: Settings, labelKey: 'settings' },
+  { href: '/settings', icon: Settings, labelKey: 'settings', hideInDemo: true },
 ];
 
 export function MobileTabBar() {
@@ -43,7 +43,10 @@ export function MobileTabBar() {
   const t = useTranslations('nav');
   const [showMore, setShowMore] = useState(false);
 
-  if (!user) return null;
+  // In demo mode, show tab bar without requiring auth
+  if (!user && !isDemo) return null;
+
+  const filteredMoreItems = isDemo ? MORE_ITEMS.filter((item) => !item.hideInDemo) : MORE_ITEMS;
 
   return (
     <>
@@ -61,7 +64,7 @@ export function MobileTabBar() {
                 <X size={18} className="text-muted-foreground" />
               </button>
             </div>
-            {MORE_ITEMS.map((item) => {
+            {filteredMoreItems.map((item) => {
               const active = pathname.startsWith(item.href);
               return (
                 <Link

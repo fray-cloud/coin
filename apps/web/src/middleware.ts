@@ -8,12 +8,16 @@ const PUBLIC_PATHS = ['/', '/login', '/signup', '/markets', '/demo'];
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Pass pathname to layout via header
+  const response = NextResponse.next();
+  response.headers.set('x-pathname', pathname);
+
   // Demo mode: skip all auth, redirect login/signup to /demo
   if (isDemo) {
     if (pathname === '/login' || pathname === '/signup') {
       return NextResponse.redirect(new URL('/demo', request.url));
     }
-    return NextResponse.next();
+    return response;
   }
 
   if (
@@ -22,7 +26,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/api') ||
     pathname === '/favicon.ico'
   ) {
-    return NextResponse.next();
+    return response;
   }
 
   const accessToken = request.cookies.get('access_token');
@@ -31,7 +35,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {
