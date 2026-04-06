@@ -44,3 +44,4 @@ infra/nginx/certs/
 
 tmp/
 .gstack/*.log
+image.png

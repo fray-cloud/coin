@@ -1,0 +1,243 @@
+/* Demo landing page — dark theme + voltagent-inspired effects */
+
+.demo-landing {
+  --demo-bg: #050507;
+  --demo-surface: #0d0d12;
+  --demo-border: #1a1a24;
+  --demo-text: #e4e4e7;
+  --demo-muted: #71717a;
+  --demo-accent: #00d992;
+  --demo-accent-dim: rgba(0, 217, 146, 0.15);
+  background: var(--demo-bg);
+  color: var(--demo-text);
+}
+
+/* Dot pattern background */
+.demo-dots {
+  background-image: radial-gradient(circle, #ffffff08 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Hero glow orb */
+.demo-glow-orb {
+  position: absolute;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, var(--demo-accent-dim), transparent 70%);
+  filter: blur(80px);
+  animation: glowPulse 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes glowPulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
+}
+
+/* Glow border card */
+.demo-glow-card {
+  background: var(--demo-surface);
+  border: 1px solid var(--demo-border);
+  border-radius: 12px;
+  transition: all 0.3s;
+}
+
+.demo-glow-card:hover {
+  border-color: var(--demo-accent);
+  box-shadow:
+    0 0 20px rgba(0, 217, 146, 0.1),
+    0 0 40px rgba(0, 217, 146, 0.05);
+}
+
+/* CTA button glow */
+.demo-btn-glow {
+  background: var(--demo-accent);
+  color: #050507;
+  font-weight: 600;
+  border-radius: 9999px;
+  transition: all 0.3s;
+}
+
+.demo-btn-glow:hover {
+  box-shadow:
+    0 0 20px rgba(0, 217, 146, 0.4),
+    0 0 40px rgba(0, 217, 146, 0.2);
+}
+
+/* Marquee scroll */
+.demo-marquee {
+  overflow: hidden;
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+.demo-marquee-track {
+  display: flex;
+  gap: 2rem;
+  width: max-content;
+  animation: marqueeScroll 40s linear infinite;
+}
+
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Architecture flow nodes */
+.demo-flow-node {
+  background: var(--demo-surface);
+  border: 1px solid var(--demo-border);
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-size: 13px;
+  font-weight: 600;
+  position: relative;
+  opacity: 0;
+  transform: translateY(16px);
+  transition: all 0.5s ease-out;
+}
+
+.demo-flow-node.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.demo-flow-node.active {
+  border-color: var(--demo-accent);
+  box-shadow: 0 0 16px rgba(0, 217, 146, 0.2);
+}
+
+/* Flow connection line */
+.demo-flow-line {
+  stroke: var(--demo-border);
+  stroke-width: 2;
+  fill: none;
+}
+
+.demo-flow-line.drawn {
+  stroke: var(--demo-accent);
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: drawLine 1s ease-out forwards;
+}
+
+@keyframes drawLine {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Flowing dot on connection */
+.demo-flow-dot {
+  fill: var(--demo-accent);
+  filter: drop-shadow(0 0 6px var(--demo-accent));
+}
+
+/* Section fade-in */
+.demo-fade-section {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 0.7s ease-out;
+}
+
+.demo-fade-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Code block */
+.demo-code {
+  background: #0d0d12;
+  border: 1px solid var(--demo-border);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.demo-code-header {
+  background: #111118;
+  padding: 10px 16px;
+  font-size: 12px;
+  color: var(--demo-muted);
+  border-bottom: 1px solid var(--demo-border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.demo-code-header::before {
+  content: '';
+  display: flex;
+  gap: 6px;
+}
+
+.demo-code-body {
+  padding: 16px;
+  font-family: 'JetBrains Mono', ui-monospace, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  overflow-x: auto;
+  color: #a1a1aa;
+}
+
+.demo-code-body .keyword {
+  color: #c084fc;
+}
+.demo-code-body .string {
+  color: #86efac;
+}
+.demo-code-body .type {
+  color: #67e8f9;
+}
+.demo-code-body .comment {
+  color: #525264;
+}
+.demo-code-body .fn {
+  color: #fbbf24;
+}
+.demo-code-body .number {
+  color: #f97316;
+}
+
+/* React Flow overrides for demo */
+.demo-landing .react-flow__background {
+  display: none;
+}
+
+.demo-landing .react-flow__attribution {
+  display: none;
+}
+
+.demo-landing .react-flow__edge-path {
+  stroke: var(--demo-border);
+}
+
+.demo-landing .react-flow__pane {
+  cursor: default !important;
+}
+
+.demo-landing .react-flow__node {
+  cursor: default !important;
+}
+
+.demo-landing .react-flow__node-arch {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+.demo-landing .react-flow__node-group {
+  background: transparent !important;
+  box-shadow: none !important;
+}
