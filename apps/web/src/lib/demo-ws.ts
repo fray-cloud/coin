@@ -1,11 +1,20 @@
 /**
  * Demo mode: connect directly to exchange public WebSockets
  * No auth required — public market data only
+ *
+ * NOTE: We save a reference to the native WebSocket before MSW can patch it.
+ * MSW v2 intercepts WebSocket connections, so we need the original constructor.
  */
 
 import type { Ticker } from '@coin/types';
 
 type TickerCallback = (ticker: Ticker) => void;
+
+// Use the native WebSocket saved before MSW patches it (see providers.tsx)
+function getNativeWebSocket(): typeof WebSocket | undefined {
+  if (typeof window === 'undefined') return undefined;
+  return window.__nativeWebSocket || window.WebSocket;
+}
 
 // --- Upbit Public WebSocket ---
 
@@ -21,80 +30,104 @@ const UPBIT_SYMBOLS = [
   'KRW-DOT',
 ];
 
-function connectUpbit(onTicker: TickerCallback): WebSocket {
-  const ws = new WebSocket(UPBIT_WS_URL);
+function connectUpbit(onTicker: TickerCallback): WebSocket | null {
+  const NativeWebSocket = getNativeWebSocket();
+  if (!NativeWebSocket) return null;
 
-  ws.onopen = () => {
-    ws.send(JSON.stringify([{ ticket: 'demo-upbit' }, { type: 'ticker', codes: UPBIT_SYMBOLS }]));
-  };
+  try {
+    const ws = new NativeWebSocket(UPBIT_WS_URL);
 
-  ws.onmessage = async (event) => {
-    try {
-      const blob = event.data as Blob;
-      const text = await blob.text();
-      const data = JSON.parse(text);
+    ws.onopen = () => {
+      ws.send(JSON.stringify([{ ticket: 'demo-upbit' }, { type: 'ticker', codes: UPBIT_SYMBOLS }]));
+    };
 
-      onTicker({
-        exchange: 'upbit',
-        symbol: data.code,
-        price: String(data.trade_price),
-        volume24h: String(data.acc_trade_volume_24h || '0'),
-        change24h: String(data.signed_change_price || '0'),
-        changePercent24h: String(((data.signed_change_rate || 0) * 100).toFixed(2)),
-        high24h: String(data.high_price || '0'),
-        low24h: String(data.low_price || '0'),
-        timestamp: data.timestamp || Date.now(),
-      });
-    } catch {
-      // ignore parse errors
-    }
-  };
+    ws.onmessage = async (event) => {
+      try {
+        const blob = event.data as Blob;
+        const text = await blob.text();
+        const data = JSON.parse(text);
 
-  return ws;
+        onTicker({
+          exchange: 'upbit',
+          symbol: data.code,
+          price: String(data.trade_price),
+          volume24h: String(data.acc_trade_volume_24h || '0'),
+          change24h: String(data.signed_change_price || '0'),
+          changePercent24h: String(((data.signed_change_rate || 0) * 100).toFixed(2)),
+          high24h: String(data.high_price || '0'),
+          low24h: String(data.low_price || '0'),
+          timestamp: data.timestamp || Date.now(),
+        });
+      } catch {
+        // ignore parse errors
+      }
+    };
+
+    ws.onerror = () => {
+      console.warn('[demo-ws] Upbit WebSocket error — falling back to REST polling');
+    };
+
+    return ws;
+  } catch {
+    console.warn('[demo-ws] Failed to connect Upbit WebSocket');
+    return null;
+  }
 }
 
 // --- Binance Public WebSocket ---
 
 const BINANCE_SYMBOLS = ['btcusdt', 'ethusdt', 'solusdt', 'dogeusdt', 'xrpusdt', 'adausdt'];
 
-function connectBinance(onTicker: TickerCallback): WebSocket {
-  const streams = BINANCE_SYMBOLS.map((s) => `${s}@ticker`).join('/');
-  const ws = new WebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
+function connectBinance(onTicker: TickerCallback): WebSocket | null {
+  const NativeWebSocket = getNativeWebSocket();
+  if (!NativeWebSocket) return null;
 
-  ws.onmessage = (event) => {
-    try {
-      const { data } = JSON.parse(event.data);
-      if (!data || !data.s) return;
+  try {
+    const streams = BINANCE_SYMBOLS.map((s) => `${s}@ticker`).join('/');
+    const ws = new NativeWebSocket(`wss://stream.binance.com:9443/stream?streams=${streams}`);
 
-      onTicker({
-        exchange: 'binance',
-        symbol: data.s,
-        price: data.c,
-        volume24h: data.v,
-        change24h: data.p,
-        changePercent24h: parseFloat(data.P).toFixed(2),
-        high24h: data.h,
-        low24h: data.l,
-        timestamp: data.E || Date.now(),
-      });
-    } catch {
-      // ignore parse errors
-    }
-  };
+    ws.onmessage = (event) => {
+      try {
+        const { data } = JSON.parse(event.data as string);
+        if (!data || !data.s) return;
 
-  return ws;
+        onTicker({
+          exchange: 'binance',
+          symbol: data.s,
+          price: data.c,
+          volume24h: data.v,
+          change24h: data.p,
+          changePercent24h: parseFloat(data.P).toFixed(2),
+          high24h: data.h,
+          low24h: data.l,
+          timestamp: data.E || Date.now(),
+        });
+      } catch {
+        // ignore parse errors
+      }
+    };
+
+    ws.onerror = () => {
+      console.warn('[demo-ws] Binance WebSocket error');
+    };
+
+    return ws;
+  } catch {
+    console.warn('[demo-ws] Failed to connect Binance WebSocket');
+    return null;
+  }
 }
 
 // --- Combined connection manager ---
 
 export function connectDemoExchanges(onTicker: TickerCallback): () => void {
-  const sockets: WebSocket[] = [];
+  const sockets: (WebSocket | null)[] = [];
 
   sockets.push(connectUpbit(onTicker));
   sockets.push(connectBinance(onTicker));
 
   return () => {
-    sockets.forEach((ws) => ws.close());
+    sockets.forEach((ws) => ws?.close());
   };
 }
 

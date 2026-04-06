@@ -32,6 +32,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!isDemo) return;
 
+    // Save native WebSocket before MSW patches it
+    if (typeof window !== 'undefined' && !window.__nativeWebSocket) {
+      window.__nativeWebSocket = window.WebSocket;
+    }
+
     import('@/mocks/browser').then(({ worker }) => {
       worker.start({ onUnhandledRequest: 'bypass' }).then(() => {
         setMswReady(true);
