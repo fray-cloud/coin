@@ -1,8 +1,11 @@
 export type ExchangeId = 'binance';
 
+export type Network = 'mainnet' | 'testnet';
+
 export interface ExchangeCredentials {
   apiKey: string;
   secretKey: string;
+  network?: Network;
 }
 
 export interface Ticker {
@@ -49,22 +52,38 @@ export interface Balance {
   locked: string;
 }
 
+export type PositionSide = 'long' | 'short';
+export type MarginType = 'ISOLATED' | 'CROSS';
+
+/**
+ * Futures order request. `side` is the user-facing position direction
+ * (long/short). The adapter translates to Binance's internal BUY/SELL.
+ *
+ * For closing an existing position use closePosition() on the adapter,
+ * not placeOrder().
+ */
 export interface OrderRequest {
   exchange: ExchangeId;
   symbol: string;
-  side: 'buy' | 'sell';
-  type: 'limit' | 'market';
+  side: PositionSide;
+  type: 'market' | 'limit';
   quantity: string;
   price?: string;
+  leverage: number;
+  marginType?: MarginType;
+  takeProfitPrice?: string;
+  stopLossPrice?: string;
 }
+
+export type OrderStatus = 'pending' | 'placed' | 'filled' | 'partial' | 'cancelled' | 'failed';
 
 export interface OrderResult {
   exchange: ExchangeId;
   orderId: string;
   symbol: string;
-  side: 'buy' | 'sell';
-  type: 'limit' | 'market';
-  status: 'pending' | 'placed' | 'filled' | 'partial' | 'cancelled' | 'failed';
+  side: PositionSide;
+  type: 'market' | 'limit';
+  status: OrderStatus;
   quantity: string;
   filledQuantity: string;
   price: string;
@@ -72,6 +91,24 @@ export interface OrderResult {
   fee: string;
   feeCurrency: string;
   timestamp: number;
+  entryPrice?: string;
+  liquidationPrice?: string;
+  leverage?: number;
+  tpOrderId?: string;
+  slOrderId?: string;
+}
+
+export interface Position {
+  exchange: ExchangeId;
+  symbol: string;
+  side: PositionSide;
+  quantity: string;
+  entryPrice: string;
+  markPrice: string;
+  liquidationPrice: string;
+  leverage: number;
+  marginType: MarginType;
+  unrealizedPnl: string;
 }
 
 export interface Market {
@@ -79,4 +116,14 @@ export interface Market {
   symbol: string;
   baseAsset: string;
   quoteAsset: string;
+}
+
+export interface SymbolFilter {
+  symbol: string;
+  pricePrecision: number;
+  quantityPrecision: number;
+  minQty: string;
+  stepSize: string;
+  minNotional: string;
+  tickSize: string;
 }
