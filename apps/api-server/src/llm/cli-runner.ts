@@ -3,7 +3,7 @@ import { spawn } from 'child_process';
 export interface ClaudeCliOptions {
   prompt: string;
   oauthToken: string;
-  systemPromptFile: string;
+  systemPrompt: string;
   model?: string;
   timeoutMs?: number;
 }
@@ -38,21 +38,24 @@ export function runClaudeCli(opts: ClaudeCliOptions): Promise<ClaudeCliResult> {
       'json',
       '--tools',
       '',
-      '--bare',
-      '--append-system-prompt-file',
-      opts.systemPromptFile,
+      '--append-system-prompt',
+      opts.systemPrompt,
       '--model',
       opts.model ?? 'claude-sonnet-4-6',
     ];
 
+    // Strip parent ANTHROPIC_API_KEY so we don't accidentally use the host's
+    // API key (we want the user's OAuth token to win).
+    const env = { ...process.env };
+    delete env.ANTHROPIC_API_KEY;
+    delete env.ANTHROPIC_AUTH_TOKEN;
+    env.CLAUDE_CODE_OAUTH_TOKEN = opts.oauthToken;
+
     const proc = spawn('claude', args, {
-      env: {
-        ...process.env,
-        CLAUDE_CODE_OAUTH_TOKEN: opts.oauthToken,
-        // Belt-and-suspenders: even with --bare, make sure we don't pick up
-        // the host's API key by accident.
-        ANTHROPIC_API_KEY: '',
-      },
+      // stdin: 'ignore' prevents claude CLI from waiting on an open pipe for
+      // 3s (it inherits-as-pipe by default and reads stdin even with -p).
+      stdio: ['ignore', 'pipe', 'pipe'],
+      env,
     });
 
     let stdout = '';

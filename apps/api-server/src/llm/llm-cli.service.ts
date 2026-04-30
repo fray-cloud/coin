@@ -1,9 +1,7 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import { join } from 'path';
 import type { Candle } from '@coin/types';
 import { runClaudeCli } from './cli-runner';
-
-const SYSTEM_PROMPT_FILE = join(__dirname, 'prompts', 'trading-system.md');
+import { TRADING_SYSTEM_PROMPT } from './prompts/trading-system';
 
 export interface LlmDecisionInput {
   oauthToken: string;
@@ -80,7 +78,7 @@ export class LlmCliService {
         const cli = await runClaudeCli({
           prompt: userPrompt,
           oauthToken: input.oauthToken,
-          systemPromptFile: SYSTEM_PROMPT_FILE,
+          systemPrompt: TRADING_SYSTEM_PROMPT,
           model: this.model,
           timeoutMs: 30_000,
         });

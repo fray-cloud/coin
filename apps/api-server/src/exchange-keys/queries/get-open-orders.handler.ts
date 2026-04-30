@@ -34,6 +34,7 @@ export class GetOpenOrdersHandler implements IQueryHandler<GetOpenOrdersQuery> {
     const credentials: ExchangeCredentials = {
       apiKey: decrypt(key.apiKey, this.masterKey),
       secretKey: decrypt(key.secretKey, this.masterKey),
+      network: (key.network as 'mainnet' | 'testnet') ?? 'mainnet',
     };
 
     return adapter.getOpenOrders(credentials, symbol);

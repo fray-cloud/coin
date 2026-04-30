@@ -89,8 +89,29 @@ export class LlmTradesService {
       : (keys.find((k) => k.network === 'testnet') ?? keys[0]);
     if (!key) throw new NotFoundException('Specified exchange key not found');
 
-    // Margin × leverage / entry = base-asset quantity
-    const quantity = ((dto.betUsdt * dto.leverage) / Number(dto.entryPrice)).toFixed(6);
+    // Margin × leverage / entry = base-asset quantity. Then snap down to the
+    // exchange's LOT_SIZE step (Binance rejects with -1111 otherwise) and
+    // refuse if the snapped notional is below MIN_NOTIONAL.
+    const rawQty = (dto.betUsdt * dto.leverage) / Number(dto.entryPrice);
+    const filter = await this.binance.getSymbolFilter(dto.symbol);
+    const step = Number(filter.stepSize);
+    if (!step || step <= 0) {
+      throw new BadRequestException(`No LOT_SIZE filter for ${dto.symbol}`);
+    }
+    const stepDecimals = (filter.stepSize.split('.')[1] ?? '').length;
+    const snapped = Math.floor(rawQty / step) * step;
+    const quantity = snapped.toFixed(stepDecimals);
+    const notional = Number(quantity) * Number(dto.entryPrice);
+    if (notional < Number(filter.minNotional || 0)) {
+      throw new BadRequestException(
+        `Notional ${notional.toFixed(2)} USDT < min ${filter.minNotional}; raise bet or leverage`,
+      );
+    }
+    if (Number(quantity) < Number(filter.minQty || 0)) {
+      throw new BadRequestException(
+        `Quantity ${quantity} < minQty ${filter.minQty}; raise bet or leverage`,
+      );
+    }
 
     const order = await this.prisma.order.create({
       data: {

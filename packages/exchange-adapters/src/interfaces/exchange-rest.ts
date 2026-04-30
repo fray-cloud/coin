@@ -56,12 +56,14 @@ export interface IExchangeRest {
     symbol: string,
     side: PositionSide,
     stopPrice: string,
+    quantity: string,
   ): Promise<OrderResult>;
   placeTakeProfit(
     credentials: ExchangeCredentials,
     symbol: string,
     side: PositionSide,
     stopPrice: string,
+    quantity: string,
   ): Promise<OrderResult>;
   getSymbolFilter(symbol: string): Promise<SymbolFilter>;
 }

@@ -61,6 +61,24 @@ interface BinanceFuturesOrderResponse {
   updateTime?: number;
 }
 
+interface BinanceFuturesAlgoOrderResponse {
+  algoId: number;
+  clientAlgoId?: string;
+  algoType: 'CONDITIONAL';
+  orderType: string;
+  symbol: string;
+  side: 'BUY' | 'SELL';
+  positionSide?: string;
+  algoStatus: string;
+  triggerPrice?: string;
+  price?: string;
+  quantity?: string;
+  closePosition?: boolean;
+  workingType?: string;
+  updateTime?: number;
+  createTime?: number;
+}
+
 interface BinanceFuturesPositionResponse {
   symbol: string;
   positionAmt: string;
@@ -317,23 +335,30 @@ export class BinanceRest implements IExchangeRest {
     return this.mapOrderResult(data);
   }
 
+  /**
+   * Conditional close orders (STOP_MARKET / TAKE_PROFIT_MARKET) moved to a
+   * dedicated endpoint /fapi/v1/algoOrder per Binance's 2025-11-06 mandatory
+   * migration. Schema differs from /fapi/v1/order:
+   * - `algoType: 'CONDITIONAL'` is required
+   * - `stopPrice` is renamed to `triggerPrice`
+   * - response carries `algoId` (not `orderId`)
+   * `quantity` is accepted but ignored when `closePosition=true` — we keep
+   * passing it as a fallback in case Binance changes the contract.
+   */
   async placeStopLoss(
     credentials: ExchangeCredentials,
     symbol: string,
     side: PositionSide,
     stopPrice: string,
+    quantity: string,
   ): Promise<OrderResult> {
-    const params: Record<string, string> = {
+    return this.placeAlgoConditional(credentials, {
       symbol,
       side: side === 'long' ? 'SELL' : 'BUY',
       type: 'STOP_MARKET',
-      stopPrice,
-      closePosition: 'true',
-      workingType: 'MARK_PRICE',
-    };
-    const res = await this.signedRequest(credentials, 'POST', '/fapi/v1/order', params);
-    const data = (await res.json()) as BinanceFuturesOrderResponse;
-    return this.mapOrderResult(data);
+      triggerPrice: stopPrice,
+      quantity,
+    });
   }
 
   async placeTakeProfit(
@@ -341,18 +366,53 @@ export class BinanceRest implements IExchangeRest {
     symbol: string,
     side: PositionSide,
     stopPrice: string,
+    quantity: string,
   ): Promise<OrderResult> {
-    const params: Record<string, string> = {
+    return this.placeAlgoConditional(credentials, {
       symbol,
       side: side === 'long' ? 'SELL' : 'BUY',
       type: 'TAKE_PROFIT_MARKET',
-      stopPrice,
+      triggerPrice: stopPrice,
+      quantity,
+    });
+  }
+
+  private async placeAlgoConditional(
+    credentials: ExchangeCredentials,
+    opts: {
+      symbol: string;
+      side: 'BUY' | 'SELL';
+      type: 'STOP_MARKET' | 'TAKE_PROFIT_MARKET';
+      triggerPrice: string;
+      quantity: string;
+    },
+  ): Promise<OrderResult> {
+    const params: Record<string, string> = {
+      symbol: opts.symbol,
+      side: opts.side,
+      type: opts.type,
+      algoType: 'CONDITIONAL',
+      triggerPrice: opts.triggerPrice,
       closePosition: 'true',
       workingType: 'MARK_PRICE',
     };
-    const res = await this.signedRequest(credentials, 'POST', '/fapi/v1/order', params);
-    const data = (await res.json()) as BinanceFuturesOrderResponse;
-    return this.mapOrderResult(data);
+    const res = await this.signedRequest(credentials, 'POST', '/fapi/v1/algoOrder', params);
+    const data = (await res.json()) as BinanceFuturesAlgoOrderResponse;
+    return {
+      exchange: this.exchangeId,
+      orderId: String(data.algoId),
+      symbol: data.symbol,
+      side: opts.side === 'BUY' ? 'long' : 'short',
+      type: 'market',
+      status: this.mapOrderStatus(data.algoStatus),
+      quantity: opts.quantity,
+      filledQuantity: '0',
+      price: data.triggerPrice ?? '0',
+      filledPrice: '0',
+      fee: '0',
+      feeCurrency: '',
+      timestamp: data.updateTime ?? Date.now(),
+    };
   }
 
   async getSymbolFilter(symbol: string): Promise<SymbolFilter> {

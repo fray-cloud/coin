@@ -122,6 +122,7 @@ export async function getExchangeKeys(): Promise<ExchangeKeyItem[]> {
 
 export async function createExchangeKey(data: {
   exchange: string;
+  network?: 'mainnet' | 'testnet';
   apiKey: string;
   secretKey: string;
 }): Promise<{ id: string; exchange: string }> {
