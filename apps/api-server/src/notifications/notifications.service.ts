@@ -73,9 +73,7 @@ export class NotificationsService implements OnModuleInit, OnModuleDestroy {
     const shouldNotify =
       !setting ||
       (type === 'order_filled' && setting.notifyOrders) ||
-      (type === 'order_failed' && setting.notifyOrders) ||
-      (type === 'strategy_signal' && setting.notifySignals) ||
-      (type === 'risk_blocked' && setting.notifyRisks);
+      (type === 'order_failed' && setting.notifyOrders);
 
     if (!shouldNotify) return;
 

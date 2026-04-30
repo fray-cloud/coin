@@ -3,14 +3,7 @@ import { Kafka, Producer } from 'kafkajs';
 import Redis from 'ioredis';
 import { Ticker } from '@coin/types';
 import { KAFKA_TOPICS } from '@coin/kafka-contracts';
-import {
-  UpbitWebSocket,
-  BinanceWebSocket,
-  BybitWebSocket,
-  IExchangeWebSocket,
-} from '@coin/exchange-adapters';
-import { PaperEngineService } from '../orders/paper-engine.service';
-import { OrdersService } from '../orders/orders.service';
+import { BinanceWebSocket, IExchangeWebSocket } from '@coin/exchange-adapters';
 
 @Injectable()
 export class ExchangesService implements OnModuleInit, OnModuleDestroy {
@@ -20,10 +13,7 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
   private producer: Producer;
   private redis: Redis;
 
-  constructor(
-    private readonly paperEngine: PaperEngineService,
-    private readonly ordersService: OrdersService,
-  ) {
+  constructor() {
     this.kafka = new Kafka({
       clientId: 'worker-service',
       brokers: (process.env.KAFKA_BROKERS || 'localhost:9092').split(','),
@@ -45,39 +35,18 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
     await this.fetchExchangeRate();
     this.exchangeRateInterval = setInterval(() => this.fetchExchangeRate(), 5 * 60 * 1000);
 
-    const upbit = new UpbitWebSocket({
-      onConnected: () => this.logger.log('Upbit WebSocket connected'),
-      onDisconnected: () => this.logger.warn('Upbit WebSocket disconnected'),
-      onError: (err) => this.logger.error(`Upbit WS error: ${err.message}`),
-    });
-
     const binance = new BinanceWebSocket({
       onConnected: () => this.logger.log('Binance WebSocket connected'),
       onDisconnected: () => this.logger.warn('Binance WebSocket disconnected'),
       onError: (err) => this.logger.error(`Binance WS error: ${err.message}`),
     });
 
-    const bybit = new BybitWebSocket({
-      onConnected: () => this.logger.log('Bybit WebSocket connected'),
-      onDisconnected: () => this.logger.warn('Bybit WebSocket disconnected'),
-      onError: (err) => this.logger.error(`Bybit WS error: ${err.message}`),
-    });
-
     const tickerHandler = (ticker: Ticker) => this.handleTicker(ticker);
 
-    // Upbit: KRW-BTC 형식
-    upbit.subscribeTicker(['KRW-BTC', 'KRW-ETH', 'KRW-XRP'], tickerHandler);
-    upbit.connect();
-
-    // Binance: BTCUSDT 형식
     binance.subscribeTicker(['BTCUSDT', 'ETHUSDT', 'XRPUSDT'], tickerHandler);
 
-    // Bybit: BTCUSDT 형식
-    bybit.subscribeTicker(['BTCUSDT', 'ETHUSDT', 'XRPUSDT'], tickerHandler);
-    bybit.connect();
-
-    this.adapters.push(upbit, binance, bybit);
-    this.logger.log('All exchange WebSocket adapters started');
+    this.adapters.push(binance);
+    this.logger.log('Binance WebSocket adapter started');
   }
 
   async onModuleDestroy() {
@@ -160,9 +129,6 @@ export class ExchangesService implements OnModuleInit, OnModuleDestroy {
           .expire(priceKey, 3600)
           .exec(),
       ]);
-
-      // 페이퍼 지정가 주문 체결 체크
-      await this.paperEngine.checkPendingOrders(ticker, this.ordersService.getProducer());
     } catch (err) {
       this.logger.error(`Failed to process ticker: ${err}`);
     }

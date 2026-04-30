@@ -23,7 +23,7 @@ export class CancelOrderHandler implements ICommandHandler<CancelOrderCommand> {
     }
 
     if (order.mode === 'real' && order.exchangeOrderId) {
-      const { UpbitRest, BinanceRest, BybitRest } = await import('@coin/exchange-adapters');
+      const { BinanceRest } = await import('@coin/exchange-adapters');
       const { decrypt } = await import('@coin/utils');
 
       if (order.exchangeKeyId) {
@@ -33,10 +33,8 @@ export class CancelOrderHandler implements ICommandHandler<CancelOrderCommand> {
         if (key) {
           const masterKey = process.env.ENCRYPTION_MASTER_KEY;
           if (masterKey) {
-            const adapters = {
-              upbit: UpbitRest,
+            const adapters: Record<ExchangeId, typeof BinanceRest> = {
               binance: BinanceRest,
-              bybit: BybitRest,
             };
             const AdapterClass = adapters[order.exchange as ExchangeId];
             const adapter = new AdapterClass();

@@ -22,31 +22,14 @@ type SortDir = 'asc' | 'desc';
 
 function getDisplayPrices(
   price: string,
-  exchange: string,
+  _exchange: string,
   krwPerUsd: number,
   baseCurrency: 'KRW' | 'USD',
 ): { main: string; sub: string | null } {
   const num = Number(price);
   if (!krwPerUsd) return { main: formatPrice(price), sub: null };
 
-  const isKrwExchange = exchange === 'upbit';
-  const isBaseKrw = baseCurrency === 'KRW';
-
-  if (isKrwExchange && isBaseKrw) {
-    const usd = num / krwPerUsd;
-    return {
-      main: `₩${formatPrice(price)}`,
-      sub: `$${usd >= 1 ? usd.toLocaleString('en-US', { maximumFractionDigits: 2 }) : usd.toLocaleString('en-US', { maximumFractionDigits: 6 })}`,
-    };
-  }
-  if (isKrwExchange && !isBaseKrw) {
-    const usd = num / krwPerUsd;
-    return {
-      main: `$${usd >= 1 ? usd.toLocaleString('en-US', { maximumFractionDigits: 2 }) : usd.toLocaleString('en-US', { maximumFractionDigits: 6 })}`,
-      sub: `₩${formatPrice(price)}`,
-    };
-  }
-  if (!isKrwExchange && isBaseKrw) {
+  if (baseCurrency === 'KRW') {
     const krw = num * krwPerUsd;
     return {
       main: `₩${krw.toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`,

@@ -202,4 +202,4 @@ export const bybitHandlers = [
   }),
 ];
 
-export const defaultHandlers = [...upbitHandlers, ...binanceHandlers, ...bybitHandlers];
+export const defaultHandlers = [...binanceHandlers];

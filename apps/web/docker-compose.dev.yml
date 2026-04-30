@@ -9,7 +9,6 @@ services:
       - JWT_ACCESS_EXPIRES_IN=${JWT_ACCESS_EXPIRES_IN:-15m}
     volumes:
       - ../../:/app
-      - /app/node_modules
     expose:
       - '3001'
     networks: [coin-net]

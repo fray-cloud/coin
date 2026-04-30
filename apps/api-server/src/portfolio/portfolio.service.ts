@@ -2,14 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
-import { UpbitRest, BinanceRest, BybitRest, IExchangeRest } from '@coin/exchange-adapters';
+import { BinanceRest, IExchangeRest } from '@coin/exchange-adapters';
 import type { ExchangeId, ExchangeCredentials, Ticker } from '@coin/types';
 import { decrypt } from '@coin/utils';
 
 const REST_ADAPTERS: Record<ExchangeId, () => IExchangeRest> = {
-  upbit: () => new UpbitRest(),
   binance: () => new BinanceRest(),
-  bybit: () => new BybitRest(),
 };
 
 interface PortfolioAsset {
@@ -22,17 +20,7 @@ interface PortfolioAsset {
   pnl: number;
 }
 
-/**
- * Parse base currency from exchange-specific symbol format.
- * - Upbit: "KRW-BTC" → "BTC"
- * - Binance/Bybit: "BTCUSDT" → "BTC"
- */
-function parseBaseCurrency(exchange: string, symbol: string): string {
-  if (exchange === 'upbit') {
-    const parts = symbol.split('-');
-    return parts.length > 1 ? parts[1] : symbol;
-  }
-  // Binance / Bybit: remove known quote currencies
+function parseBaseCurrency(_exchange: string, symbol: string): string {
   for (const quote of ['USDT', 'BUSD', 'USD', 'USDC']) {
     if (symbol.endsWith(quote)) {
       return symbol.slice(0, -quote.length);
@@ -220,8 +208,7 @@ export class PortfolioService {
   }
 
   private async getTickerPrice(exchange: string, currency: string): Promise<number> {
-    const symbols =
-      exchange === 'upbit' ? [`KRW-${currency}`] : [`${currency}USDT`, `${currency}USD`];
+    const symbols = [`${currency}USDT`, `${currency}USD`];
 
     for (const symbol of symbols) {
       const key = `ticker:${exchange}:${symbol}`;

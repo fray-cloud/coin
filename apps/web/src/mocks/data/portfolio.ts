@@ -6,7 +6,7 @@ export const demoPortfolio: PortfolioSummary = {
   unrealizedPnl: 680_000,
   assets: [
     {
-      exchange: 'upbit',
+      exchange: 'binance',
       currency: 'BTC',
       quantity: '0.007',
       avgCost: 134_250_000,
@@ -15,7 +15,7 @@ export const demoPortfolio: PortfolioSummary = {
       pnl: 15_750,
     },
     {
-      exchange: 'upbit',
+      exchange: 'binance',
       currency: 'ETH',
       quantity: '0.1',
       avgCost: 5_200_000,
@@ -24,7 +24,7 @@ export const demoPortfolio: PortfolioSummary = {
       pnl: 15_000,
     },
     {
-      exchange: 'upbit',
+      exchange: 'binance',
       currency: 'SOL',
       quantity: '5',
       avgCost: 220_000,
@@ -33,7 +33,7 @@ export const demoPortfolio: PortfolioSummary = {
       pnl: 40_000,
     },
     {
-      exchange: 'upbit',
+      exchange: 'binance',
       currency: 'XRP',
       quantity: '500',
       avgCost: 3_150,

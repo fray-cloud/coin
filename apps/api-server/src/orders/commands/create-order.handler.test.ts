@@ -19,7 +19,7 @@ describe('CreateOrderHandler', () => {
 
     const result = await handler.execute(
       new CreateOrderCommand('user-1', {
-        exchange: 'upbit',
+        exchange: 'binance',
         symbol: 'KRW-BTC',
         side: 'buy',
         type: 'market',
@@ -36,7 +36,7 @@ describe('CreateOrderHandler', () => {
     await expect(
       handler.execute(
         new CreateOrderCommand('user-1', {
-          exchange: 'upbit',
+          exchange: 'binance',
           symbol: 'KRW-BTC',
           side: 'buy',
           type: 'market',
@@ -53,7 +53,7 @@ describe('CreateOrderHandler', () => {
     await expect(
       handler.execute(
         new CreateOrderCommand('user-1', {
-          exchange: 'upbit',
+          exchange: 'binance',
           symbol: 'KRW-BTC',
           side: 'buy',
           type: 'market',
@@ -69,7 +69,7 @@ describe('CreateOrderHandler', () => {
     await expect(
       handler.execute(
         new CreateOrderCommand('user-1', {
-          exchange: 'upbit',
+          exchange: 'binance',
           symbol: 'KRW-BTC',
           side: 'buy',
           type: 'limit',
@@ -85,7 +85,7 @@ describe('CreateOrderHandler', () => {
 
     await handler.execute(
       new CreateOrderCommand('user-1', {
-        exchange: 'upbit',
+        exchange: 'binance',
         symbol: 'KRW-BTC',
         side: 'buy',
         type: 'market',

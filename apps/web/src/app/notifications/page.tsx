@@ -115,16 +115,6 @@ export default function NotificationsPage() {
             checked={settings?.notifyOrders ?? true}
             onChange={(v) => mutation.mutate({ notifyOrders: v })}
           />
-          <Toggle
-            label={t('strategySignals')}
-            checked={settings?.notifySignals ?? true}
-            onChange={(v) => mutation.mutate({ notifySignals: v })}
-          />
-          <Toggle
-            label={t('riskBlocked')}
-            checked={settings?.notifyRisks ?? false}
-            onChange={(v) => mutation.mutate({ notifyRisks: v })}
-          />
           {saved && <p className="text-xs text-green-600 mt-2">{t('saved')}</p>}
         </CardContent>
       </Card>

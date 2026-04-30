@@ -7,7 +7,7 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
       - ./certs:/etc/nginx/certs:ro
-      - ${LOG_DIR:-../logs}/nginx:/var/log/nginx
+      - nginx_logs:/var/log/nginx
     depends_on:
       web:
         condition: service_started
@@ -36,3 +36,6 @@ services:
 networks:
   coin-net:
     name: coin-net
+
+volumes:
+  nginx_logs:

@@ -3,14 +3,12 @@ import { CommandHandler, ICommandHandler } from '@nestjs/cqrs';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { encrypt } from '@coin/utils';
-import { UpbitRest, BinanceRest, BybitRest, IExchangeRest } from '@coin/exchange-adapters';
+import { BinanceRest, IExchangeRest } from '@coin/exchange-adapters';
 import type { ExchangeId, ExchangeCredentials } from '@coin/types';
 import { CreateExchangeKeyCommand } from './create-exchange-key.command';
 
 const REST_ADAPTERS: Record<ExchangeId, () => IExchangeRest> = {
-  upbit: () => new UpbitRest(),
   binance: () => new BinanceRest(),
-  bybit: () => new BybitRest(),
 };
 
 @CommandHandler(CreateExchangeKeyCommand)

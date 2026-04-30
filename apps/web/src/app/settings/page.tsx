@@ -113,7 +113,7 @@ function GeneralTab() {
 
 function AccountsTab() {
   const queryClient = useQueryClient();
-  const [exchange, setExchange] = useState('upbit');
+  const [exchange, setExchange] = useState('binance');
   const [apiKey, setApiKey] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [error, setError] = useState('');
@@ -349,16 +349,6 @@ function NotificationsTab() {
             label="주문 체결 / 실패"
             checked={settings?.notifyOrders ?? true}
             onChange={(v) => mutation.mutate({ notifyOrders: v })}
-          />
-          <ToggleSwitch
-            label="전략 시그널"
-            checked={settings?.notifySignals ?? true}
-            onChange={(v) => mutation.mutate({ notifySignals: v })}
-          />
-          <ToggleSwitch
-            label="리스크 차단"
-            checked={settings?.notifyRisks ?? false}
-            onChange={(v) => mutation.mutate({ notifyRisks: v })}
           />
           {saved && <p className="text-xs text-green-600 mt-2">설정이 저장되었습니다</p>}
         </CardContent>

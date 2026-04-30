@@ -15,7 +15,7 @@ export function createMockExchangeKey(overrides: Partial<MockExchangeKey> = {}):
   return {
     id: `key-${keyCounter}`,
     userId: 'user-1',
-    exchange: 'upbit',
+    exchange: 'binance',
     apiKey: 'encrypted-api-key',
     secretKey: 'encrypted-secret-key',
     createdAt: new Date('2025-01-01'),

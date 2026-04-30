@@ -1,14 +1,12 @@
 import { NotFoundException } from '@nestjs/common';
 import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { PrismaService } from '../../prisma/prisma.service';
-import { UpbitRest, BinanceRest, BybitRest, IExchangeRest } from '@coin/exchange-adapters';
+import { BinanceRest, IExchangeRest } from '@coin/exchange-adapters';
 import type { ExchangeId } from '@coin/types';
 import { GetMarketsQuery } from './get-markets.query';
 
 const REST_ADAPTERS: Record<ExchangeId, () => IExchangeRest> = {
-  upbit: () => new UpbitRest(),
   binance: () => new BinanceRest(),
-  bybit: () => new BybitRest(),
 };
 
 @QueryHandler(GetMarketsQuery)

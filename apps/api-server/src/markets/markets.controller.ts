@@ -3,13 +3,11 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/
 import { TickerResponse, ExchangeRateResponse, CandleResponse } from './dto/market-response.dto';
 import { MarketsService } from './markets.service';
 import { Public } from '../auth/decorators/public.decorator';
-import { UpbitRest, BinanceRest, BybitRest, IExchangeRest } from '@coin/exchange-adapters';
+import { BinanceRest, IExchangeRest } from '@coin/exchange-adapters';
 import type { ExchangeId } from '@coin/types';
 
 const REST_ADAPTERS: Record<ExchangeId, () => IExchangeRest> = {
-  upbit: () => new UpbitRest(),
   binance: () => new BinanceRest(),
-  bybit: () => new BybitRest(),
 };
 
 @ApiTags('Markets')
@@ -22,7 +20,7 @@ export class MarketsController {
   @ApiOperation({
     summary: '모든 거래소의 캐시된 티커 조회',
     description:
-      '모든 거래소(Upbit, Binance, Bybit)의 실시간 티커 데이터를 Redis 캐시에서 조회합니다. 가격, 24시간 변동률, 거래량 등을 포함합니다.',
+      'Binance 실시간 티커 데이터를 Redis 캐시에서 조회합니다. 가격, 24시간 변동률, 거래량 등을 포함합니다.',
   })
   @ApiResponse({ status: 200, description: '티커 목록 반환', type: [TickerResponse] })
   async getAllTickers() {
@@ -49,7 +47,7 @@ export class MarketsController {
   })
   @ApiResponse({ status: 200, description: '캔들 데이터 반환', type: [CandleResponse] })
   @ApiResponse({ status: 404, description: '거래소를 찾을 수 없음' })
-  @ApiParam({ name: 'exchange', description: '거래소 식별자 (upbit, binance, bybit)' })
+  @ApiParam({ name: 'exchange', description: '거래소 식별자 (binance)' })
   @ApiParam({ name: 'symbol', description: '트레이딩 심볼 (예: BTC/KRW)' })
   @ApiQuery({
     name: 'interval',
@@ -82,7 +80,7 @@ export class MarketsController {
   })
   @ApiResponse({ status: 200, description: '티커 데이터 반환', type: TickerResponse })
   @ApiResponse({ status: 404, description: '티커를 찾을 수 없음' })
-  @ApiParam({ name: 'exchange', description: '거래소 식별자 (upbit, binance, bybit)' })
+  @ApiParam({ name: 'exchange', description: '거래소 식별자 (binance)' })
   @ApiParam({ name: 'symbol', description: '트레이딩 심볼 (예: BTC/KRW)' })
   async getTicker(@Param('exchange') exchange: string, @Param('symbol') symbol: string) {
     const ticker = await this.marketsService.getLatestTicker(exchange, symbol);

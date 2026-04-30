@@ -10,11 +10,9 @@ import { PrismaModule } from './prisma/prisma.module';
 import { AuthModule } from './auth/auth.module';
 import { ExchangeKeysModule } from './exchange-keys/exchange-keys.module';
 import { OrdersModule } from './orders/orders.module';
-import { StrategiesModule } from './strategies/strategies.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
 import { ActivityModule } from './activity/activity.module';
-import { FlowsModule } from './flows/flows.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -47,11 +45,9 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     MarketsModule,
     ExchangeKeysModule,
     OrdersModule,
-    StrategiesModule,
     NotificationsModule,
     PortfolioModule,
     ActivityModule,
-    FlowsModule,
   ],
   controllers: [AppController],
   providers: [

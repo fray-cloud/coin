@@ -8,7 +8,7 @@ services:
     volumes:
       - ../../:/app
       - /app/node_modules
-      - ${LOG_DIR:-../../logs}/api-server:/app/logs
+      - api_server_logs:/app/logs
     expose:
       - '3000'
     depends_on:
@@ -35,3 +35,6 @@ services:
 networks:
   coin-net:
     name: coin-net
+
+volumes:
+  api_server_logs:

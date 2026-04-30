@@ -62,8 +62,8 @@ describe('useTickersStore', () => {
 
   it('getTickersArray가 Map을 배열로 변환해야 한다', () => {
     const ticker = {
-      exchange: 'upbit' as const,
-      symbol: 'KRW-BTC',
+      exchange: 'binance' as const,
+      symbol: 'BTCUSDT',
       price: '50000000',
       volume24h: '100',
       change24h: '500000',
@@ -73,11 +73,11 @@ describe('useTickersStore', () => {
       timestamp: Date.now(),
     };
     useTickersStore.setState({
-      tickers: new Map([['upbit:KRW-BTC', ticker]]),
+      tickers: new Map([['binance:BTCUSDT', ticker]]),
     });
 
     const arr = useTickersStore.getState().getTickersArray();
     expect(arr).toHaveLength(1);
-    expect(arr[0].symbol).toBe('KRW-BTC');
+    expect(arr[0].symbol).toBe('BTCUSDT');
   });
 });

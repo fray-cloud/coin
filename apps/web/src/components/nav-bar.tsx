@@ -4,9 +4,6 @@ import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import {
   BarChart3,
-  ShoppingCart,
-  BrainCircuit,
-  Workflow,
   PieChart,
   Activity,
   Settings,
@@ -63,27 +60,6 @@ export function NavBar() {
               >
                 <LayoutDashboard size={15} />
                 대시보드
-              </Link>
-              <Link
-                href="/orders"
-                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"
-              >
-                <ShoppingCart size={15} />
-                {t('orders')}
-              </Link>
-              <Link
-                href="/strategies"
-                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"
-              >
-                <BrainCircuit size={15} />
-                {t('strategies')}
-              </Link>
-              <Link
-                href="/flows"
-                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"
-              >
-                <Workflow size={15} />
-                {t('flows')}
               </Link>
               <Link
                 href="/portfolio"
