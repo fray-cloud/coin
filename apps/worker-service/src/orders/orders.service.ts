@@ -6,6 +6,7 @@ import type { OrderRequestedEvent, OrderResultEvent } from '@coin/kafka-contract
 import type { OrderResult } from '@coin/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { executeRealOrderSaga } from './sagas/real-execution-steps';
+import { RiskGuardService } from '../risk/risk-guard.service';
 
 @Injectable()
 export class OrdersService implements OnModuleInit, OnModuleDestroy {
@@ -15,7 +16,10 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
   private producer: Producer;
   private redis: Redis;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly riskGuard: RiskGuardService,
+  ) {
     this.kafka = new Kafka({
       clientId: 'worker-orders',
       brokers: (process.env.KAFKA_BROKERS || 'localhost:9092').split(','),
@@ -91,6 +95,20 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
           'Paper mode disabled: use Binance Futures Testnet via real mode with network=testnet',
         );
       }
+
+      // Resolve network from the user's exchange key so guards know whether
+      // mainnet-only checks apply. Cheap DB hit, runs once per order.
+      const exchangeKey = await this.prisma.exchangeKey.findFirst({
+        where: { id: exchangeKeyId, userId },
+        select: { network: true },
+      });
+      const network = (exchangeKey?.network as 'mainnet' | 'testnet') ?? 'mainnet';
+
+      const guard = await this.riskGuard.checkAll({ userId, network, order });
+      if (!guard.ok) {
+        throw new Error(`Risk guard: ${guard.reason}`);
+      }
+
       await this.executeRealOrder(event);
       console.log(`[OrdersService] Order executed OK: ${dbOrderId}`);
     } catch (err) {
