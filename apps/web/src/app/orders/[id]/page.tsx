@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { OrderChart } from '@/components/order-chart';
+import { CloseReasonBadge } from '@/components/close-reason-badge';
 import { PnlValue } from '@/components/shared/pnl-value';
 import { useBaseCurrency } from '@/hooks/use-base-currency';
 import { useExchangeRate } from '@/hooks/use-exchange-rate';
@@ -96,11 +97,12 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
           <div className="flex items-center gap-2 flex-wrap">
             <h1 className="text-2xl font-bold">{order.symbol}</h1>
             <span className={`text-lg font-semibold uppercase ${sideColor}`}>{order.side}</span>
-            <Badge variant="info">{order.status}</Badge>
+            <Badge variant="info">{order.closedAt ? 'closed' : order.status}</Badge>
             <Badge variant={network === 'mainnet' ? 'orange' : 'purple'}>
               {network === 'mainnet' ? '실거래' : '모의'}
             </Badge>
             {order.leverage ? <Badge variant="muted">{order.leverage}x</Badge> : null}
+            <CloseReasonBadge reason={order.closeReason} />
           </div>
         </div>
         {canClose && (

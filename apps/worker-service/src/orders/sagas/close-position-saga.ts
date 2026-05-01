@@ -85,7 +85,7 @@ export async function executeClosePositionSaga(
   });
   if (!livePosBefore) {
     logger.warn(`Position already gone on exchange — reconciling order ${order.id}`);
-    await markOrderClosed(prisma, order.id, null);
+    await markOrderClosed(prisma, order.id, null, 'manual_on_exchange');
     await emitClosedEvents(
       producer,
       event,
@@ -107,7 +107,7 @@ export async function executeClosePositionSaga(
   } catch (err) {
     if (isPositionGoneError(err)) {
       logger.warn(`Close request rejected (position gone): ${err}. Reconciling.`);
-      await markOrderClosed(prisma, order.id, null);
+      await markOrderClosed(prisma, order.id, null, 'manual_on_exchange');
       await emitClosedEvents(
         producer,
         event,
@@ -148,7 +148,7 @@ export async function executeClosePositionSaga(
     realizedPnl = String(((fill - entry) * qty * direction).toFixed(8));
   }
 
-  await markOrderClosed(prisma, order.id, realizedPnl);
+  await markOrderClosed(prisma, order.id, realizedPnl, 'manual');
   await emitClosedEvents(
     producer,
     event,
@@ -160,10 +160,15 @@ export async function executeClosePositionSaga(
   );
 }
 
-async function markOrderClosed(prisma: PrismaService, orderId: string, realizedPnl: string | null) {
+async function markOrderClosed(
+  prisma: PrismaService,
+  orderId: string,
+  realizedPnl: string | null,
+  closeReason: 'manual' | 'manual_on_exchange' = 'manual',
+) {
   await prisma.order.update({
     where: { id: orderId },
-    data: { status: 'closed', closedAt: new Date(), realizedPnl },
+    data: { status: 'closed', closedAt: new Date(), realizedPnl, closeReason },
   });
 }
 

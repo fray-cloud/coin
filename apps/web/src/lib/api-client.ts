@@ -246,6 +246,14 @@ export async function cancelOrder(id: string): Promise<{ id: string; status: str
   return res.json();
 }
 
+export type CloseReason =
+  | 'take_profit'
+  | 'stop_loss'
+  | 'liquidation'
+  | 'manual'
+  | 'manual_on_exchange'
+  | 'reconciled_unknown';
+
 export interface OrderDetail {
   order: OrderItem & {
     entryPrice: string | null;
@@ -253,6 +261,7 @@ export interface OrderDetail {
     stopLossPrice: string | null;
     realizedPnl: string | null;
     closedAt: string | null;
+    closeReason: CloseReason | null;
     leverage: number | null;
     positionSide: string | null;
   };
@@ -501,6 +510,7 @@ export interface LlmDecisionItem {
     stopLossPrice: string | null;
     realizedPnl: string | null;
     closedAt: string | null;
+    closeReason: CloseReason | null;
     createdAt: string;
   } | null;
 }

@@ -11,6 +11,7 @@ import {
   PositionSide,
   MarginType,
   SymbolFilter,
+  IncomeRecord,
 } from '@coin/types';
 import { IExchangeRest } from '../interfaces/exchange-rest';
 
@@ -413,6 +414,52 @@ export class BinanceRest implements IExchangeRest {
       feeCurrency: '',
       timestamp: data.updateTime ?? Date.now(),
     };
+  }
+
+  /**
+   * Binance Futures income endpoint. Used by the position reconciler to
+   * discover authoritative realized PnL after a TP/SL/liquidation fires.
+   * Each entry's `tradeId` ties back to the closing trade so callers can
+   * correlate against tpOrderId / slOrderId stored at entry time.
+   */
+  async getIncome(
+    credentials: ExchangeCredentials,
+    opts: {
+      symbol?: string;
+      incomeType?: string;
+      startTime?: number;
+      endTime?: number;
+      limit?: number;
+    },
+  ): Promise<IncomeRecord[]> {
+    const params: Record<string, string> = {};
+    if (opts.symbol) params.symbol = opts.symbol;
+    if (opts.incomeType) params.incomeType = opts.incomeType;
+    if (opts.startTime != null) params.startTime = String(opts.startTime);
+    if (opts.endTime != null) params.endTime = String(opts.endTime);
+    if (opts.limit != null) params.limit = String(opts.limit);
+
+    const res = await this.signedRequest(credentials, 'GET', '/fapi/v1/income', params);
+    const data = (await res.json()) as Array<{
+      symbol?: string;
+      incomeType: string;
+      income: string;
+      asset: string;
+      time: number;
+      tradeId?: string;
+      tranId?: string;
+      info?: string;
+    }>;
+    return data.map((r) => ({
+      symbol: r.symbol,
+      incomeType: r.incomeType,
+      income: r.income,
+      asset: r.asset,
+      time: r.time,
+      tradeId: r.tradeId,
+      tranId: r.tranId,
+      info: r.info,
+    }));
   }
 
   async getSymbolFilter(symbol: string): Promise<SymbolFilter> {

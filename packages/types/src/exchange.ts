@@ -127,3 +127,35 @@ export interface SymbolFilter {
   minNotional: string;
   tickSize: string;
 }
+
+export type IncomeType =
+  | 'REALIZED_PNL'
+  | 'COMMISSION'
+  | 'FUNDING_FEE'
+  | 'INSURANCE_CLEAR'
+  | 'TRANSFER'
+  | 'WELCOME_BONUS'
+  | 'REFERRAL_KICKBACK'
+  | 'COMMISSION_REBATE'
+  | 'API_REBATE'
+  | 'CONTEST_REWARD'
+  | 'CROSS_COLLATERAL_TRANSFER'
+  | 'OPTIONS_PREMIUM_FEE'
+  | 'OPTIONS_SETTLE_PROFIT'
+  | 'INTERNAL_TRANSFER'
+  | 'AUTO_EXCHANGE'
+  | 'DELIVERED_SETTELMENT'
+  | 'COIN_SWAP_DEPOSIT'
+  | 'COIN_SWAP_WITHDRAW'
+  | 'POSITION_LIMIT_INCREASE_FEE';
+
+export interface IncomeRecord {
+  symbol?: string;
+  incomeType: IncomeType | string;
+  income: string;
+  asset: string;
+  time: number;
+  tradeId?: string;
+  tranId?: string;
+  info?: string;
+}

@@ -95,6 +95,7 @@ model Order {
   slOrderId        String?
   realizedPnl      String?
   closedAt         DateTime?
+  closeReason      String?      // 'take_profit' | 'stop_loss' | 'liquidation' | 'manual' | 'manual_on_exchange' | 'reconciled_unknown'
   createdAt        DateTime     @default(now())
   updatedAt        DateTime     @updatedAt
   user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
