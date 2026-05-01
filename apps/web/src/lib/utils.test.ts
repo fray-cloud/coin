@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cn, formatPrice, formatKrw, formatVolume } from './utils';
+import { cn, formatPrice, formatKrw, formatVolume, formatCurrency } from './utils';
 
 describe('cn', () => {
   it('클래스 이름을 병합해야 한다', () => {
@@ -60,5 +60,24 @@ describe('formatVolume', () => {
 
   it('1000 미만이면 소수점 2자리로 표시해야 한다', () => {
     expect(formatVolume('42.5')).toBe('42.50');
+  });
+});
+
+describe('formatCurrency', () => {
+  it('KRW 모드에서 main=원 표기, sub=달러 표기', () => {
+    const { main, sub } = formatCurrency(100, 'KRW', 1300);
+    expect(main).toContain('₩');
+    expect(sub).toContain('$');
+  });
+
+  it('USD 모드에서 main=달러 표기, sub=원 표기', () => {
+    const { main, sub } = formatCurrency(100, 'USD', 1300);
+    expect(main).toContain('$');
+    expect(sub).toContain('₩');
+  });
+
+  it('환율 0이면 sub은 null', () => {
+    const { sub } = formatCurrency(100, 'KRW', 0);
+    expect(sub).toBeNull();
   });
 });

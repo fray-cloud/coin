@@ -163,4 +163,37 @@ export class LlmTradesService {
 
     return { id: order.id, status: 'pending' };
   }
+
+  async listDecisions(userId: string, limit: number, cursor?: string) {
+    const cursorDate = cursor ? new Date(cursor) : undefined;
+    const rows = await this.prisma.llmDecisionLog.findMany({
+      where: {
+        userId,
+        ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: limit + 1,
+      include: {
+        order: {
+          select: {
+            id: true,
+            status: true,
+            symbol: true,
+            side: true,
+            entryPrice: true,
+            takeProfitPrice: true,
+            stopLossPrice: true,
+            realizedPnl: true,
+            closedAt: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    const hasMore = rows.length > limit;
+    const items = hasMore ? rows.slice(0, limit) : rows;
+    const nextCursor = hasMore ? items[items.length - 1].createdAt.toISOString() : null;
+    return { items, nextCursor };
+  }
 }

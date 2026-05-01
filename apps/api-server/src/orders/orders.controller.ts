@@ -19,7 +19,7 @@ import {
 } from '@nestjs/swagger';
 import { CommandBus, QueryBus } from '@nestjs/cqrs';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { CreateOrderCommand, CancelOrderCommand } from './commands';
+import { CreateOrderCommand, CancelOrderCommand, CloseOrderCommand } from './commands';
 import { GetOrdersQuery, GetOrderQuery } from './queries';
 import { CreateOrderDto } from './dto/create-order.dto';
 import { OrderResponse, OrderListResponse } from './dto/order-response.dto';
@@ -134,5 +134,21 @@ export class OrdersController {
   @ApiParam({ name: 'id', description: '주문 ID' })
   async cancel(@CurrentUser() user: User, @Param('id') id: string) {
     return this.commandBus.execute(new CancelOrderCommand(user.id, id));
+  }
+
+  @Post(':id/close')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @ApiOperation({
+    summary: '체결된 실거래 포지션을 시장가 reduceOnly로 수동 종료',
+    description:
+      '체결된 실거래(real) 주문에 대해 reduceOnly MARKET 주문으로 포지션을 수동 종료합니다. Kafka 이벤트가 발행되며 worker가 거래소 종료를 처리합니다.',
+  })
+  @ApiResponse({ status: 202, description: '종료 요청 접수' })
+  @ApiResponse({ status: 400, description: '이미 종료된 주문이거나 실거래가 아님' })
+  @ApiResponse({ status: 401, description: '인증 필요' })
+  @ApiResponse({ status: 404, description: '주문을 찾을 수 없음' })
+  @ApiParam({ name: 'id', description: '주문 ID' })
+  async close(@CurrentUser() user: User, @Param('id') id: string) {
+    return this.commandBus.execute(new CloseOrderCommand(user.id, id));
   }
 }

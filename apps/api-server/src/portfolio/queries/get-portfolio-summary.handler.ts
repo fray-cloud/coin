@@ -7,6 +7,6 @@ export class GetPortfolioSummaryHandler implements IQueryHandler<GetPortfolioSum
   constructor(private readonly portfolioService: PortfolioService) {}
 
   async execute(query: GetPortfolioSummaryQuery): Promise<unknown> {
-    return this.portfolioService.getSummary(query.userId, query.mode);
+    return this.portfolioService.getSummary(query.userId, query.network);
   }
 }

@@ -2,10 +2,15 @@ import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/commo
 import { Kafka, Consumer, Producer } from 'kafkajs';
 import Redis from 'ioredis';
 import { KAFKA_TOPICS } from '@coin/kafka-contracts';
-import type { OrderRequestedEvent, OrderResultEvent } from '@coin/kafka-contracts';
+import type {
+  OrderRequestedEvent,
+  OrderResultEvent,
+  OrderCloseRequestedEvent,
+} from '@coin/kafka-contracts';
 import type { OrderResult } from '@coin/types';
 import { PrismaService } from '../prisma/prisma.service';
 import { executeRealOrderSaga } from './sagas/real-execution-steps';
+import { executeClosePositionSaga } from './sagas/close-position-saga';
 import { RiskGuardService } from '../risk/risk-guard.service';
 
 @Injectable()
@@ -43,14 +48,23 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
         topic: KAFKA_TOPICS.TRADING_ORDER_REQUESTED,
         fromBeginning: false,
       });
+      await this.consumer.subscribe({
+        topic: KAFKA_TOPICS.TRADING_ORDER_CLOSE_REQUESTED,
+        fromBeginning: false,
+      });
       this.logger.log('Order consumer subscribed');
 
       await this.consumer.run({
-        eachMessage: async ({ message }) => {
+        eachMessage: async ({ topic, message }) => {
           try {
-            console.log('[OrdersService] message received');
-            const event: OrderRequestedEvent = JSON.parse(message.value!.toString());
-            await this.handleOrderRequested(event);
+            const raw = message.value!.toString();
+            if (topic === KAFKA_TOPICS.TRADING_ORDER_CLOSE_REQUESTED) {
+              const event: OrderCloseRequestedEvent = JSON.parse(raw);
+              await executeClosePositionSaga(event, this.prisma, this.producer, this.redis);
+            } else {
+              const event: OrderRequestedEvent = JSON.parse(raw);
+              await this.handleOrderRequested(event);
+            }
           } catch (err) {
             console.error('[OrdersService] message processing error:', err);
           }

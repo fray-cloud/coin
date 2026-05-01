@@ -1,6 +1,14 @@
 import type { PortfolioSummary } from '@/lib/api-client';
 
+const emptyBreakdown = {
+  totalValueKrw: 0,
+  realizedPnl: 0,
+  unrealizedPnl: 0,
+  dailyPnl: [] as Array<{ date: string; pnl: number }>,
+};
+
 export const demoPortfolio: PortfolioSummary = {
+  network: 'all',
   totalValueKrw: 15_420_000,
   realizedPnl: 2_850_000,
   unrealizedPnl: 680_000,
@@ -8,6 +16,7 @@ export const demoPortfolio: PortfolioSummary = {
     {
       exchange: 'binance',
       currency: 'BTC',
+      network: 'mainnet',
       quantity: '0.007',
       avgCost: 134_250_000,
       currentPrice: 136_500_000,
@@ -17,6 +26,7 @@ export const demoPortfolio: PortfolioSummary = {
     {
       exchange: 'binance',
       currency: 'ETH',
+      network: 'mainnet',
       quantity: '0.1',
       avgCost: 5_200_000,
       currentPrice: 5_350_000,
@@ -26,6 +36,7 @@ export const demoPortfolio: PortfolioSummary = {
     {
       exchange: 'binance',
       currency: 'SOL',
+      network: 'testnet',
       quantity: '5',
       avgCost: 220_000,
       currentPrice: 228_000,
@@ -35,6 +46,7 @@ export const demoPortfolio: PortfolioSummary = {
     {
       exchange: 'binance',
       currency: 'XRP',
+      network: 'mainnet',
       quantity: '500',
       avgCost: 3_150,
       currentPrice: 3_280,
@@ -44,6 +56,7 @@ export const demoPortfolio: PortfolioSummary = {
     {
       exchange: 'binance',
       currency: 'USDT',
+      network: 'mainnet',
       quantity: '5000',
       avgCost: 1,
       currentPrice: 1,
@@ -60,4 +73,13 @@ export const demoPortfolio: PortfolioSummary = {
     { date: '2026-04-05', pnl: 990_000 },
     { date: '2026-04-06', pnl: 1_400_000 },
   ],
+  byNetwork: {
+    testnet: { ...emptyBreakdown, totalValueKrw: 1_140_000, unrealizedPnl: 40_000 },
+    mainnet: {
+      ...emptyBreakdown,
+      totalValueKrw: 14_280_500,
+      realizedPnl: 2_850_000,
+      unrealizedPnl: 640_000,
+    },
+  },
 };

@@ -12,18 +12,15 @@ describe('GetPortfolioSummaryHandler', () => {
     handler = new GetPortfolioSummaryHandler(mockPortfolioService as never);
   });
 
-  it('portfolioService.getSummary에 위임해야 한다', async () => {
-    const summary = { totalValue: 1000, assets: [] };
-    mockPortfolioService.getSummary.mockResolvedValue(summary);
+  it('네트워크 필터를 PortfolioService에 위임한다', async () => {
+    mockPortfolioService.getSummary.mockResolvedValue({ network: 'testnet' });
 
-    const result = await handler.execute(new GetPortfolioSummaryQuery('user-1', 'paper'));
-    expect(result).toEqual(summary);
-    expect(mockPortfolioService.getSummary).toHaveBeenCalledWith('user-1', 'paper');
+    await handler.execute(new GetPortfolioSummaryQuery('user-1', 'testnet'));
+    expect(mockPortfolioService.getSummary).toHaveBeenCalledWith('user-1', 'testnet');
   });
 
-  it('모드가 지정되지 않으면 undefined를 전달해야 한다', async () => {
+  it('네트워크가 지정되지 않으면 undefined를 전달한다', async () => {
     mockPortfolioService.getSummary.mockResolvedValue({});
-
     await handler.execute(new GetPortfolioSummaryQuery('user-1'));
     expect(mockPortfolioService.getSummary).toHaveBeenCalledWith('user-1', undefined);
   });

@@ -1,6 +1,7 @@
 export const KAFKA_TOPICS = {
   MARKET_TICKER_UPDATED: 'market.ticker.updated',
   TRADING_ORDER_REQUESTED: 'trading.order.requested',
+  TRADING_ORDER_CLOSE_REQUESTED: 'trading.order.close-requested',
   TRADING_ORDER_RESULT: 'trading.order.result',
   TRADING_POSITION_UPDATED: 'trading.position.updated',
   NOTIFICATION_SEND: 'notification.send',

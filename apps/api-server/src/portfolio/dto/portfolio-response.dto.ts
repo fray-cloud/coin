@@ -7,6 +7,9 @@ export class PortfolioAssetResponse {
   @ApiProperty({ description: '통화' })
   currency!: string;
 
+  @ApiProperty({ description: '네트워크', enum: ['testnet', 'mainnet'] })
+  network!: 'testnet' | 'mainnet';
+
   @ApiProperty({ description: '수량' })
   quantity!: string;
 
@@ -31,7 +34,22 @@ class DailyPnlItem {
   pnl!: number;
 }
 
+class NetworkBreakdownResponse {
+  @ApiProperty() totalValueKrw!: number;
+  @ApiProperty() realizedPnl!: number;
+  @ApiProperty() unrealizedPnl!: number;
+  @ApiProperty({ type: [DailyPnlItem] }) dailyPnl!: DailyPnlItem[];
+}
+
+class PortfolioByNetworkResponse {
+  @ApiProperty({ type: NetworkBreakdownResponse }) testnet!: NetworkBreakdownResponse;
+  @ApiProperty({ type: NetworkBreakdownResponse }) mainnet!: NetworkBreakdownResponse;
+}
+
 export class PortfolioSummaryResponse {
+  @ApiProperty({ description: '필터된 네트워크', enum: ['testnet', 'mainnet', 'all'] })
+  network!: 'testnet' | 'mainnet' | 'all';
+
   @ApiProperty({ description: '총 자산 가치 (KRW)' })
   totalValueKrw!: number;
 
@@ -44,9 +62,9 @@ export class PortfolioSummaryResponse {
   @ApiProperty({ description: '자산 목록', type: [PortfolioAssetResponse] })
   assets!: PortfolioAssetResponse[];
 
-  @ApiProperty({ description: '일별 P&L', type: [DailyPnlItem] })
+  @ApiProperty({ description: '일별 누적 P&L', type: [DailyPnlItem] })
   dailyPnl!: DailyPnlItem[];
 
-  @ApiProperty({ description: '모드', example: 'all' })
-  mode!: string;
+  @ApiProperty({ description: '네트워크별 분할', type: PortfolioByNetworkResponse })
+  byNetwork!: PortfolioByNetworkResponse;
 }
