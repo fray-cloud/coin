@@ -19,8 +19,8 @@ export class PortfolioAssetResponse {
   @ApiProperty({ description: '현재가' })
   currentPrice!: number;
 
-  @ApiProperty({ description: '가치 (KRW)' })
-  valueKrw!: number;
+  @ApiProperty({ description: '가치 (USD/USDT, 견적 자산)' })
+  valueUsd!: number;
 
   @ApiProperty({ description: '손익' })
   pnl!: number;
@@ -35,7 +35,7 @@ class DailyPnlItem {
 }
 
 class NetworkBreakdownResponse {
-  @ApiProperty() totalValueKrw!: number;
+  @ApiProperty() totalValueUsd!: number;
   @ApiProperty() realizedPnl!: number;
   @ApiProperty() unrealizedPnl!: number;
   @ApiProperty({ type: [DailyPnlItem] }) dailyPnl!: DailyPnlItem[];
@@ -50,8 +50,8 @@ export class PortfolioSummaryResponse {
   @ApiProperty({ description: '필터된 네트워크', enum: ['testnet', 'mainnet', 'all'] })
   network!: 'testnet' | 'mainnet' | 'all';
 
-  @ApiProperty({ description: '총 자산 가치 (KRW)' })
-  totalValueKrw!: number;
+  @ApiProperty({ description: '총 자산 가치 (USD/USDT)' })
+  totalValueUsd!: number;
 
   @ApiProperty({ description: '실현 손익' })
   realizedPnl!: number;

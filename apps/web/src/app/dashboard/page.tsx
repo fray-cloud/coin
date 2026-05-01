@@ -7,11 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { PnlValue } from '@/components/shared/pnl-value';
+import { MoneyValue } from '@/components/shared/money-value';
+import { PnlMoney } from '@/components/shared/pnl-money';
 import { closePosition, getDashboardSummary, type DashboardSummary } from '@/lib/api-client';
-import { useBaseCurrency } from '@/hooks/use-base-currency';
-import { useExchangeRate } from '@/hooks/use-exchange-rate';
-import { formatCurrency } from '@/lib/utils';
 
 export default function DashboardPage() {
   const { data, isLoading } = useQuery({
@@ -66,14 +64,14 @@ function PnlSection({ pnl }: { pnl: DashboardSummary['pnl'] }) {
           <CardContent className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-xs text-purple-500 mb-1">모의 (Testnet)</p>
-              <p className="text-xl tabular-nums">
-                <PnlValue value={pnl[window].testnet} />
+              <p className="text-xl">
+                <PnlMoney usd={pnl[window].testnet} />
               </p>
             </div>
             <div>
               <p className="text-xs text-orange-500 mb-1">실거래 (Mainnet)</p>
-              <p className="text-xl tabular-nums">
-                <PnlValue value={pnl[window].mainnet} />
+              <p className="text-xl">
+                <PnlMoney usd={pnl[window].mainnet} />
               </p>
             </div>
           </CardContent>
@@ -85,8 +83,6 @@ function PnlSection({ pnl }: { pnl: DashboardSummary['pnl'] }) {
 
 function OpenPositionsSection({ positions }: { positions: DashboardSummary['openPositions'] }) {
   const queryClient = useQueryClient();
-  const { currency } = useBaseCurrency();
-  const { krwPerUsd } = useExchangeRate();
 
   const closeMut = useMutation({
     mutationFn: (id: string) => closePosition(id),
@@ -128,9 +124,6 @@ function OpenPositionsSection({ positions }: { positions: DashboardSummary['open
             <tbody>
               {positions.map((p) => {
                 const entry = p.entryPrice ? Number(p.entryPrice) : null;
-                const entryFmt = entry != null ? formatCurrency(entry, currency, krwPerUsd) : null;
-                const markFmt =
-                  p.markPrice != null ? formatCurrency(p.markPrice, currency, krwPerUsd) : null;
                 const network = p.exchangeKey?.network ?? 'mainnet';
                 return (
                   <tr key={p.id} className="border-b hover:bg-muted/40">
@@ -162,10 +155,14 @@ function OpenPositionsSection({ positions }: { positions: DashboardSummary['open
                     <td className="py-2 px-2 text-right tabular-nums">
                       {p.filledQuantity || p.quantity}
                     </td>
-                    <td className="py-2 px-2 text-right tabular-nums">{entryFmt?.main ?? '-'}</td>
-                    <td className="py-2 px-2 text-right tabular-nums">{markFmt?.main ?? '-'}</td>
-                    <td className="py-2 px-2 text-right tabular-nums">
-                      {p.unrealizedPnl != null ? <PnlValue value={p.unrealizedPnl} /> : '-'}
+                    <td className="py-2 px-2 text-right">
+                      {entry != null ? <MoneyValue usd={entry} showSub={false} /> : '-'}
+                    </td>
+                    <td className="py-2 px-2 text-right">
+                      {p.markPrice != null ? <MoneyValue usd={p.markPrice} showSub={false} /> : '-'}
+                    </td>
+                    <td className="py-2 px-2 text-right">
+                      <PnlMoney usd={p.unrealizedPnl} showSub={false} />
                     </td>
                     <td className="py-2 px-2 text-right">
                       {p.mode === 'real' && (
