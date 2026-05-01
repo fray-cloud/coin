@@ -103,6 +103,7 @@ export async function getMe() {
 export interface ExchangeKeyItem {
   id: string;
   exchange: string;
+  network: 'mainnet' | 'testnet';
   createdAt: string;
   updatedAt: string;
 }
