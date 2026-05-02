@@ -261,9 +261,15 @@ function describeOutcome(order: DashboardSummary['recentDecisions'][number]['ord
   if (order.status === 'pending') return { label: '진행 중', variant: 'info' };
   if (order.status === 'failed') return { label: '실패', variant: 'error' };
   if (order.closedAt) {
+    if (order.closeReason === 'take_profit') return { label: 'TP 익절', variant: 'success' };
+    if (order.closeReason === 'stop_loss') return { label: 'SL 손절', variant: 'error' };
+    if (order.closeReason === 'liquidation') return { label: '청산', variant: 'error' };
+    if (order.closeReason === 'manual') return { label: '수동 종료', variant: 'info' };
+    if (order.closeReason === 'manual_on_exchange')
+      return { label: '거래소 종료', variant: 'muted' };
     const pnl = Number(order.realizedPnl ?? 0);
-    if (pnl > 0) return { label: 'TP / 익절', variant: 'success' };
-    if (pnl < 0) return { label: 'SL / 손절', variant: 'error' };
+    if (pnl > 0) return { label: '익절', variant: 'success' };
+    if (pnl < 0) return { label: '손절', variant: 'error' };
     return { label: '종료', variant: 'muted' };
   }
   return { label: '활성', variant: 'info' };

@@ -10,6 +10,7 @@ import {
   PositionSide,
   MarginType,
   SymbolFilter,
+  IncomeRecord,
 } from '@coin/types';
 
 export interface IExchangeRest {
@@ -66,4 +67,14 @@ export interface IExchangeRest {
     quantity: string,
   ): Promise<OrderResult>;
   getSymbolFilter(symbol: string): Promise<SymbolFilter>;
+  getIncome(
+    credentials: ExchangeCredentials,
+    opts: {
+      symbol?: string;
+      incomeType?: string;
+      startTime?: number;
+      endTime?: number;
+      limit?: number;
+    },
+  ): Promise<IncomeRecord[]>;
 }
