@@ -3,14 +3,12 @@ import { IQueryHandler, QueryHandler } from '@nestjs/cqrs';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { decrypt } from '@coin/utils';
-import { UpbitRest, BinanceRest, BybitRest, IExchangeRest } from '@coin/exchange-adapters';
+import { BinanceRest, IExchangeRest } from '@coin/exchange-adapters';
 import type { ExchangeId, ExchangeCredentials } from '@coin/types';
 import { GetBalancesQuery } from './get-balances.query';
 
 const REST_ADAPTERS: Record<ExchangeId, () => IExchangeRest> = {
-  upbit: () => new UpbitRest(),
   binance: () => new BinanceRest(),
-  bybit: () => new BybitRest(),
 };
 
 @QueryHandler(GetBalancesQuery)

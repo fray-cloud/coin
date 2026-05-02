@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
 import { useInfiniteQuery } from '@tanstack/react-query';
-import { ShoppingCart, BrainCircuit, Shield, LogIn, LogOut } from 'lucide-react';
+import { ShoppingCart, LogIn, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { ExchangeIcon, CoinIcon } from '@/components/icons';
@@ -38,35 +38,6 @@ function ActivityIcon({ type, side }: { type: ActivityItem['type']; side?: strin
                 : 'text-red-600 dark:text-red-400'
             }
           />
-        </div>
-      );
-    case 'strategy_signal':
-      return (
-        <div
-          className={`p-2 rounded-full ${side === 'buy' ? 'bg-blue-100 dark:bg-blue-900/30' : side === 'sell' ? 'bg-purple-100 dark:bg-purple-900/30' : 'bg-blue-100 dark:bg-blue-900/30'}`}
-        >
-          <BrainCircuit
-            size={16}
-            className={
-              side === 'buy'
-                ? 'text-blue-600 dark:text-blue-400'
-                : side === 'sell'
-                  ? 'text-purple-600 dark:text-purple-400'
-                  : 'text-blue-600 dark:text-blue-400'
-            }
-          />
-        </div>
-      );
-    case 'strategy_order':
-      return (
-        <div className="p-2 rounded-full bg-green-100 dark:bg-green-900/30">
-          <BrainCircuit size={16} className="text-green-600 dark:text-green-400" />
-        </div>
-      );
-    case 'risk_blocked':
-      return (
-        <div className="p-2 rounded-full bg-yellow-100 dark:bg-yellow-900/30">
-          <Shield size={16} className="text-yellow-600 dark:text-yellow-400" />
         </div>
       );
     case 'login':
@@ -140,7 +111,7 @@ export default function ActivityPage() {
   const items = data?.pages.flatMap((p) => p.items) ?? [];
   const filteredItems = typeFilter === 'all' ? items : items.filter((i) => i.type === typeFilter);
 
-  const typeOptions = ['all', 'order', 'strategy_signal', 'risk_blocked', 'login'] as const;
+  const typeOptions = ['all', 'order', 'login'] as const;
 
   return (
     <div className="max-w-6xl mx-auto p-4 md:p-6 space-y-4">

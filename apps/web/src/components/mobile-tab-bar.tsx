@@ -6,8 +6,6 @@ import { usePathname } from 'next/navigation';
 import { useTranslations } from 'next-intl';
 import {
   BarChart3,
-  ShoppingCart,
-  BrainCircuit,
   PieChart,
   MoreHorizontal,
   Activity,
@@ -20,8 +18,6 @@ import { isDemo } from '@/lib/demo';
 
 const TABS = [
   { href: '/markets', icon: BarChart3, labelKey: 'markets' as const },
-  { href: '/orders', icon: ShoppingCart, labelKey: 'orders' as const },
-  { href: '/strategies', icon: BrainCircuit, labelKey: 'strategies' as const },
   { href: '/portfolio', icon: PieChart, labelKey: 'portfolio' as const },
 ];
 

@@ -5,7 +5,6 @@ import { KAFKA_TOPICS } from '@coin/kafka-contracts';
 import type { OrderRequestedEvent, OrderResultEvent } from '@coin/kafka-contracts';
 import type { OrderResult } from '@coin/types';
 import { PrismaService } from '../prisma/prisma.service';
-import { PaperEngineService } from './paper-engine.service';
 import { executeRealOrderSaga } from './sagas/real-execution-steps';
 
 @Injectable()
@@ -16,10 +15,7 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
   private producer: Producer;
   private redis: Redis;
 
-  constructor(
-    private readonly prisma: PrismaService,
-    private readonly paperEngine: PaperEngineService,
-  ) {
+  constructor(private readonly prisma: PrismaService) {
     this.kafka = new Kafka({
       clientId: 'worker-orders',
       brokers: (process.env.KAFKA_BROKERS || 'localhost:9092').split(','),
@@ -91,10 +87,11 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
 
     try {
       if (mode === 'paper') {
-        await this.executePaperOrder(event);
-      } else {
-        await this.executeRealOrder(event);
+        throw new Error(
+          'Paper mode disabled: use Binance Futures Testnet via real mode with network=testnet',
+        );
       }
+      await this.executeRealOrder(event);
       console.log(`[OrdersService] Order executed OK: ${dbOrderId}`);
     } catch (err) {
       console.error(`[OrdersService] Order execution FAILED: ${dbOrderId}`, err);
@@ -132,35 +129,6 @@ export class OrdersService implements OnModuleInit, OnModuleDestroy {
         topic: KAFKA_TOPICS.TRADING_ORDER_RESULT,
         messages: [{ key: userId, value: JSON.stringify(resultEvent) }],
       });
-    }
-  }
-
-  private async executePaperOrder(event: OrderRequestedEvent) {
-    const { order, dbOrderId, userId } = event;
-
-    if (order.type === 'market') {
-      await this.paperEngine.executeMarketOrder(
-        dbOrderId,
-        userId,
-        order.exchange,
-        order.symbol,
-        order.side,
-        order.quantity,
-        this.redis,
-        this.producer,
-      );
-    } else {
-      await this.paperEngine.placeLimitOrder(
-        dbOrderId,
-        userId,
-        order.exchange,
-        order.symbol,
-        order.side,
-        order.quantity,
-        order.price || '0',
-        this.redis,
-        this.producer,
-      );
     }
   }
 

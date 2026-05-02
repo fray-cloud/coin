@@ -50,9 +50,10 @@ export default function MarketDetailPage() {
               </span>
               {krwPerUsd > 0 && (
                 <span className="text-sm text-muted-foreground tabular-nums">
-                  {exchange === 'upbit'
-                    ? `$${(Number(ticker.price) / krwPerUsd).toLocaleString('en-US', { maximumFractionDigits: 2 })}`
-                    : `₩${(Number(ticker.price) * krwPerUsd).toLocaleString('ko-KR', { maximumFractionDigits: 0 })}`}
+                  ₩
+                  {(Number(ticker.price) * krwPerUsd).toLocaleString('ko-KR', {
+                    maximumFractionDigits: 0,
+                  })}
                 </span>
               )}
             </div>

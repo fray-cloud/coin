@@ -4,10 +4,10 @@ let candleCounter = 0;
 
 export function createMockCandle(overrides: Partial<Candle> = {}): Candle {
   candleCounter++;
-  const basePrice = 50000000;
+  const basePrice = 50000;
   return {
-    exchange: 'upbit' as ExchangeId,
-    symbol: 'KRW-BTC',
+    exchange: 'binance' as ExchangeId,
+    symbol: 'BTCUSDT',
     interval: '1h',
     open: String(basePrice + candleCounter * 100000),
     high: String(basePrice + candleCounter * 100000 + 500000),

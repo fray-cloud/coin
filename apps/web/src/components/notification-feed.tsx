@@ -3,16 +3,7 @@
 import { useRef, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
-import {
-  Bell,
-  ShoppingCart,
-  BrainCircuit,
-  TrendingUp,
-  TrendingDown,
-  AlertTriangle,
-  Info,
-  X,
-} from 'lucide-react';
+import { Bell, ShoppingCart, TrendingUp, TrendingDown, AlertTriangle, Info, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   useNotificationFeedStore,
@@ -24,7 +15,6 @@ const EVENT_ICON: Record<NotificationEventType, React.ElementType> = {
   order_submitted: ShoppingCart,
   order_cancelled: ShoppingCart,
   order_failed: AlertTriangle,
-  strategy_signal: BrainCircuit,
   position_opened: TrendingUp,
   position_closed: TrendingDown,
   info: Info,
@@ -35,7 +25,6 @@ const EVENT_COLOR: Record<NotificationEventType, string> = {
   order_submitted: 'text-blue-500',
   order_cancelled: 'text-muted-foreground',
   order_failed: 'text-red-500',
-  strategy_signal: 'text-purple-500',
   position_opened: 'text-green-500',
   position_closed: 'text-orange-500',
   info: 'text-blue-500',

@@ -41,14 +41,14 @@ describe('GetOrdersHandler', () => {
     mockPrisma.order.findMany.mockResolvedValue([]);
 
     await handler.execute(
-      new GetOrdersQuery('user-1', undefined, 20, 'filled', 'upbit', 'KRW-BTC', 'paper', 'buy'),
+      new GetOrdersQuery('user-1', undefined, 20, 'filled', 'binance', 'BTCUSDT', 'paper', 'buy'),
     );
 
     const where = mockPrisma.order.findMany.mock.calls[0][0].where;
     expect(where.userId).toBe('user-1');
     expect(where.status).toBe('filled');
-    expect(where.exchange).toBe('upbit');
-    expect(where.symbol).toBe('KRW-BTC');
+    expect(where.exchange).toBe('binance');
+    expect(where.symbol).toBe('BTCUSDT');
     expect(where.mode).toBe('paper');
     expect(where.side).toBe('buy');
   });

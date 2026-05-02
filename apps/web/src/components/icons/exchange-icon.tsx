@@ -10,9 +10,7 @@ interface ExchangeIconProps {
 }
 
 const EXCHANGE_LOGOS: Record<string, string> = {
-  upbit: 'https://static.upbit.com/logos/UPBIT.png',
   binance: 'https://bin.bnbstatic.com/static/images/common/logo.png',
-  bybit: 'https://www.bybit.com/favicon.ico',
 };
 
 function Fallback({ char, size }: { char: string; size: number }) {

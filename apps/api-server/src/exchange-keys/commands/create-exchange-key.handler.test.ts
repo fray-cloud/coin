@@ -39,13 +39,13 @@ describe('CreateExchangeKeyHandler', () => {
   it('암호화된 자격증명으로 거래소 키를 생성/upsert해야 한다', async () => {
     mockPrisma.exchangeKey.upsert.mockResolvedValue({
       id: 'key-1',
-      exchange: 'upbit',
+      exchange: 'binance',
       createdAt: new Date(),
     });
 
     const result = await handler.execute(
       new CreateExchangeKeyCommand('user-1', {
-        exchange: 'upbit',
+        exchange: 'binance',
         apiKey: 'my-api-key',
         secretKey: 'my-secret',
       } as never),
@@ -65,7 +65,7 @@ describe('CreateExchangeKeyHandler', () => {
     await expect(
       handler.execute(
         new CreateExchangeKeyCommand('user-1', {
-          exchange: 'upbit',
+          exchange: 'binance',
           apiKey: 'key',
           secretKey: 'secret',
         } as never),
@@ -79,7 +79,7 @@ describe('CreateExchangeKeyHandler', () => {
     await expect(
       handler.execute(
         new CreateExchangeKeyCommand('user-1', {
-          exchange: 'upbit',
+          exchange: 'binance',
           apiKey: 'bad-key',
           secretKey: 'bad-secret',
         } as never),

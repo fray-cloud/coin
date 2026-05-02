@@ -5,7 +5,6 @@ export type NotificationEventType =
   | 'order_submitted'
   | 'order_cancelled'
   | 'order_failed'
-  | 'strategy_signal'
   | 'position_opened'
   | 'position_closed'
   | 'info';

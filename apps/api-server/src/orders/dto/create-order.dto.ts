@@ -5,9 +5,9 @@ export class CreateOrderDto {
   @ApiProperty({
     description: '대상 거래소',
     example: 'binance',
-    enum: ['upbit', 'binance', 'bybit'],
+    enum: ['binance'],
   })
-  @IsIn(['upbit', 'binance', 'bybit'])
+  @IsIn(['binance'])
   exchange!: string;
 
   @ApiProperty({ description: '트레이딩 심볼', example: 'BTC/USDT' })

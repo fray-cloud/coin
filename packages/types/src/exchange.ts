@@ -1,4 +1,4 @@
-export type ExchangeId = 'upbit' | 'binance' | 'bybit';
+export type ExchangeId = 'binance';
 
 export interface ExchangeCredentials {
   apiKey: string;

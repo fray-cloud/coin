@@ -47,15 +47,11 @@ export const useOrderUpdatesStore = create<OrderUpdatesState>((set, get) => ({
       queryClient.invalidateQueries({ queryKey: ['orders'] });
     });
 
-    socket.on('strategy:signal', () => {
-      queryClient.invalidateQueries({ queryKey: ['strategies'] });
-    });
-
     socket.on(
       'notification:received',
       (data: { type: string; title: string; message: string; href?: string }) => {
         const toastType =
-          data.type === 'order_filled' || data.type === 'strategy_signal'
+          data.type === 'order_filled'
             ? 'success'
             : data.type === 'order_failed'
               ? 'error'

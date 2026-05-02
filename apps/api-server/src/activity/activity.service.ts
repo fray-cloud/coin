@@ -3,7 +3,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 export interface ActivityItem {
   id: string;
-  type: 'order' | 'strategy_signal' | 'strategy_order' | 'risk_blocked' | 'login';
+  type: 'order' | 'login';
   title: string;
   description: string;
   exchange?: string;
@@ -25,22 +25,12 @@ export class ActivityService {
   ): Promise<{ items: ActivityItem[]; nextCursor: string | null }> {
     const cursorDate = cursor ? new Date(cursor) : undefined;
 
-    // Fetch from all 3 sources in parallel
-    const [orders, strategyLogs, logins] = await Promise.all([
+    const [orders, logins] = await Promise.all([
       this.prisma.order.findMany({
         where: {
           userId,
           ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
         },
-        orderBy: { createdAt: 'desc' },
-        take: limit + 1,
-      }),
-      this.prisma.strategyLog.findMany({
-        where: {
-          strategy: { userId },
-          ...(cursorDate ? { createdAt: { lt: cursorDate } } : {}),
-        },
-        include: { strategy: { select: { name: true, exchange: true, symbol: true, id: true } } },
         orderBy: { createdAt: 'desc' },
         take: limit + 1,
       }),
@@ -54,7 +44,6 @@ export class ActivityService {
       }),
     ]);
 
-    // Map to unified type
     const orderItems: ActivityItem[] = orders.map((o) => ({
       id: `order-${o.id}`,
       type: 'order' as const,
@@ -68,28 +57,6 @@ export class ActivityService {
       createdAt: o.createdAt,
     }));
 
-    const strategyItems: ActivityItem[] = strategyLogs.map((log) => {
-      const details = log.details as Record<string, unknown>;
-      const action = log.action;
-      let type: ActivityItem['type'] = 'strategy_signal';
-      if (action === 'order_placed') type = 'strategy_order';
-      if (action === 'risk_blocked') type = 'risk_blocked';
-
-      return {
-        id: `strategy-${log.id}`,
-        type,
-        title: `${log.strategy.name} — ${action.replace('_', ' ')}`,
-        description: log.signal
-          ? `${log.signal.toUpperCase()} @ ${details.price || ''} (${details.reason || ''})`
-          : String(details.reason || details.error || ''),
-        exchange: log.strategy.exchange,
-        symbol: log.strategy.symbol,
-        side: log.signal || undefined,
-        link: `/strategies/${log.strategy.id}`,
-        createdAt: log.createdAt,
-      };
-    });
-
     const loginItems: ActivityItem[] = logins.map((l) => ({
       id: `login-${l.id}`,
       type: 'login' as const,
@@ -100,8 +67,7 @@ export class ActivityService {
       createdAt: l.createdAt,
     }));
 
-    // Merge sort by createdAt desc
-    const all = [...orderItems, ...strategyItems, ...loginItems].sort(
+    const all = [...orderItems, ...loginItems].sort(
       (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
     );
 

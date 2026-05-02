@@ -4,14 +4,12 @@ import Redis from 'ioredis';
 import { KAFKA_TOPICS } from '@coin/kafka-contracts';
 import type { OrderResultEvent, OrderRequestedEvent } from '@coin/kafka-contracts';
 import type { ExchangeId, ExchangeCredentials, OrderResult } from '@coin/types';
-import { UpbitRest, BinanceRest, BybitRest, IExchangeRest } from '@coin/exchange-adapters';
+import { BinanceRest, IExchangeRest } from '@coin/exchange-adapters';
 import { decrypt } from '@coin/utils';
 import { PrismaService } from '../../prisma/prisma.service';
 
 const REST_ADAPTERS: Record<ExchangeId, () => IExchangeRest> = {
-  upbit: () => new UpbitRest(),
   binance: () => new BinanceRest(),
-  bybit: () => new BybitRest(),
 };
 
 export interface RealExecutionContext {
@@ -71,22 +69,6 @@ export class PlaceOrderStep implements SagaStep {
     if (!credentials) throw new Error('No credentials available');
 
     const order = { ...event.order };
-
-    // Upbit market buy requires KRW amount, not coin quantity.
-    // Convert quantity (coin units) to KRW using current price.
-    if (order.exchange === 'upbit' && order.type === 'market' && order.side === 'buy') {
-      const tickerKey = `ticker:upbit:${order.symbol}`;
-      const tickerData = await this.redis.get(tickerKey);
-      if (tickerData) {
-        const currentPrice = parseFloat(JSON.parse(tickerData).price);
-        const krwAmount = Math.floor(parseFloat(order.quantity) * currentPrice);
-        this.logger.log(`Upbit market buy: ${order.quantity} × ${currentPrice} = ${krwAmount} KRW`);
-        order.price = String(krwAmount);
-      } else {
-        throw new Error(`No ticker data for ${order.symbol} — cannot calculate KRW amount`);
-      }
-    }
-
     const adapter = REST_ADAPTERS[event.order.exchange]();
     let lastError: Error | undefined;
 

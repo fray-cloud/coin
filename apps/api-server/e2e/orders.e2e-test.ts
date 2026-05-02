@@ -9,7 +9,7 @@ describe('Orders E2E', () => {
       method: 'POST',
       cookies,
       body: JSON.stringify({
-        exchange: 'upbit',
+        exchange: 'binance',
         symbol: 'KRW-BTC',
         side: 'buy',
         type: 'market',
