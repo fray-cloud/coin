@@ -53,7 +53,7 @@ export class ActivityService {
       symbol: o.symbol,
       status: o.status,
       side: o.side,
-      link: '/orders',
+      link: `/orders/${o.id}`,
       createdAt: o.createdAt,
     }));
 

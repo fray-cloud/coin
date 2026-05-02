@@ -17,6 +17,12 @@ export interface OrderResultEvent {
   mode: 'paper' | 'real';
 }
 
+export interface OrderCloseRequestedEvent {
+  requestId: string;
+  userId: string;
+  dbOrderId: string;
+}
+
 export interface NotificationEvent {
   userId: string;
   type: 'order_filled' | 'order_failed';

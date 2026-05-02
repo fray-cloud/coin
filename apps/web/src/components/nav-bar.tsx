@@ -17,6 +17,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { useUser, useLogout } from '@/hooks/use-user';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { BaseCurrencyToggle } from '@/components/base-currency-toggle';
 import { isDemo } from '@/lib/demo';
 
 const DEMO_HIDDEN_PATHS = ['/settings'];
@@ -97,6 +98,7 @@ export function NavBar() {
 
         {/* Right section */}
         <div className="flex items-center gap-1.5 shrink-0">
+          <BaseCurrencyToggle />
           <ThemeToggle />
           <LanguageSwitcher />
           {showUserMenu && (

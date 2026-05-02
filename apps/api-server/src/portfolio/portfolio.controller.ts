@@ -4,6 +4,7 @@ import { PortfolioSummaryResponse } from './dto/portfolio-response.dto';
 import { QueryBus } from '@nestjs/cqrs';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { GetPortfolioSummaryQuery } from './queries';
+import type { PortfolioNetwork } from './queries/get-portfolio-summary.query';
 import type { User } from '@coin/database';
 
 @ApiTags('Portfolio')
@@ -14,22 +15,22 @@ export class PortfolioController {
 
   @Get('summary')
   @ApiOperation({
-    summary: '모든 거래소의 통합 포트폴리오 요약 조회',
+    summary: '포트폴리오 요약 (네트워크 분리)',
     description:
-      '## 포트폴리오 집계\n\n- **전체(all)**: 실제 거래소 잔고 + 모든 체결 주문 기반 손익\n- **실전(real)**: 실제 거래소 API에서 잔고 조회\n- **모의(paper)**: 모의 주문 이력 기반 가상 잔고 계산\n\n포트폴리오 요약을 조회합니다. 총 자산 가치, 실현/미실현 손익, 자산별 상세 내역을 반환합니다.\n\n- **전체(all)**: 실제 거래소 잔고 + 전체 주문 기반 손익\n- **실전(real)**: 거래소 API에서 실제 잔고 조회\n- **모의(paper)**: 모의 주문 이력 기반 가상 잔고 계산',
+      '실제 거래소 잔고와 체결된 주문 기반의 손익을 반환합니다. `network`로 testnet/mainnet/all 필터링이 가능하며, all 응답에는 `byNetwork` 분할 합계가 포함됩니다.',
   })
   @ApiResponse({ status: 200, description: '포트폴리오 요약 반환', type: PortfolioSummaryResponse })
   @ApiResponse({ status: 401, description: '인증 필요' })
   @ApiQuery({
-    name: 'mode',
+    name: 'network',
     required: false,
-    enum: ['paper', 'real', 'all'],
-    description: '거래 모드 필터',
+    enum: ['testnet', 'mainnet', 'all'],
+    description: '거래 네트워크 필터',
   })
   async getSummary(
     @CurrentUser() user: User,
-    @Query('mode') mode?: 'paper' | 'real' | 'all',
+    @Query('network') network?: PortfolioNetwork,
   ): Promise<unknown> {
-    return this.queryBus.execute(new GetPortfolioSummaryQuery(user.id, mode));
+    return this.queryBus.execute(new GetPortfolioSummaryQuery(user.id, network));
   }
 }

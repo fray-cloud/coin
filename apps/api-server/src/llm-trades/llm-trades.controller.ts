@@ -1,5 +1,5 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { LlmTradesService } from './llm-trades.service';
@@ -27,5 +27,20 @@ export class LlmTradesController {
   })
   execute(@CurrentUser() user: { id: string }, @Body() dto: ExecuteTradeDto) {
     return this.service.execute(user.id, dto);
+  }
+
+  @Get('decisions')
+  @ApiOperation({
+    summary: 'List recent LLM decisions for the current user (newest first)',
+  })
+  @ApiQuery({ name: 'limit', required: false, description: 'Page size (default 20, max 100)' })
+  @ApiQuery({ name: 'cursor', required: false, description: 'createdAt ISO cursor' })
+  decisions(
+    @CurrentUser() user: { id: string },
+    @Query('limit') limit?: string,
+    @Query('cursor') cursor?: string,
+  ) {
+    const parsed = Math.min(100, Math.max(1, limit ? parseInt(limit, 10) : 20));
+    return this.service.listDecisions(user.id, parsed, cursor);
   }
 }

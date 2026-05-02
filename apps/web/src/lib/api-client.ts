@@ -246,6 +246,51 @@ export async function cancelOrder(id: string): Promise<{ id: string; status: str
   return res.json();
 }
 
+export interface OrderDetail {
+  order: OrderItem & {
+    entryPrice: string | null;
+    takeProfitPrice: string | null;
+    stopLossPrice: string | null;
+    realizedPnl: string | null;
+    closedAt: string | null;
+    leverage: number | null;
+    positionSide: string | null;
+  };
+  decision: {
+    id: string;
+    parsedSignal: {
+      signal: 'long' | 'short';
+      takeProfitPrice: string;
+      stopLossPrice: string;
+      reasoning: string;
+    };
+    model: string;
+    latencyMs: number;
+    createdAt: string;
+  } | null;
+  network: 'testnet' | 'mainnet';
+  markPrice: number | null;
+  unrealizedPnl: number | null;
+}
+
+export async function getOrder(id: string): Promise<OrderDetail> {
+  const res = await apiFetch(`/orders/${id}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to fetch order');
+  }
+  return res.json();
+}
+
+export async function closePosition(id: string): Promise<{ id: string; status: string }> {
+  const res = await apiFetch(`/orders/${id}/close`, { method: 'POST' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to close position');
+  }
+  return res.json();
+}
+
 // --- Notifications ---
 
 export interface NotificationSettingItem {
@@ -273,9 +318,12 @@ export async function updateNotificationSettings(
 
 // --- Portfolio ---
 
+export type PortfolioNetwork = 'testnet' | 'mainnet' | 'all';
+
 export interface PortfolioAsset {
   exchange: string;
   currency: string;
+  network: 'testnet' | 'mainnet';
   quantity: string;
   avgCost: number;
   currentPrice: number;
@@ -283,18 +331,25 @@ export interface PortfolioAsset {
   pnl: number;
 }
 
+export interface NetworkBreakdown {
+  totalValueKrw: number;
+  realizedPnl: number;
+  unrealizedPnl: number;
+  dailyPnl: Array<{ date: string; pnl: number }>;
+}
+
 export interface PortfolioSummary {
+  network: PortfolioNetwork;
   totalValueKrw: number;
   realizedPnl: number;
   unrealizedPnl: number;
   assets: PortfolioAsset[];
   dailyPnl: Array<{ date: string; pnl: number }>;
+  byNetwork: { testnet: NetworkBreakdown; mainnet: NetworkBreakdown };
 }
 
-export async function getPortfolioSummary(
-  mode?: 'paper' | 'real' | 'all',
-): Promise<PortfolioSummary> {
-  const params = mode ? `?mode=${mode}` : '';
+export async function getPortfolioSummary(network?: PortfolioNetwork): Promise<PortfolioSummary> {
+  const params = network ? `?network=${network}` : '';
   const res = await apiFetch(`/portfolio/summary${params}`);
   if (!res.ok) throw new Error('Failed to fetch portfolio');
   return res.json();
@@ -422,6 +477,56 @@ export async function requestSignal(input: {
     const body = await res.json().catch(() => ({}));
     throw new Error(body.message || 'Failed to request signal');
   }
+  return res.json();
+}
+
+export interface LlmDecisionItem {
+  id: string;
+  parsedSignal: {
+    signal: 'long' | 'short';
+    takeProfitPrice: string;
+    stopLossPrice: string;
+    reasoning: string;
+  };
+  model: string;
+  latencyMs: number;
+  createdAt: string;
+  order: {
+    id: string;
+    status: string;
+    symbol: string;
+    side: string;
+    entryPrice: string | null;
+    takeProfitPrice: string | null;
+    stopLossPrice: string | null;
+    realizedPnl: string | null;
+    closedAt: string | null;
+    createdAt: string;
+  } | null;
+}
+
+export interface DashboardSummary {
+  pnl: {
+    today: { testnet: number; mainnet: number };
+    week: { testnet: number; mainnet: number };
+  };
+  openPositions: Array<
+    OrderItem & {
+      entryPrice: string | null;
+      takeProfitPrice: string | null;
+      stopLossPrice: string | null;
+      leverage: number | null;
+      markPrice: number | null;
+      unrealizedPnl: number | null;
+      exchangeKey: { network: 'testnet' | 'mainnet' } | null;
+    }
+  >;
+  recentDecisions: LlmDecisionItem[];
+}
+
+export async function getDashboardSummary(): Promise<DashboardSummary> {
+  const res = await apiFetch('/dashboard/summary');
+  if (!res.ok) throw new Error('Failed to fetch dashboard');
   return res.json();
 }
 
