@@ -3,7 +3,7 @@ import { Producer } from 'kafkajs';
 import Redis from 'ioredis';
 import { KAFKA_TOPICS } from '@coin/kafka-contracts';
 import type { OrderResultEvent, OrderRequestedEvent } from '@coin/kafka-contracts';
-import type { ExchangeId, ExchangeCredentials, OrderResult } from '@coin/types';
+import type { ExchangeId, ExchangeCredentials, OrderResult, MarginType } from '@coin/types';
 import { BinanceRest, IExchangeRest } from '@coin/exchange-adapters';
 import { decrypt } from '@coin/utils';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -16,6 +16,8 @@ export interface RealExecutionContext {
   event: OrderRequestedEvent;
   credentials?: ExchangeCredentials;
   result?: OrderResult;
+  tpOrderId?: string;
+  slOrderId?: string;
 }
 
 interface SagaStep {
@@ -43,14 +45,49 @@ export class DecryptKeysStep implements SagaStep {
     const credentials: ExchangeCredentials = {
       apiKey: decrypt(exchangeKey.apiKey, masterKey),
       secretKey: decrypt(exchangeKey.secretKey, masterKey),
+      network: (exchangeKey.network as 'mainnet' | 'testnet') ?? 'mainnet',
     };
 
-    this.logger.log(`Keys decrypted for ${event.order.exchange}`);
+    this.logger.log(`Keys decrypted for ${event.order.exchange} (${credentials.network})`);
     return { ...context, credentials };
   }
 
   async compensate(_context: RealExecutionContext): Promise<void> {
-    // noop — nothing to undo for decryption
+    // noop
+  }
+}
+
+/**
+ * Configures Binance Futures account state idempotently:
+ * - one-way position mode (dualSidePosition=false)
+ * - margin type per order (default ISOLATED)
+ * - leverage per order
+ *
+ * All three calls swallow Binance's "no need to change" errors so a re-run
+ * with identical settings is a no-op.
+ */
+export class ConfigureFuturesAccountStep implements SagaStep {
+  readonly name = 'ConfigureFuturesAccount';
+  private readonly logger = new Logger(ConfigureFuturesAccountStep.name);
+
+  async execute(context: RealExecutionContext): Promise<RealExecutionContext> {
+    const { event, credentials } = context;
+    if (!credentials) throw new Error('No credentials available');
+
+    const adapter = REST_ADAPTERS[event.order.exchange]();
+    const symbol = event.order.symbol;
+    const marginType: MarginType = event.order.marginType ?? 'ISOLATED';
+    const leverage = event.order.leverage ?? 1;
+
+    await adapter.setPositionMode(credentials, false);
+    await adapter.setMarginType(credentials, symbol, marginType);
+    await adapter.setLeverage(credentials, symbol, leverage);
+    this.logger.log(`Configured ${symbol}: marginType=${marginType} leverage=${leverage}x`);
+    return context;
+  }
+
+  async compensate(_context: RealExecutionContext): Promise<void> {
+    // noop — settings are stateful but harmless to leave
   }
 }
 
@@ -58,17 +95,12 @@ export class PlaceOrderStep implements SagaStep {
   readonly name = 'PlaceOrder';
   private readonly logger = new Logger(PlaceOrderStep.name);
   private readonly maxRetries = 2;
-  private redis: Redis;
-
-  constructor(redis: Redis) {
-    this.redis = redis;
-  }
 
   async execute(context: RealExecutionContext): Promise<RealExecutionContext> {
     const { event, credentials } = context;
     if (!credentials) throw new Error('No credentials available');
 
-    const order = { ...event.order };
+    const order = event.order;
     const adapter = REST_ADAPTERS[event.order.exchange]();
     let lastError: Error | undefined;
 
@@ -79,7 +111,6 @@ export class PlaceOrderStep implements SagaStep {
           `Order placed on ${event.order.exchange}: ${result.orderId} (${result.status})`,
         );
 
-        // For market orders, poll until filled (exchanges process async)
         if (order.type === 'market' && result.status === 'placed' && result.orderId) {
           for (let poll = 0; poll < 5; poll++) {
             await new Promise((r) => setTimeout(r, 1000));
@@ -93,8 +124,6 @@ export class PlaceOrderStep implements SagaStep {
                 updated.status === 'partial' ||
                 updated.status === 'cancelled'
               ) {
-                // Upbit market buy returns 'cancelled' when done (remaining KRW refunded)
-                // but the adapter maps cancel+executed_volume>0 to 'filled'
                 result = updated;
                 break;
               }
@@ -118,7 +147,74 @@ export class PlaceOrderStep implements SagaStep {
   }
 
   async compensate(_context: RealExecutionContext): Promise<void> {
-    // noop — exchange order cannot be easily cancelled at this stage
+    // noop
+  }
+}
+
+/**
+ * Attaches STOP_MARKET (SL) and TAKE_PROFIT_MARKET (TP) close-position orders
+ * after the entry has filled. If either fails, compensate force-closes the
+ * underlying position so it never sits naked.
+ */
+export class AttachTpSlStep implements SagaStep {
+  readonly name = 'AttachTpSl';
+  private readonly logger = new Logger(AttachTpSlStep.name);
+
+  async execute(context: RealExecutionContext): Promise<RealExecutionContext> {
+    const { event, credentials, result } = context;
+    if (!credentials) throw new Error('No credentials available');
+    if (!result) throw new Error('No entry order result available');
+
+    const order = event.order;
+    if (!order.takeProfitPrice && !order.stopLossPrice) {
+      this.logger.log('No TP/SL specified, skipping');
+      return context;
+    }
+    if (result.status !== 'filled' && result.status !== 'partial') {
+      this.logger.warn(`Entry not filled (status=${result.status}), skipping TP/SL attachment`);
+      return context;
+    }
+
+    const adapter = REST_ADAPTERS[order.exchange]();
+
+    let tpOrderId: string | undefined;
+    let slOrderId: string | undefined;
+    try {
+      if (order.takeProfitPrice) {
+        const tp = await adapter.placeTakeProfit(
+          credentials,
+          order.symbol,
+          order.side,
+          order.takeProfitPrice,
+        );
+        tpOrderId = tp.orderId;
+        this.logger.log(`TP attached: ${tp.orderId} @ ${order.takeProfitPrice}`);
+      }
+      if (order.stopLossPrice) {
+        const sl = await adapter.placeStopLoss(
+          credentials,
+          order.symbol,
+          order.side,
+          order.stopLossPrice,
+        );
+        slOrderId = sl.orderId;
+        this.logger.log(`SL attached: ${sl.orderId} @ ${order.stopLossPrice}`);
+      }
+      return { ...context, tpOrderId, slOrderId };
+    } catch (err) {
+      this.logger.error(`TP/SL attach failed, force-closing position: ${err}`);
+      try {
+        await adapter.closePosition(credentials, order.symbol, order.side, result.filledQuantity);
+        this.logger.warn(`Position force-closed after TP/SL failure`);
+      } catch (closeErr) {
+        this.logger.error(`Force-close also failed: ${closeErr}`);
+      }
+      throw err;
+    }
+  }
+
+  async compensate(_context: RealExecutionContext): Promise<void> {
+    // already handled inline
   }
 }
 
@@ -129,7 +225,7 @@ export class UpdateDbStep implements SagaStep {
   constructor(private readonly prisma: PrismaService) {}
 
   async execute(context: RealExecutionContext): Promise<RealExecutionContext> {
-    const { event, result } = context;
+    const { event, result, tpOrderId, slOrderId } = context;
     if (!result) throw new Error('No order result available');
 
     await this.prisma.order.update({
@@ -141,6 +237,14 @@ export class UpdateDbStep implements SagaStep {
         filledPrice: result.filledPrice,
         fee: result.fee,
         feeCurrency: result.feeCurrency,
+        leverage: event.order.leverage,
+        marginType: event.order.marginType ?? 'ISOLATED',
+        positionSide: event.order.side,
+        entryPrice: result.filledPrice,
+        takeProfitPrice: event.order.takeProfitPrice,
+        stopLossPrice: event.order.stopLossPrice,
+        tpOrderId,
+        slOrderId,
       },
     });
 
@@ -165,14 +269,14 @@ export class PublishResultStep implements SagaStep {
   constructor(private readonly producer: Producer) {}
 
   async execute(context: RealExecutionContext): Promise<RealExecutionContext> {
-    const { event, result } = context;
+    const { event, result, tpOrderId, slOrderId } = context;
     if (!result) throw new Error('No order result available');
 
     const resultEvent: OrderResultEvent = {
       requestId: event.requestId,
       userId: event.userId,
       dbOrderId: event.dbOrderId,
-      result,
+      result: { ...result, tpOrderId, slOrderId },
       mode: 'real',
     };
 
@@ -186,7 +290,7 @@ export class PublishResultStep implements SagaStep {
   }
 
   async compensate(_context: RealExecutionContext): Promise<void> {
-    // noop — result message already sent
+    // noop
   }
 }
 
@@ -194,18 +298,14 @@ export async function executeRealOrderSaga(
   event: OrderRequestedEvent,
   prisma: PrismaService,
   producer: Producer,
-  redis?: Redis,
+  _redis?: Redis,
 ): Promise<void> {
   const logger = new Logger('RealExecutionSaga');
-  const redisInstance =
-    redis ||
-    new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: Number(process.env.REDIS_PORT || 6379),
-    });
   const steps: SagaStep[] = [
     new DecryptKeysStep(prisma),
-    new PlaceOrderStep(redisInstance),
+    new ConfigureFuturesAccountStep(),
+    new PlaceOrderStep(),
+    new AttachTpSlStep(),
     new UpdateDbStep(prisma),
     new PublishResultStep(producer),
   ];
@@ -219,8 +319,6 @@ export async function executeRealOrderSaga(
       completedSteps.push(step);
     } catch (err) {
       logger.error(`Step "${step.name}" failed: ${err}`);
-
-      // Compensate in reverse order
       for (let i = completedSteps.length - 1; i >= 0; i--) {
         try {
           await completedSteps[i].compensate(context);
@@ -228,7 +326,6 @@ export async function executeRealOrderSaga(
           logger.error(`Compensation "${completedSteps[i].name}" failed: ${compErr}`);
         }
       }
-
       throw err;
     }
   }

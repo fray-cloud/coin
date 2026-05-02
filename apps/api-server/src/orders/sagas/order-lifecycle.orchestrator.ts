@@ -55,6 +55,10 @@ export class OrderLifecycleOrchestrator implements OnModuleInit, OnModuleDestroy
       quantity: dto.quantity,
       price: dto.price,
       exchangeKeyId: dto.exchangeKeyId,
+      leverage: dto.leverage,
+      marginType: dto.marginType,
+      takeProfitPrice: dto.takeProfitPrice,
+      stopLossPrice: dto.stopLossPrice,
     };
 
     const runner = new SagaStepRunner<OrderLifecycleContext>(this.prisma);

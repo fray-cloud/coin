@@ -6,6 +6,10 @@ import {
   OrderResult,
   Market,
   Candle,
+  Position,
+  PositionSide,
+  MarginType,
+  SymbolFilter,
 } from '@coin/types';
 
 export interface IExchangeRest {
@@ -31,4 +35,33 @@ export interface IExchangeRest {
     startTime: number,
     endTime: number,
   ): Promise<Candle[]>;
+
+  // Futures-specific
+  setLeverage(credentials: ExchangeCredentials, symbol: string, leverage: number): Promise<void>;
+  setMarginType(
+    credentials: ExchangeCredentials,
+    symbol: string,
+    marginType: MarginType,
+  ): Promise<void>;
+  setPositionMode(credentials: ExchangeCredentials, dualSide: boolean): Promise<void>;
+  getPosition(credentials: ExchangeCredentials, symbol: string): Promise<Position | null>;
+  closePosition(
+    credentials: ExchangeCredentials,
+    symbol: string,
+    side: PositionSide,
+    quantity: string,
+  ): Promise<OrderResult>;
+  placeStopLoss(
+    credentials: ExchangeCredentials,
+    symbol: string,
+    side: PositionSide,
+    stopPrice: string,
+  ): Promise<OrderResult>;
+  placeTakeProfit(
+    credentials: ExchangeCredentials,
+    symbol: string,
+    side: PositionSide,
+    stopPrice: string,
+  ): Promise<OrderResult>;
+  getSymbolFilter(symbol: string): Promise<SymbolFilter>;
 }
