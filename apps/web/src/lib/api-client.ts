@@ -103,6 +103,7 @@ export async function getMe() {
 export interface ExchangeKeyItem {
   id: string;
   exchange: string;
+  network: 'mainnet' | 'testnet';
   createdAt: string;
   updatedAt: string;
 }
@@ -336,12 +337,13 @@ export interface PortfolioAsset {
   quantity: string;
   avgCost: number;
   currentPrice: number;
-  valueKrw: number;
+  /** USD/USDT-denominated value. Frontend converts via useExchangeRate when displaying KRW. */
+  valueUsd: number;
   pnl: number;
 }
 
 export interface NetworkBreakdown {
-  totalValueKrw: number;
+  totalValueUsd: number;
   realizedPnl: number;
   unrealizedPnl: number;
   dailyPnl: Array<{ date: string; pnl: number }>;
@@ -349,7 +351,7 @@ export interface NetworkBreakdown {
 
 export interface PortfolioSummary {
   network: PortfolioNetwork;
-  totalValueKrw: number;
+  totalValueUsd: number;
   realizedPnl: number;
   unrealizedPnl: number;
   assets: PortfolioAsset[];

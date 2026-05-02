@@ -10,17 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { OrderChart } from '@/components/order-chart';
 import { CloseReasonBadge } from '@/components/close-reason-badge';
-import { PnlValue } from '@/components/shared/pnl-value';
-import { useBaseCurrency } from '@/hooks/use-base-currency';
-import { useExchangeRate } from '@/hooks/use-exchange-rate';
+import { MoneyValue } from '@/components/shared/money-value';
+import { PnlMoney } from '@/components/shared/pnl-money';
 import { closePosition, getOrder } from '@/lib/api-client';
-import { formatCurrency } from '@/lib/utils';
 
 export default function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const queryClient = useQueryClient();
-  const { currency } = useBaseCurrency();
-  const { krwPerUsd } = useExchangeRate();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['order', id],
@@ -71,18 +67,6 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
   const entryPrice = order.entryPrice ? Number(order.entryPrice) : null;
   const tpPrice = order.takeProfitPrice ? Number(order.takeProfitPrice) : null;
   const slPrice = order.stopLossPrice ? Number(order.stopLossPrice) : null;
-
-  const formatUsd = (n: number | null) => {
-    if (n == null) return '-';
-    const { main, sub } = formatCurrency(n, currency, krwPerUsd);
-    return sub ? (
-      <span className="tabular-nums">
-        {main} <span className="text-xs text-muted-foreground">{sub}</span>
-      </span>
-    ) : (
-      <span className="tabular-nums">{main}</span>
-    );
-  };
 
   return (
     <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-4">
@@ -149,17 +133,14 @@ export default function OrderDetailPage({ params }: { params: Promise<{ id: stri
               label="수량"
               value={<span className="tabular-nums">{order.filledQuantity || order.quantity}</span>}
             />
-            <Row label="진입가" value={formatUsd(entryPrice)} />
-            <Row label="현재가 (Mark)" value={formatUsd(markPrice)} />
-            <Row label="익절 (TP)" value={formatUsd(tpPrice)} />
-            <Row label="손절 (SL)" value={formatUsd(slPrice)} />
+            <Row label="진입가" value={<MoneyValue usd={entryPrice} />} />
+            <Row label="현재가 (Mark)" value={<MoneyValue usd={markPrice} />} />
+            <Row label="익절 (TP)" value={<MoneyValue usd={tpPrice} />} />
+            <Row label="손절 (SL)" value={<MoneyValue usd={slPrice} />} />
             {order.realizedPnl ? (
-              <Row label="실현 손익" value={<PnlValue value={Number(order.realizedPnl)} />} />
+              <Row label="실현 손익" value={<PnlMoney usd={Number(order.realizedPnl)} />} />
             ) : (
-              <Row
-                label="미실현 손익"
-                value={unrealizedPnl != null ? <PnlValue value={unrealizedPnl} /> : <span>-</span>}
-              />
+              <Row label="미실현 손익" value={<PnlMoney usd={unrealizedPnl} />} />
             )}
             {order.closedAt && (
               <Row

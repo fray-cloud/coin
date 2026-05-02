@@ -19,12 +19,13 @@ interface PortfolioAsset {
   quantity: string;
   avgCost: number;
   currentPrice: number;
-  valueKrw: number;
+  /** Quote-asset value (USDT for Binance Futures). Frontend converts to user's base currency. */
+  valueUsd: number;
   pnl: number;
 }
 
 interface NetworkBreakdown {
-  totalValueKrw: number;
+  totalValueUsd: number;
   realizedPnl: number;
   unrealizedPnl: number;
   dailyPnl: Array<{ date: string; pnl: number }>;
@@ -62,9 +63,11 @@ export class PortfolioService {
     const filteredKeys =
       effective === 'all' ? keys : keys.filter((k) => (k.network ?? 'mainnet') === effective);
 
-    // Filled orders joined with exchangeKey so we can split by network
+    // Filled or closed orders joined with exchangeKey so we can split by network.
+    // 'closed' orders carry realizedPnl set by the close-saga or reconciler;
+    // excluding them would zero out realized PnL on testnet/mainnet.
     const filledOrders = await this.prisma.order.findMany({
-      where: { userId, status: 'filled' },
+      where: { userId, status: { in: ['filled', 'closed'] } },
       include: { exchangeKey: { select: { network: true } } },
       orderBy: { createdAt: 'asc' },
     });
@@ -98,7 +101,7 @@ export class PortfolioService {
           const costKey = `${key.exchange}|${bal.currency}`;
           const avgCost = avgCostMap.get(costKey) ?? 0;
 
-          const valueKrw = currentPrice * total;
+          const valueUsd = currentPrice * total;
           const pnl = avgCost > 0 ? (currentPrice - avgCost) * total : 0;
 
           assets.push({
@@ -108,7 +111,7 @@ export class PortfolioService {
             quantity: total.toString(),
             avgCost,
             currentPrice,
-            valueKrw,
+            valueUsd,
             pnl,
           });
         }
@@ -121,7 +124,7 @@ export class PortfolioService {
       const avgCostMap = this.buildAvgCostMap(rows);
       const deltas = this.dailyDeltaMap(rows);
       const summary: NetworkBreakdown = {
-        totalValueKrw: 0,
+        totalValueUsd: 0,
         realizedPnl: this.calculateRealizedPnl(rows, avgCostMap),
         unrealizedPnl: 0,
         dailyPnl: this.toCumulative(deltas),
@@ -133,29 +136,29 @@ export class PortfolioService {
     const mainnetView = breakdownFor(ordersByNetwork.mainnet);
     const testnetBreakdown = testnetView.summary;
     const mainnetBreakdown = mainnetView.summary;
-    testnetBreakdown.totalValueKrw = assets
+    testnetBreakdown.totalValueUsd = assets
       .filter((a) => a.network === 'testnet')
-      .reduce((s, a) => s + a.valueKrw, 0);
+      .reduce((s, a) => s + a.valueUsd, 0);
     testnetBreakdown.unrealizedPnl = assets
       .filter((a) => a.network === 'testnet')
       .reduce((s, a) => s + a.pnl, 0);
-    mainnetBreakdown.totalValueKrw = assets
+    mainnetBreakdown.totalValueUsd = assets
       .filter((a) => a.network === 'mainnet')
-      .reduce((s, a) => s + a.valueKrw, 0);
+      .reduce((s, a) => s + a.valueUsd, 0);
     mainnetBreakdown.unrealizedPnl = assets
       .filter((a) => a.network === 'mainnet')
       .reduce((s, a) => s + a.pnl, 0);
 
-    let totalValueKrw: number;
+    let totalValueUsd: number;
     let realizedPnl: number;
     let unrealizedPnl: number;
     let dailyPnl: Array<{ date: string; pnl: number }>;
     if (effective === 'testnet') {
-      ({ totalValueKrw, realizedPnl, unrealizedPnl, dailyPnl } = testnetBreakdown);
+      ({ totalValueUsd, realizedPnl, unrealizedPnl, dailyPnl } = testnetBreakdown);
     } else if (effective === 'mainnet') {
-      ({ totalValueKrw, realizedPnl, unrealizedPnl, dailyPnl } = mainnetBreakdown);
+      ({ totalValueUsd, realizedPnl, unrealizedPnl, dailyPnl } = mainnetBreakdown);
     } else {
-      totalValueKrw = testnetBreakdown.totalValueKrw + mainnetBreakdown.totalValueKrw;
+      totalValueUsd = testnetBreakdown.totalValueUsd + mainnetBreakdown.totalValueUsd;
       realizedPnl = testnetBreakdown.realizedPnl + mainnetBreakdown.realizedPnl;
       unrealizedPnl = testnetBreakdown.unrealizedPnl + mainnetBreakdown.unrealizedPnl;
       const merged = new Map<string, number>();
@@ -166,7 +169,7 @@ export class PortfolioService {
 
     return {
       network: effective,
-      totalValueKrw,
+      totalValueUsd,
       realizedPnl,
       unrealizedPnl,
       assets,

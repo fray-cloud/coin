@@ -3,8 +3,8 @@
 import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { Search } from 'lucide-react';
-import { formatKrw } from '@/lib/utils';
-import { PnlValue } from '@/components/shared/pnl-value';
+import { MoneyValue } from '@/components/shared/money-value';
+import { PnlMoney } from '@/components/shared/pnl-money';
 import { ExchangeIcon, CoinIcon } from '@/components/icons';
 import type { PortfolioAsset } from '@/lib/api-client';
 
@@ -30,7 +30,9 @@ function AssetCard({ asset }: { asset: PortfolioAsset }) {
           </div>
         </div>
         <div className="text-right">
-          <div className="font-bold text-sm tabular-nums">{formatKrw(asset.valueKrw)}</div>
+          <div className="font-bold text-sm">
+            <MoneyValue usd={asset.valueUsd} showSub={false} />
+          </div>
           <div className="text-xs text-muted-foreground">{t('value')}</div>
         </div>
       </div>
@@ -43,14 +45,14 @@ function AssetCard({ asset }: { asset: PortfolioAsset }) {
         </div>
         <div className="bg-muted/40 rounded-lg p-2">
           <div className="text-muted-foreground mb-0.5">{t('avgCost')}</div>
-          <div className="font-medium tabular-nums">
-            {asset.avgCost > 0 ? formatKrw(asset.avgCost) : '-'}
+          <div className="font-medium">
+            {asset.avgCost > 0 ? <MoneyValue usd={asset.avgCost} showSub={false} /> : '-'}
           </div>
         </div>
         <div className="bg-muted/40 rounded-lg p-2">
           <div className="text-muted-foreground mb-0.5">{t('current')}</div>
-          <div className="font-medium tabular-nums">
-            {asset.currentPrice > 0 ? formatKrw(asset.currentPrice) : '-'}
+          <div className="font-medium">
+            {asset.currentPrice > 0 ? <MoneyValue usd={asset.currentPrice} showSub={false} /> : '-'}
           </div>
         </div>
       </div>
@@ -58,7 +60,7 @@ function AssetCard({ asset }: { asset: PortfolioAsset }) {
       {/* P&L row */}
       <div className="flex items-center justify-between text-xs">
         <span className="text-muted-foreground">{t('pnl')}</span>
-        <PnlValue value={asset.pnl} />
+        <PnlMoney usd={asset.pnl} showSub={false} />
       </div>
     </div>
   );

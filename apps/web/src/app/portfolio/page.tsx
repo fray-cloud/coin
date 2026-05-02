@@ -6,8 +6,8 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { getPortfolioSummary, type PortfolioNetwork } from '@/lib/api-client';
 import { useTranslations } from 'next-intl';
-import { formatKrw } from '@/lib/utils';
-import { PnlValue } from '@/components/shared/pnl-value';
+import { MoneyValue } from '@/components/shared/money-value';
+import { PnlMoney } from '@/components/shared/pnl-money';
 import { PnlChart } from '@/components/shared/pnl-chart';
 import { AssetTable } from '@/components/portfolio/asset-table';
 import { AssetCardList } from '@/components/portfolio/asset-card-list';
@@ -100,14 +100,16 @@ export default function PortfolioPage() {
         <Card>
           <CardContent className="pt-4">
             <p className="text-sm text-muted-foreground">{t('totalValue')}</p>
-            <p className="text-2xl font-bold">{formatKrw(data.totalValueKrw)}</p>
+            <p className="text-2xl font-bold">
+              <MoneyValue usd={data.totalValueUsd} />
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-4">
             <p className="text-sm text-muted-foreground">{t('realizedPnl')}</p>
             <p className="text-2xl">
-              <PnlValue value={data.realizedPnl} />
+              <PnlMoney usd={data.realizedPnl} />
             </p>
           </CardContent>
         </Card>
@@ -115,7 +117,7 @@ export default function PortfolioPage() {
           <CardContent className="pt-4">
             <p className="text-sm text-muted-foreground">{t('unrealizedPnl')}</p>
             <p className="text-2xl">
-              <PnlValue value={data.unrealizedPnl} />
+              <PnlMoney usd={data.unrealizedPnl} />
             </p>
           </CardContent>
         </Card>
@@ -130,17 +132,15 @@ export default function PortfolioPage() {
             <CardContent className="text-sm space-y-1">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t('totalValue')}</span>
-                <span className="tabular-nums">
-                  {formatKrw(data.byNetwork.testnet.totalValueKrw)}
-                </span>
+                <MoneyValue usd={data.byNetwork.testnet.totalValueUsd} showSub={false} />
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t('realizedPnl')}</span>
-                <PnlValue value={data.byNetwork.testnet.realizedPnl} />
+                <PnlMoney usd={data.byNetwork.testnet.realizedPnl} showSub={false} />
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t('unrealizedPnl')}</span>
-                <PnlValue value={data.byNetwork.testnet.unrealizedPnl} />
+                <PnlMoney usd={data.byNetwork.testnet.unrealizedPnl} showSub={false} />
               </div>
             </CardContent>
           </Card>
@@ -153,17 +153,15 @@ export default function PortfolioPage() {
             <CardContent className="text-sm space-y-1">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t('totalValue')}</span>
-                <span className="tabular-nums">
-                  {formatKrw(data.byNetwork.mainnet.totalValueKrw)}
-                </span>
+                <MoneyValue usd={data.byNetwork.mainnet.totalValueUsd} showSub={false} />
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t('realizedPnl')}</span>
-                <PnlValue value={data.byNetwork.mainnet.realizedPnl} />
+                <PnlMoney usd={data.byNetwork.mainnet.realizedPnl} showSub={false} />
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t('unrealizedPnl')}</span>
-                <PnlValue value={data.byNetwork.mainnet.unrealizedPnl} />
+                <PnlMoney usd={data.byNetwork.mainnet.unrealizedPnl} showSub={false} />
               </div>
             </CardContent>
           </Card>

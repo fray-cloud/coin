@@ -3,13 +3,14 @@
 import { useState, useMemo } from 'react';
 import { useTranslations } from 'next-intl';
 import { ArrowUpDown, ArrowUp, ArrowDown, Search, LayoutGrid, LayoutList } from 'lucide-react';
-import { formatKrw, cn } from '@/lib/utils';
-import { PnlValue } from '@/components/shared/pnl-value';
+import { cn } from '@/lib/utils';
+import { MoneyValue } from '@/components/shared/money-value';
+import { PnlMoney } from '@/components/shared/pnl-money';
 import { ExchangeIcon, CoinIcon } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import type { PortfolioAsset } from '@/lib/api-client';
 
-type AssetSortKey = 'exchange' | 'currency' | 'quantity' | 'valueKrw' | 'pnl';
+type AssetSortKey = 'exchange' | 'currency' | 'quantity' | 'valueUsd' | 'pnl';
 type SortDir = 'asc' | 'desc';
 type ViewMode = 'card' | 'table';
 
@@ -66,8 +67,8 @@ function AssetCard({ asset }: { asset: PortfolioAsset }) {
       {/* Current price */}
       <div>
         <p className="text-xs text-muted-foreground">{t('current')}</p>
-        <p className="text-lg font-semibold tabular-nums">
-          {asset.currentPrice > 0 ? formatKrw(asset.currentPrice) : '-'}
+        <p className="text-lg font-semibold">
+          {asset.currentPrice > 0 ? <MoneyValue usd={asset.currentPrice} /> : '-'}
         </p>
       </div>
 
@@ -79,7 +80,9 @@ function AssetCard({ asset }: { asset: PortfolioAsset }) {
         </div>
         <div>
           <p className="text-xs text-muted-foreground">{t('value')}</p>
-          <p className="tabular-nums font-medium">{formatKrw(asset.valueKrw)}</p>
+          <p className="font-medium">
+            <MoneyValue usd={asset.valueUsd} />
+          </p>
         </div>
       </div>
 
@@ -87,10 +90,7 @@ function AssetCard({ asset }: { asset: PortfolioAsset }) {
       <div className="flex items-center justify-between pt-1 border-t">
         <span className="text-xs text-muted-foreground">{t('pnl')}</span>
         <div className="text-right">
-          <div className={`font-bold text-sm ${pnlColor}`}>
-            {asset.pnl > 0 ? '+' : ''}
-            {formatKrw(asset.pnl)}
-          </div>
+          <PnlMoney usd={asset.pnl} />
           {pct !== null && (
             <div className={`text-xs font-semibold ${pnlColor}`}>
               {pct > 0 ? '+' : ''}
@@ -206,9 +206,9 @@ export function AssetTable({ assets }: AssetTableProps) {
                 </th>
                 <th className="pb-2 font-medium text-right">{t('avgCost')}</th>
                 <th className="pb-2 font-medium text-right">{t('current')}</th>
-                <th className={cn(thClass, 'text-right')} onClick={() => toggleSort('valueKrw')}>
+                <th className={cn(thClass, 'text-right')} onClick={() => toggleSort('valueUsd')}>
                   {t('value')}
-                  <SortIcon column="valueKrw" sortKey={sortKey} sortDir={sortDir} />
+                  <SortIcon column="valueUsd" sortKey={sortKey} sortDir={sortDir} />
                 </th>
                 <th className={cn(thClass, 'text-right')} onClick={() => toggleSort('pnl')}>
                   {t('pnl')}
@@ -232,15 +232,17 @@ export function AssetTable({ assets }: AssetTableProps) {
                     </span>
                   </td>
                   <td className="py-2 text-right tabular-nums">{a.quantity}</td>
-                  <td className="py-2 text-right tabular-nums">
-                    {a.avgCost > 0 ? formatKrw(a.avgCost) : '-'}
-                  </td>
-                  <td className="py-2 text-right tabular-nums">
-                    {a.currentPrice > 0 ? formatKrw(a.currentPrice) : '-'}
-                  </td>
-                  <td className="py-2 text-right tabular-nums">{formatKrw(a.valueKrw)}</td>
                   <td className="py-2 text-right">
-                    <PnlValue value={a.pnl} />
+                    {a.avgCost > 0 ? <MoneyValue usd={a.avgCost} showSub={false} /> : '-'}
+                  </td>
+                  <td className="py-2 text-right">
+                    {a.currentPrice > 0 ? <MoneyValue usd={a.currentPrice} showSub={false} /> : '-'}
+                  </td>
+                  <td className="py-2 text-right">
+                    <MoneyValue usd={a.valueUsd} showSub={false} />
+                  </td>
+                  <td className="py-2 text-right">
+                    <PnlMoney usd={a.pnl} showSub={false} />
                   </td>
                 </tr>
               ))}

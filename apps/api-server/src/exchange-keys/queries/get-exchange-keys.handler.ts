@@ -12,6 +12,7 @@ export class GetExchangeKeysHandler implements IQueryHandler<GetExchangeKeysQuer
       select: {
         id: true,
         exchange: true,
+        network: true,
         createdAt: true,
         updatedAt: true,
       },
