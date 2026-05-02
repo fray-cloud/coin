@@ -122,6 +122,7 @@ export async function getExchangeKeys(): Promise<ExchangeKeyItem[]> {
 
 export async function createExchangeKey(data: {
   exchange: string;
+  network?: 'mainnet' | 'testnet';
   apiKey: string;
   secretKey: string;
 }): Promise<{ id: string; exchange: string }> {
@@ -361,5 +362,87 @@ export async function getActivity(cursor?: string): Promise<ActivityResponse> {
   const params = cursor ? `?cursor=${cursor}&limit=20` : '?limit=20';
   const res = await apiFetch(`/activity${params}`);
   if (!res.ok) throw new Error('Failed to fetch activity');
+  return res.json();
+}
+
+// --- Claude Tokens ---
+
+export interface ClaudeTokenStatus {
+  registered: boolean;
+  updatedAt?: string;
+}
+
+export async function getClaudeTokenStatus(): Promise<ClaudeTokenStatus> {
+  const res = await apiFetch('/claude-tokens');
+  if (!res.ok) throw new Error('Failed to fetch Claude token status');
+  return res.json();
+}
+
+export async function saveClaudeToken(token: string): Promise<{ updatedAt: string }> {
+  const res = await apiFetch('/claude-tokens', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to save Claude token');
+  }
+  return res.json();
+}
+
+export async function deleteClaudeToken(): Promise<void> {
+  const res = await apiFetch('/claude-tokens', { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete Claude token');
+}
+
+// --- LLM Trades ---
+
+export interface SignalResponse {
+  signal: 'long' | 'short';
+  takeProfitPrice: string;
+  stopLossPrice: string;
+  reasoning: string;
+  entryPrice: string;
+  latencyMs: number;
+  model: string;
+}
+
+export async function requestSignal(input: {
+  symbol: string;
+  interval: string;
+  candleCount: number;
+}): Promise<SignalResponse> {
+  const res = await apiFetch('/llm-trades/signal', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to request signal');
+  }
+  return res.json();
+}
+
+export async function executeTrade(input: {
+  symbol: string;
+  side: 'long' | 'short';
+  betUsdt: number;
+  leverage: number;
+  takeProfitPrice: string;
+  stopLossPrice: string;
+  entryPrice: string;
+  exchangeKeyId?: string;
+}): Promise<{ id: string; status: string }> {
+  const res = await apiFetch('/llm-trades/execute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to execute trade');
+  }
   return res.json();
 }

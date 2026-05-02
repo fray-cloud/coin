@@ -62,6 +62,13 @@ export function NavBar() {
                 대시보드
               </Link>
               <Link
+                href="/llm-trade"
+                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"
+              >
+                <BarChart3 size={15} />
+                LLM Trade
+              </Link>
+              <Link
                 href="/portfolio"
                 className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"
               >

@@ -114,6 +114,7 @@ function GeneralTab() {
 function AccountsTab() {
   const queryClient = useQueryClient();
   const [exchange, setExchange] = useState('binance');
+  const [network, setNetwork] = useState<'mainnet' | 'testnet'>('testnet');
   const [apiKey, setApiKey] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [error, setError] = useState('');
@@ -145,7 +146,7 @@ function AccountsTab() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              createMutation.mutate({ exchange, apiKey, secretKey });
+              createMutation.mutate({ exchange, network, apiKey, secretKey });
             }}
             className="space-y-4"
           >
@@ -166,6 +167,29 @@ function AccountsTab() {
                   </option>
                 ))}
               </select>
+            </div>
+            <div className="space-y-2">
+              <Label>네트워크</Label>
+              <div className="flex gap-2">
+                {(['testnet', 'mainnet'] as const).map((n) => (
+                  <button
+                    type="button"
+                    key={n}
+                    onClick={() => setNetwork(n)}
+                    className={`flex-1 h-9 rounded-md border text-sm font-medium ${
+                      network === n
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'border-input bg-transparent text-muted-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {n === 'testnet' ? 'Testnet (모의)' : 'Mainnet (실거래)'}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Testnet 키는 testnet.binancefuture.com에서 발급한 것이어야 하며, mainnet 키는
+                Futures (선물) 활성화 + IP 화이트리스트 허용된 키여야 합니다.
+              </p>
             </div>
             <div className="space-y-2">
               <Label>API Key</Label>

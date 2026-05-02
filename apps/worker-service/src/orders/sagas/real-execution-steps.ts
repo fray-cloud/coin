@@ -152,9 +152,10 @@ export class PlaceOrderStep implements SagaStep {
 }
 
 /**
- * Attaches STOP_MARKET (SL) and TAKE_PROFIT_MARKET (TP) close-position orders
- * after the entry has filled. If either fails, compensate force-closes the
- * underlying position so it never sits naked.
+ * Attaches conditional close orders (TAKE_PROFIT_MARKET / STOP_MARKET) via
+ * Binance's algoOrder endpoint after the entry has filled. If either
+ * placement fails, force-close the underlying position so it never sits
+ * naked.
  */
 export class AttachTpSlStep implements SagaStep {
   readonly name = 'AttachTpSl';
@@ -170,12 +171,9 @@ export class AttachTpSlStep implements SagaStep {
       this.logger.log('No TP/SL specified, skipping');
       return context;
     }
-    if (result.status !== 'filled' && result.status !== 'partial') {
-      this.logger.warn(`Entry not filled (status=${result.status}), skipping TP/SL attachment`);
-      return context;
-    }
 
     const adapter = REST_ADAPTERS[order.exchange]();
+    const filledQty = result.filledQuantity || order.quantity;
 
     let tpOrderId: string | undefined;
     let slOrderId: string | undefined;
@@ -186,9 +184,10 @@ export class AttachTpSlStep implements SagaStep {
           order.symbol,
           order.side,
           order.takeProfitPrice,
+          filledQty,
         );
         tpOrderId = tp.orderId;
-        this.logger.log(`TP attached: ${tp.orderId} @ ${order.takeProfitPrice}`);
+        this.logger.log(`TP attached: algoId=${tp.orderId} @ ${order.takeProfitPrice}`);
       }
       if (order.stopLossPrice) {
         const sl = await adapter.placeStopLoss(
@@ -196,16 +195,17 @@ export class AttachTpSlStep implements SagaStep {
           order.symbol,
           order.side,
           order.stopLossPrice,
+          filledQty,
         );
         slOrderId = sl.orderId;
-        this.logger.log(`SL attached: ${sl.orderId} @ ${order.stopLossPrice}`);
+        this.logger.log(`SL attached: algoId=${sl.orderId} @ ${order.stopLossPrice}`);
       }
       return { ...context, tpOrderId, slOrderId };
     } catch (err) {
       this.logger.error(`TP/SL attach failed, force-closing position: ${err}`);
       try {
-        await adapter.closePosition(credentials, order.symbol, order.side, result.filledQuantity);
-        this.logger.warn(`Position force-closed after TP/SL failure`);
+        await adapter.closePosition(credentials, order.symbol, order.side, filledQty);
+        this.logger.warn('Position force-closed after TP/SL failure');
       } catch (closeErr) {
         this.logger.error(`Force-close also failed: ${closeErr}`);
       }

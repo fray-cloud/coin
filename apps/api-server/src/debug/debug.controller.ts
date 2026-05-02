@@ -95,10 +95,22 @@ export class DebugController {
     let tp: { orderId: string } | undefined;
     let sl: { orderId: string } | undefined;
     if (dto.takeProfitPrice) {
-      tp = await adapter.placeTakeProfit(credentials, dto.symbol, dto.side, dto.takeProfitPrice);
+      tp = await adapter.placeTakeProfit(
+        credentials,
+        dto.symbol,
+        dto.side,
+        dto.takeProfitPrice,
+        dto.quantity,
+      );
     }
     if (dto.stopLossPrice) {
-      sl = await adapter.placeStopLoss(credentials, dto.symbol, dto.side, dto.stopLossPrice);
+      sl = await adapter.placeStopLoss(
+        credentials,
+        dto.symbol,
+        dto.side,
+        dto.stopLossPrice,
+        dto.quantity,
+      );
     }
 
     const position = await adapter.getPosition(credentials, dto.symbol);
