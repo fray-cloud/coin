@@ -38,7 +38,7 @@ function formatPct(p: number | null): string {
 export function LlmTradeForm() {
   const [symbol, setSymbol] = useState<(typeof TOP_SYMBOLS)[number]>('BTCUSDT');
   const [interval, setInterval] = useState<(typeof INTERVALS)[number]>('5m');
-  const [candleCount, setCandleCount] = useState(50);
+  const [candleCount, setCandleCount] = useState(60);
   const [network, setNetwork] = useState<Network>('testnet');
   const [betUsdt, setBetUsdt] = useState(50);
   const [leverage, setLeverage] = useState(5);
@@ -174,15 +174,28 @@ export function LlmTradeForm() {
               </select>
             </div>
             <div className="col-span-2">
-              <label className="block text-xs text-muted-foreground mb-1">캔들 개수 (Y)</label>
+              <label
+                className="block text-xs text-muted-foreground mb-1"
+                title="LLM 프롬프트에 들어갈 캔들 개수. 백엔드는 EMA200 안정성을 위해 항상 220+ 캔들을 페치합니다."
+              >
+                프롬프트 캔들 수 (30 ~ 120)
+              </label>
               <input
                 type="number"
-                min={20}
-                max={200}
+                min={30}
+                max={120}
                 value={candleCount}
-                onChange={(e) => setCandleCount(Number(e.target.value))}
+                onChange={(e) => {
+                  const v = Number(e.target.value);
+                  if (!Number.isFinite(v)) return;
+                  setCandleCount(Math.min(120, Math.max(30, v)));
+                }}
                 className="w-full h-9 px-3 rounded-md border border-input bg-transparent text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
+              <p className="text-[10px] text-muted-foreground mt-1">
+                인디케이터 계산은 220+ 캔들로 자동 수행됩니다. 이 값은 LLM이 보는 row 개수만
+                결정합니다.
+              </p>
             </div>
           </div>
 

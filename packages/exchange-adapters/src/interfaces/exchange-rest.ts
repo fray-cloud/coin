@@ -11,6 +11,9 @@ import {
   MarginType,
   SymbolFilter,
   IncomeRecord,
+  FundingRateRecord,
+  OpenInterestSnapshot,
+  OpenInterestPoint,
 } from '@coin/types';
 
 export interface IExchangeRest {
@@ -77,4 +80,16 @@ export interface IExchangeRest {
       limit?: number;
     },
   ): Promise<IncomeRecord[]>;
+
+  // Public futures market data (no signature required)
+  getFundingRateHistory(symbol: string, limit?: number): Promise<FundingRateRecord[]>;
+  getCurrentFundingRate(
+    symbol: string,
+  ): Promise<{ symbol: string; lastFundingRate: string; nextFundingTime: number }>;
+  getOpenInterest(symbol: string): Promise<OpenInterestSnapshot>;
+  getOpenInterestHistory(
+    symbol: string,
+    period: '5m' | '15m' | '30m' | '1h' | '2h' | '4h' | '6h' | '12h' | '1d',
+    limit?: number,
+  ): Promise<OpenInterestPoint[]>;
 }

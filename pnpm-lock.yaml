@@ -28,6 +28,9 @@ importers:
       '@coin/exchange-adapters':
         specifier: workspace:*
         version: link:../../packages/exchange-adapters
+      '@coin/indicators':
+        specifier: workspace:*
+        version: link:../../packages/indicators
       '@coin/kafka-contracts':
         specifier: workspace:*
         version: link:../../packages/kafka-contracts
@@ -476,6 +479,28 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^4.1.2
+        version: 4.1.2(@types/node@22.19.15)(@vitest/browser-playwright@4.1.2)(jsdom@26.1.0)(msw@2.12.14(@types/node@22.19.15)(typescript@5.9.3))(vite@7.3.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.3))
+
+  packages/indicators:
+    dependencies:
+      '@coin/types':
+        specifier: workspace:*
+        version: link:../types
+      technicalindicators:
+        specifier: ^3.1.0
+        version: 3.1.0
+    devDependencies:
+      '@coin/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@vitest/coverage-v8':
+        specifier: ^4.1.2
+        version: 4.1.2(@vitest/browser@4.1.2(msw@2.12.14(@types/node@22.19.15)(typescript@5.9.3))(vite@7.3.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.3))(vitest@4.1.2))(vitest@4.1.2)
+      typescript:
+        specifier: ^5
+        version: 5.9.3
+      vitest:
+        specifier: ^4
         version: 4.1.2(@types/node@22.19.15)(@vitest/browser-playwright@4.1.2)(jsdom@26.1.0)(msw@2.12.14(@types/node@22.19.15)(typescript@5.9.3))(vite@7.3.1(@types/node@22.19.15)(jiti@2.6.1)(lightningcss@1.32.0)(terser@5.46.1)(yaml@2.8.3))
 
   packages/kafka-contracts:

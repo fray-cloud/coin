@@ -3,11 +3,12 @@ import { Kafka, Producer } from 'kafkajs';
 import { KAFKA_TOPICS } from '@coin/kafka-contracts';
 import type { OrderRequestedEvent } from '@coin/kafka-contracts';
 import { BinanceRest } from '@coin/exchange-adapters';
-import type { Candle } from '@coin/types';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { ClaudeTokensService } from '../claude-tokens/claude-tokens.service';
 import { LlmCliService, LlmDecision } from '../llm/llm-cli.service';
+import { MarketContextService } from './market-context/market-context.service';
+import type { MarketContext } from './market-context/market-context.types';
 import { RequestSignalDto } from './dto/request-signal.dto';
 import { ExecuteTradeDto } from './dto/execute-trade.dto';
 
@@ -23,6 +24,7 @@ export class LlmTradesService {
     private readonly prisma: PrismaService,
     private readonly tokens: ClaudeTokensService,
     private readonly llm: LlmCliService,
+    private readonly marketContext: MarketContextService,
   ) {
     this.kafka = new Kafka({
       clientId: 'api-llm-trades',
@@ -43,24 +45,24 @@ export class LlmTradesService {
   async signal(
     userId: string,
     dto: RequestSignalDto,
-  ): Promise<LlmDecision & { entryPrice: string; candles: Candle[] }> {
+  ): Promise<LlmDecision & { entryPrice: string; marketContext: MarketContext }> {
     const oauthToken = await this.tokens.getDecrypted(userId);
-    const candles = await this.binance.getCandles(dto.symbol, dto.interval, dto.candleCount);
-    if (candles.length === 0) {
-      throw new BadRequestException(`No candles for ${dto.symbol} @ ${dto.interval}`);
-    }
-    const decision = await this.llm.decide({
-      oauthToken,
+    const marketContext = await this.marketContext.build({
       symbol: dto.symbol,
       interval: dto.interval,
-      candles,
+      promptCandleCount: dto.candleCount,
     });
-    const entryPrice = candles[candles.length - 1].close;
+    if (marketContext.candles.length === 0) {
+      throw new BadRequestException(`No candles for ${dto.symbol} @ ${dto.interval}`);
+    }
+    const decision = await this.llm.decide({ oauthToken, marketContext });
+    const lastCandle = marketContext.candles[marketContext.candles.length - 1];
+    const entryPrice = lastCandle.c;
 
     await this.prisma.llmDecisionLog.create({
       data: {
         userId,
-        prompt: `${dto.symbol} ${dto.interval} ${dto.candleCount}`,
+        prompt: `${dto.symbol} ${dto.interval} candles=${marketContext.candles.length} indicators+sentiment`,
         rawResponse: decision.rawResponse,
         parsedSignal: {
           signal: decision.signal,
@@ -73,7 +75,7 @@ export class LlmTradesService {
       },
     });
 
-    return { ...decision, entryPrice, candles };
+    return { ...decision, entryPrice, marketContext };
   }
 
   async execute(userId: string, dto: ExecuteTradeDto): Promise<{ id: string; status: string }> {

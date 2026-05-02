@@ -12,6 +12,9 @@ import {
   MarginType,
   SymbolFilter,
   IncomeRecord,
+  FundingRateRecord,
+  OpenInterestSnapshot,
+  OpenInterestPoint,
 } from '@coin/types';
 import { IExchangeRest } from '../interfaces/exchange-rest';
 
@@ -459,6 +462,77 @@ export class BinanceRest implements IExchangeRest {
       tradeId: r.tradeId,
       tranId: r.tranId,
       info: r.info,
+    }));
+  }
+
+  // ── Public futures market data (no signature) ────────────────────
+
+  async getFundingRateHistory(symbol: string, limit = 8): Promise<FundingRateRecord[]> {
+    const url = `${publicBaseUrl()}/fapi/v1/fundingRate?symbol=${symbol}&limit=${limit}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Binance fapi fundingRate ${res.status}: ${await res.text()}`);
+    const data = (await res.json()) as Array<{
+      symbol: string;
+      fundingTime: number;
+      fundingRate: string;
+    }>;
+    return data.map((r) => ({
+      symbol: r.symbol,
+      fundingTime: r.fundingTime,
+      fundingRate: r.fundingRate,
+    }));
+  }
+
+  async getCurrentFundingRate(
+    symbol: string,
+  ): Promise<{ symbol: string; lastFundingRate: string; nextFundingTime: number }> {
+    const url = `${publicBaseUrl()}/fapi/v1/premiumIndex?symbol=${symbol}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Binance fapi premiumIndex ${res.status}: ${await res.text()}`);
+    const data = (await res.json()) as {
+      symbol: string;
+      lastFundingRate: string;
+      nextFundingTime: number;
+    };
+    return {
+      symbol: data.symbol,
+      lastFundingRate: data.lastFundingRate,
+      nextFundingTime: data.nextFundingTime,
+    };
+  }
+
+  async getOpenInterest(symbol: string): Promise<OpenInterestSnapshot> {
+    const url = `${publicBaseUrl()}/fapi/v1/openInterest?symbol=${symbol}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error(`Binance fapi openInterest ${res.status}: ${await res.text()}`);
+    const data = (await res.json()) as {
+      symbol: string;
+      openInterest: string;
+      time: number;
+    };
+    return { symbol: data.symbol, openInterest: data.openInterest, timestamp: data.time };
+  }
+
+  async getOpenInterestHistory(
+    symbol: string,
+    period: '5m' | '15m' | '30m' | '1h' | '2h' | '4h' | '6h' | '12h' | '1d',
+    limit = 24,
+  ): Promise<OpenInterestPoint[]> {
+    const url = `${publicBaseUrl()}/futures/data/openInterestHist?symbol=${symbol}&period=${period}&limit=${limit}`;
+    const res = await fetch(url);
+    if (!res.ok)
+      throw new Error(`Binance fapi openInterestHist ${res.status}: ${await res.text()}`);
+    const data = (await res.json()) as Array<{
+      symbol: string;
+      sumOpenInterest: string;
+      sumOpenInterestValue: string;
+      timestamp: number;
+    }>;
+    return data.map((r) => ({
+      symbol: r.symbol,
+      sumOpenInterest: r.sumOpenInterest,
+      sumOpenInterestValueUsdt: r.sumOpenInterestValue,
+      timestamp: r.timestamp,
     }));
   }
 
