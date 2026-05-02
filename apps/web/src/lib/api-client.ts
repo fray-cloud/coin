@@ -103,6 +103,7 @@ export async function getMe() {
 export interface ExchangeKeyItem {
   id: string;
   exchange: string;
+  network: 'mainnet' | 'testnet';
   createdAt: string;
   updatedAt: string;
 }
@@ -122,6 +123,7 @@ export async function getExchangeKeys(): Promise<ExchangeKeyItem[]> {
 
 export async function createExchangeKey(data: {
   exchange: string;
+  network?: 'mainnet' | 'testnet';
   apiKey: string;
   secretKey: string;
 }): Promise<{ id: string; exchange: string }> {
@@ -245,6 +247,60 @@ export async function cancelOrder(id: string): Promise<{ id: string; status: str
   return res.json();
 }
 
+export type CloseReason =
+  | 'take_profit'
+  | 'stop_loss'
+  | 'liquidation'
+  | 'manual'
+  | 'manual_on_exchange'
+  | 'reconciled_unknown';
+
+export interface OrderDetail {
+  order: OrderItem & {
+    entryPrice: string | null;
+    takeProfitPrice: string | null;
+    stopLossPrice: string | null;
+    realizedPnl: string | null;
+    closedAt: string | null;
+    closeReason: CloseReason | null;
+    leverage: number | null;
+    positionSide: string | null;
+  };
+  decision: {
+    id: string;
+    parsedSignal: {
+      signal: 'long' | 'short';
+      takeProfitPrice: string;
+      stopLossPrice: string;
+      reasoning: string;
+    };
+    model: string;
+    latencyMs: number;
+    createdAt: string;
+  } | null;
+  network: 'testnet' | 'mainnet';
+  markPrice: number | null;
+  unrealizedPnl: number | null;
+}
+
+export async function getOrder(id: string): Promise<OrderDetail> {
+  const res = await apiFetch(`/orders/${id}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to fetch order');
+  }
+  return res.json();
+}
+
+export async function closePosition(id: string): Promise<{ id: string; status: string }> {
+  const res = await apiFetch(`/orders/${id}/close`, { method: 'POST' });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to close position');
+  }
+  return res.json();
+}
+
 // --- Notifications ---
 
 export interface NotificationSettingItem {
@@ -272,28 +328,39 @@ export async function updateNotificationSettings(
 
 // --- Portfolio ---
 
+export type PortfolioNetwork = 'testnet' | 'mainnet' | 'all';
+
 export interface PortfolioAsset {
   exchange: string;
   currency: string;
+  network: 'testnet' | 'mainnet';
   quantity: string;
   avgCost: number;
   currentPrice: number;
-  valueKrw: number;
+  /** USD/USDT-denominated value. Frontend converts via useExchangeRate when displaying KRW. */
+  valueUsd: number;
   pnl: number;
 }
 
+export interface NetworkBreakdown {
+  totalValueUsd: number;
+  realizedPnl: number;
+  unrealizedPnl: number;
+  dailyPnl: Array<{ date: string; pnl: number }>;
+}
+
 export interface PortfolioSummary {
-  totalValueKrw: number;
+  network: PortfolioNetwork;
+  totalValueUsd: number;
   realizedPnl: number;
   unrealizedPnl: number;
   assets: PortfolioAsset[];
   dailyPnl: Array<{ date: string; pnl: number }>;
+  byNetwork: { testnet: NetworkBreakdown; mainnet: NetworkBreakdown };
 }
 
-export async function getPortfolioSummary(
-  mode?: 'paper' | 'real' | 'all',
-): Promise<PortfolioSummary> {
-  const params = mode ? `?mode=${mode}` : '';
+export async function getPortfolioSummary(network?: PortfolioNetwork): Promise<PortfolioSummary> {
+  const params = network ? `?network=${network}` : '';
   const res = await apiFetch(`/portfolio/summary${params}`);
   if (!res.ok) throw new Error('Failed to fetch portfolio');
   return res.json();
@@ -361,5 +428,138 @@ export async function getActivity(cursor?: string): Promise<ActivityResponse> {
   const params = cursor ? `?cursor=${cursor}&limit=20` : '?limit=20';
   const res = await apiFetch(`/activity${params}`);
   if (!res.ok) throw new Error('Failed to fetch activity');
+  return res.json();
+}
+
+// --- Claude Tokens ---
+
+export interface ClaudeTokenStatus {
+  registered: boolean;
+  updatedAt?: string;
+}
+
+export async function getClaudeTokenStatus(): Promise<ClaudeTokenStatus> {
+  const res = await apiFetch('/claude-tokens');
+  if (!res.ok) throw new Error('Failed to fetch Claude token status');
+  return res.json();
+}
+
+export async function saveClaudeToken(token: string): Promise<{ updatedAt: string }> {
+  const res = await apiFetch('/claude-tokens', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to save Claude token');
+  }
+  return res.json();
+}
+
+export async function deleteClaudeToken(): Promise<void> {
+  const res = await apiFetch('/claude-tokens', { method: 'DELETE' });
+  if (!res.ok) throw new Error('Failed to delete Claude token');
+}
+
+// --- LLM Trades ---
+
+export interface SignalResponse {
+  signal: 'long' | 'short';
+  takeProfitPrice: string;
+  stopLossPrice: string;
+  reasoning: string;
+  entryPrice: string;
+  latencyMs: number;
+  model: string;
+}
+
+export async function requestSignal(input: {
+  symbol: string;
+  interval: string;
+  candleCount: number;
+}): Promise<SignalResponse> {
+  const res = await apiFetch('/llm-trades/signal', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to request signal');
+  }
+  return res.json();
+}
+
+export interface LlmDecisionItem {
+  id: string;
+  parsedSignal: {
+    signal: 'long' | 'short';
+    takeProfitPrice: string;
+    stopLossPrice: string;
+    reasoning: string;
+  };
+  model: string;
+  latencyMs: number;
+  createdAt: string;
+  order: {
+    id: string;
+    status: string;
+    symbol: string;
+    side: string;
+    entryPrice: string | null;
+    takeProfitPrice: string | null;
+    stopLossPrice: string | null;
+    realizedPnl: string | null;
+    closedAt: string | null;
+    closeReason: CloseReason | null;
+    createdAt: string;
+  } | null;
+}
+
+export interface DashboardSummary {
+  pnl: {
+    today: { testnet: number; mainnet: number };
+    week: { testnet: number; mainnet: number };
+  };
+  openPositions: Array<
+    OrderItem & {
+      entryPrice: string | null;
+      takeProfitPrice: string | null;
+      stopLossPrice: string | null;
+      leverage: number | null;
+      markPrice: number | null;
+      unrealizedPnl: number | null;
+      exchangeKey: { network: 'testnet' | 'mainnet' } | null;
+    }
+  >;
+  recentDecisions: LlmDecisionItem[];
+}
+
+export async function getDashboardSummary(): Promise<DashboardSummary> {
+  const res = await apiFetch('/dashboard/summary');
+  if (!res.ok) throw new Error('Failed to fetch dashboard');
+  return res.json();
+}
+
+export async function executeTrade(input: {
+  symbol: string;
+  side: 'long' | 'short';
+  betUsdt: number;
+  leverage: number;
+  takeProfitPrice: string;
+  stopLossPrice: string;
+  entryPrice: string;
+  exchangeKeyId?: string;
+}): Promise<{ id: string; status: string }> {
+  const res = await apiFetch('/llm-trades/execute', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || 'Failed to execute trade');
+  }
   return res.json();
 }

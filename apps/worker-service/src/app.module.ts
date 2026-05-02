@@ -3,6 +3,7 @@ import { LoggerModule } from 'nestjs-pino';
 import { PrismaModule } from './prisma/prisma.module';
 import { ExchangesModule } from './exchanges/exchanges.module';
 import { OrdersModule } from './orders/orders.module';
+import { RiskModule } from './risk/risk.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { OrdersModule } from './orders/orders.module';
       },
     }),
     PrismaModule,
+    RiskModule,
     OrdersModule,
     ExchangesModule,
   ],

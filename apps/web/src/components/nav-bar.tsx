@@ -17,6 +17,7 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { useUser, useLogout } from '@/hooks/use-user';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { BaseCurrencyToggle } from '@/components/base-currency-toggle';
 import { isDemo } from '@/lib/demo';
 
 const DEMO_HIDDEN_PATHS = ['/settings'];
@@ -62,6 +63,13 @@ export function NavBar() {
                 대시보드
               </Link>
               <Link
+                href="/llm-trade"
+                className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"
+              >
+                <BarChart3 size={15} />
+                LLM Trade
+              </Link>
+              <Link
                 href="/portfolio"
                 className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1 px-2 py-1 rounded-md hover:bg-muted whitespace-nowrap"
               >
@@ -90,6 +98,7 @@ export function NavBar() {
 
         {/* Right section */}
         <div className="flex items-center gap-1.5 shrink-0">
+          <BaseCurrencyToggle />
           <ThemeToggle />
           <LanguageSwitcher />
           {showUserMenu && (

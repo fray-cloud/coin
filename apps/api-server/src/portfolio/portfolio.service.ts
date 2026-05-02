@@ -10,14 +10,25 @@ const REST_ADAPTERS: Record<ExchangeId, () => IExchangeRest> = {
   binance: () => new BinanceRest(),
 };
 
+export type PortfolioNetwork = 'testnet' | 'mainnet' | 'all';
+
 interface PortfolioAsset {
   exchange: string;
   currency: string;
+  network: 'testnet' | 'mainnet';
   quantity: string;
   avgCost: number;
   currentPrice: number;
-  valueKrw: number;
+  /** Quote-asset value (USDT for Binance Futures). Frontend converts to user's base currency. */
+  valueUsd: number;
   pnl: number;
+}
+
+interface NetworkBreakdown {
+  totalValueUsd: number;
+  realizedPnl: number;
+  unrealizedPnl: number;
+  dailyPnl: Array<{ date: string; pnl: number }>;
 }
 
 function parseBaseCurrency(_exchange: string, symbol: string): string {
@@ -44,133 +55,127 @@ export class PortfolioService {
     });
   }
 
-  async getSummary(userId: string, mode?: 'paper' | 'real' | 'all') {
-    const effectiveMode = mode || 'all';
+  async getSummary(userId: string, network?: PortfolioNetwork) {
+    const effective: PortfolioNetwork = network ?? 'all';
     const masterKey = this.config.getOrThrow<string>('ENCRYPTION_MASTER_KEY');
 
-    // Prefetch filled orders, optionally filtered by mode
-    const orderWhere: { userId: string; status: string; mode?: string } = {
-      userId,
-      status: 'filled',
-    };
-    if (effectiveMode !== 'all') {
-      orderWhere.mode = effectiveMode;
-    }
+    const keys = await this.prisma.exchangeKey.findMany({ where: { userId } });
+    const filteredKeys =
+      effective === 'all' ? keys : keys.filter((k) => (k.network ?? 'mainnet') === effective);
 
-    const allFilledOrders = await this.prisma.order.findMany({
-      where: orderWhere,
+    // Filled or closed orders joined with exchangeKey so we can split by network.
+    // 'closed' orders carry realizedPnl set by the close-saga or reconciler;
+    // excluding them would zero out realized PnL on testnet/mainnet.
+    const filledOrders = await this.prisma.order.findMany({
+      where: { userId, status: { in: ['filled', 'closed'] } },
+      include: { exchangeKey: { select: { network: true } } },
       orderBy: { createdAt: 'asc' },
     });
 
-    // Build avg cost map: key = "exchange|currency"
-    const avgCostMap = this.buildAvgCostMap(allFilledOrders);
+    const ordersByNetwork = {
+      testnet: filledOrders.filter((o) => (o.exchangeKey?.network ?? 'mainnet') === 'testnet'),
+      mainnet: filledOrders.filter((o) => (o.exchangeKey?.network ?? 'mainnet') === 'mainnet'),
+    };
 
     const assets: PortfolioAsset[] = [];
+    for (const key of filteredKeys) {
+      try {
+        const credentials: ExchangeCredentials = {
+          apiKey: decrypt(key.apiKey, masterKey),
+          secretKey: decrypt(key.secretKey, masterKey),
+          network: (key.network as 'mainnet' | 'testnet') ?? 'mainnet',
+        };
+        const adapter = REST_ADAPTERS[key.exchange as ExchangeId]();
+        const balances = await adapter.getBalances(credentials);
 
-    if (effectiveMode === 'paper') {
-      // Paper mode: compute virtual balances from order history
-      const virtualBalances = this.computePaperBalances(allFilledOrders);
-      for (const [key, qty] of virtualBalances.entries()) {
-        const [exchange, currency] = key.split('|');
-        if (qty <= 0) continue;
+        const keyNet: 'testnet' | 'mainnet' = (key.network as 'mainnet' | 'testnet') ?? 'mainnet';
+        const avgCostMap = this.buildAvgCostMap(ordersByNetwork[keyNet]);
 
-        const currentPrice = await this.getTickerPrice(exchange, currency);
-        const avgCost = avgCostMap.get(key) ?? 0;
-        const valueKrw = currentPrice * qty;
-        const pnl = avgCost > 0 ? (currentPrice - avgCost) * qty : 0;
+        for (const bal of balances) {
+          const free = parseFloat(bal.free);
+          const locked = parseFloat(bal.locked);
+          const total = free + locked;
+          if (total <= 0) continue;
 
-        assets.push({
-          exchange,
-          currency,
-          quantity: qty.toString(),
-          avgCost,
-          currentPrice,
-          valueKrw,
-          pnl,
-        });
-      }
-    } else {
-      // Real or All mode: fetch from exchange APIs
-      const keys = await this.prisma.exchangeKey.findMany({
-        where: { userId },
-      });
+          const currentPrice = await this.getTickerPrice(key.exchange, bal.currency);
+          const costKey = `${key.exchange}|${bal.currency}`;
+          const avgCost = avgCostMap.get(costKey) ?? 0;
 
-      for (const key of keys) {
-        try {
-          const credentials: ExchangeCredentials = {
-            apiKey: decrypt(key.apiKey, masterKey),
-            secretKey: decrypt(key.secretKey, masterKey),
-          };
-          const adapter = REST_ADAPTERS[key.exchange as ExchangeId]();
-          const balances = await adapter.getBalances(credentials);
+          const valueUsd = currentPrice * total;
+          const pnl = avgCost > 0 ? (currentPrice - avgCost) * total : 0;
 
-          for (const bal of balances) {
-            const free = parseFloat(bal.free);
-            const locked = parseFloat(bal.locked);
-            const total = free + locked;
-            if (total <= 0) continue;
-
-            const currentPrice = await this.getTickerPrice(key.exchange, bal.currency);
-            const costKey = `${key.exchange}|${bal.currency}`;
-            const avgCost = avgCostMap.get(costKey) ?? 0;
-
-            const valueKrw = currentPrice * total;
-            const pnl = avgCost > 0 ? (currentPrice - avgCost) * total : 0;
-
-            assets.push({
-              exchange: key.exchange,
-              currency: bal.currency,
-              quantity: total.toString(),
-              avgCost,
-              currentPrice,
-              valueKrw,
-              pnl,
-            });
-          }
-        } catch (err) {
-          this.logger.warn(`Failed to fetch balances for ${key.exchange}: ${err}`);
+          assets.push({
+            exchange: key.exchange,
+            currency: bal.currency,
+            network: keyNet,
+            quantity: total.toString(),
+            avgCost,
+            currentPrice,
+            valueUsd,
+            pnl,
+          });
         }
+      } catch (err) {
+        this.logger.warn(`Failed to fetch balances for ${key.exchange} (${key.network}): ${err}`);
       }
     }
 
-    // 2. Calculate realized P&L from prefetched orders
-    const realizedPnl = this.calculateRealizedPnl(allFilledOrders, avgCostMap);
+    const breakdownFor = (rows: typeof filledOrders) => {
+      const avgCostMap = this.buildAvgCostMap(rows);
+      const deltas = this.dailyDeltaMap(rows);
+      const summary: NetworkBreakdown = {
+        totalValueUsd: 0,
+        realizedPnl: this.calculateRealizedPnl(rows, avgCostMap),
+        unrealizedPnl: 0,
+        dailyPnl: this.toCumulative(deltas),
+      };
+      return { summary, deltas };
+    };
 
-    // 3. Calculate daily P&L from prefetched orders
-    const dailyPnl = this.calculateDailyPnl(allFilledOrders);
+    const testnetView = breakdownFor(ordersByNetwork.testnet);
+    const mainnetView = breakdownFor(ordersByNetwork.mainnet);
+    const testnetBreakdown = testnetView.summary;
+    const mainnetBreakdown = mainnetView.summary;
+    testnetBreakdown.totalValueUsd = assets
+      .filter((a) => a.network === 'testnet')
+      .reduce((s, a) => s + a.valueUsd, 0);
+    testnetBreakdown.unrealizedPnl = assets
+      .filter((a) => a.network === 'testnet')
+      .reduce((s, a) => s + a.pnl, 0);
+    mainnetBreakdown.totalValueUsd = assets
+      .filter((a) => a.network === 'mainnet')
+      .reduce((s, a) => s + a.valueUsd, 0);
+    mainnetBreakdown.unrealizedPnl = assets
+      .filter((a) => a.network === 'mainnet')
+      .reduce((s, a) => s + a.pnl, 0);
 
-    const totalValueKrw = assets.reduce((sum, a) => sum + a.valueKrw, 0);
-    const unrealizedPnl = assets.reduce((sum, a) => sum + a.pnl, 0);
-
-    return { totalValueKrw, realizedPnl, unrealizedPnl, assets, dailyPnl, mode: effectiveMode };
-  }
-
-  private computePaperBalances(
-    orders: Array<{
-      exchange: string;
-      symbol: string;
-      side: string;
-      filledQuantity: string;
-      filledPrice: string;
-    }>,
-  ): Map<string, number> {
-    const balances = new Map<string, number>();
-
-    for (const order of orders) {
-      const currency = parseBaseCurrency(order.exchange, order.symbol);
-      const key = `${order.exchange}|${currency}`;
-      const qty = parseFloat(order.filledQuantity);
-      if (!Number.isFinite(qty) || qty <= 0) continue;
-
-      const current = balances.get(key) ?? 0;
-      if (order.side === 'buy') {
-        balances.set(key, current + qty);
-      } else {
-        balances.set(key, current - qty);
-      }
+    let totalValueUsd: number;
+    let realizedPnl: number;
+    let unrealizedPnl: number;
+    let dailyPnl: Array<{ date: string; pnl: number }>;
+    if (effective === 'testnet') {
+      ({ totalValueUsd, realizedPnl, unrealizedPnl, dailyPnl } = testnetBreakdown);
+    } else if (effective === 'mainnet') {
+      ({ totalValueUsd, realizedPnl, unrealizedPnl, dailyPnl } = mainnetBreakdown);
+    } else {
+      totalValueUsd = testnetBreakdown.totalValueUsd + mainnetBreakdown.totalValueUsd;
+      realizedPnl = testnetBreakdown.realizedPnl + mainnetBreakdown.realizedPnl;
+      unrealizedPnl = testnetBreakdown.unrealizedPnl + mainnetBreakdown.unrealizedPnl;
+      const merged = new Map<string, number>();
+      for (const [d, v] of testnetView.deltas) merged.set(d, (merged.get(d) ?? 0) + v);
+      for (const [d, v] of mainnetView.deltas) merged.set(d, (merged.get(d) ?? 0) + v);
+      dailyPnl = this.toCumulative(merged);
     }
 
-    return balances;
+    return {
+      network: effective,
+      totalValueUsd,
+      realizedPnl,
+      unrealizedPnl,
+      assets,
+      dailyPnl,
+      byNetwork: { testnet: testnetBreakdown, mainnet: mainnetBreakdown },
+    };
   }
 
   private buildAvgCostMap(
@@ -185,7 +190,9 @@ export class PortfolioService {
     const aggregates = new Map<string, { totalCost: number; totalQty: number }>();
 
     for (const order of orders) {
-      if (order.side !== 'buy') continue;
+      // Treat futures 'long' as buy, 'short' as sell for spot-style cost basis.
+      const isBuy = order.side === 'buy' || order.side === 'long';
+      if (!isBuy) continue;
 
       const qty = parseFloat(order.filledQuantity);
       const price = parseFloat(order.filledPrice);
@@ -231,13 +238,25 @@ export class PortfolioService {
       filledQuantity: string;
       filledPrice: string;
       fee: string;
+      realizedPnl?: string | null;
     }>,
     avgCostMap: Map<string, number>,
   ): number {
     let realized = 0;
 
     for (const order of orders) {
-      if (order.side !== 'sell') continue;
+      // Prefer Binance-reported realizedPnl when present (futures positions
+      // closed via TP/SL/manual). Falls back to spot-style cost basis math.
+      if (order.realizedPnl) {
+        const r = parseFloat(order.realizedPnl);
+        if (Number.isFinite(r) && r !== 0) {
+          realized += r;
+          continue;
+        }
+      }
+
+      const isSell = order.side === 'sell' || order.side === 'short';
+      if (!isSell) continue;
 
       const qty = parseFloat(order.filledQuantity);
       const price = parseFloat(order.filledPrice);
@@ -256,36 +275,48 @@ export class PortfolioService {
     return Math.round(realized * 100) / 100;
   }
 
-  private calculateDailyPnl(
+  private dailyDeltaMap(
     orders: Array<{
       createdAt: Date;
       side: string;
       filledQuantity: string;
       filledPrice: string;
       fee: string;
+      realizedPnl?: string | null;
     }>,
-  ): Array<{ date: string; pnl: number }> {
+  ): Map<string, number> {
     const dailyMap = new Map<string, number>();
 
     for (const order of orders) {
       const date = order.createdAt.toISOString().split('T')[0];
+      const current = dailyMap.get(date) || 0;
+
+      if (order.realizedPnl) {
+        const r = parseFloat(order.realizedPnl);
+        if (Number.isFinite(r) && r !== 0) {
+          dailyMap.set(date, current + r);
+          continue;
+        }
+      }
+
       const qty = parseFloat(order.filledQuantity);
       const price = parseFloat(order.filledPrice);
       const fee = parseFloat(order.fee);
       const value = qty * price;
+      const isSell = order.side === 'sell' || order.side === 'short';
 
-      const current = dailyMap.get(date) || 0;
-      if (order.side === 'sell') {
-        dailyMap.set(date, current + value - fee);
-      } else {
-        dailyMap.set(date, current - value - fee);
-      }
+      dailyMap.set(date, isSell ? current + value - fee : current - value - fee);
     }
+    return dailyMap;
+  }
 
+  private toCumulative(deltas: Map<string, number>): Array<{ date: string; pnl: number }> {
     let cumulative = 0;
-    return Array.from(dailyMap.entries()).map(([date, pnl]) => {
-      cumulative += pnl;
-      return { date, pnl: Math.round(cumulative * 100) / 100 };
-    });
+    return Array.from(deltas.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([date, pnl]) => {
+        cumulative += pnl;
+        return { date, pnl: Math.round(cumulative * 100) / 100 };
+      });
   }
 }

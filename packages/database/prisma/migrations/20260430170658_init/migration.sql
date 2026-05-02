@@ -38,6 +38,7 @@ CREATE TABLE "ExchangeKey" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
     "exchange" TEXT NOT NULL,
+    "network" TEXT NOT NULL DEFAULT 'mainnet',
     "apiKey" TEXT NOT NULL,
     "secretKey" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -64,6 +65,17 @@ CREATE TABLE "Order" (
     "filledPrice" TEXT NOT NULL DEFAULT '0',
     "fee" TEXT NOT NULL DEFAULT '0',
     "feeCurrency" TEXT NOT NULL DEFAULT '',
+    "leverage" INTEGER,
+    "marginType" TEXT,
+    "positionSide" TEXT,
+    "entryPrice" TEXT,
+    "liquidationPrice" TEXT,
+    "takeProfitPrice" TEXT,
+    "stopLossPrice" TEXT,
+    "tpOrderId" TEXT,
+    "slOrderId" TEXT,
+    "realizedPnl" TEXT,
+    "closedAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -113,6 +125,32 @@ CREATE TABLE "LoginHistory" (
 );
 
 -- CreateTable
+CREATE TABLE "ClaudeToken" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "encryptedToken" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "ClaudeToken_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "LlmDecisionLog" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "orderId" TEXT,
+    "prompt" TEXT NOT NULL,
+    "rawResponse" TEXT NOT NULL,
+    "parsedSignal" JSONB NOT NULL,
+    "model" TEXT NOT NULL,
+    "latencyMs" INTEGER NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "LlmDecisionLog_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Candle" (
     "id" TEXT NOT NULL,
     "exchange" TEXT NOT NULL,
@@ -151,7 +189,7 @@ CREATE INDEX "RefreshToken_expiresAt_idx" ON "RefreshToken"("expiresAt");
 CREATE INDEX "ExchangeKey_userId_idx" ON "ExchangeKey"("userId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ExchangeKey_userId_exchange_key" ON "ExchangeKey"("userId", "exchange");
+CREATE UNIQUE INDEX "ExchangeKey_userId_exchange_network_key" ON "ExchangeKey"("userId", "exchange", "network");
 
 -- CreateIndex
 CREATE INDEX "Order_userId_idx" ON "Order"("userId");
@@ -184,6 +222,15 @@ CREATE INDEX "SagaExecution_sagaType_status_idx" ON "SagaExecution"("sagaType", 
 CREATE INDEX "LoginHistory_userId_createdAt_idx" ON "LoginHistory"("userId", "createdAt");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "ClaudeToken_userId_key" ON "ClaudeToken"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "LlmDecisionLog_orderId_key" ON "LlmDecisionLog"("orderId");
+
+-- CreateIndex
+CREATE INDEX "LlmDecisionLog_userId_createdAt_idx" ON "LlmDecisionLog"("userId", "createdAt");
+
+-- CreateIndex
 CREATE INDEX "Candle_exchange_symbol_interval_idx" ON "Candle"("exchange", "symbol", "interval");
 
 -- CreateIndex
@@ -212,3 +259,12 @@ ALTER TABLE "NotificationSetting" ADD CONSTRAINT "NotificationSetting_userId_fke
 
 -- AddForeignKey
 ALTER TABLE "LoginHistory" ADD CONSTRAINT "LoginHistory_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ClaudeToken" ADD CONSTRAINT "ClaudeToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LlmDecisionLog" ADD CONSTRAINT "LlmDecisionLog_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "LlmDecisionLog" ADD CONSTRAINT "LlmDecisionLog_orderId_fkey" FOREIGN KEY ("orderId") REFERENCES "Order"("id") ON DELETE SET NULL ON UPDATE CASCADE;

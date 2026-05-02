@@ -34,6 +34,7 @@ export class GetBalancesHandler implements IQueryHandler<GetBalancesQuery> {
     const credentials: ExchangeCredentials = {
       apiKey: decrypt(key.apiKey, this.masterKey),
       secretKey: decrypt(key.secretKey, this.masterKey),
+      network: (key.network as 'mainnet' | 'testnet') ?? 'mainnet',
     };
 
     return adapter.getBalances(credentials);

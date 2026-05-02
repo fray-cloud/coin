@@ -1,5 +1,10 @@
 FROM node:20-alpine
 RUN corepack enable && corepack prepare pnpm@9.15.4 --activate
+
+# Claude Code CLI (used by api-server LLM signal flow). Pure Node package, no
+# native deps, so it installs cleanly on alpine.
+RUN npm install -g @anthropic-ai/claude-code && claude --version
+
 WORKDIR /app
 
 # Install all monorepo dependencies

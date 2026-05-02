@@ -26,10 +26,12 @@ export class CreateExchangeKeyHandler implements ICommandHandler<CreateExchangeK
 
   async execute(command: CreateExchangeKeyCommand) {
     const { userId, dto } = command;
+    const network = ((dto as { network?: string }).network ?? 'mainnet') as 'mainnet' | 'testnet';
 
     const credentials: ExchangeCredentials = {
       apiKey: dto.apiKey,
       secretKey: dto.secretKey,
+      network,
     };
 
     // Validate key by calling getBalances
@@ -45,7 +47,7 @@ export class CreateExchangeKeyHandler implements ICommandHandler<CreateExchangeK
 
     const exchangeKey = await this.prisma.exchangeKey.upsert({
       where: {
-        userId_exchange: { userId, exchange: dto.exchange },
+        userId_exchange_network: { userId, exchange: dto.exchange, network },
       },
       update: {
         apiKey: encrypt(dto.apiKey, this.masterKey),
@@ -54,6 +56,7 @@ export class CreateExchangeKeyHandler implements ICommandHandler<CreateExchangeK
       create: {
         userId,
         exchange: dto.exchange,
+        network,
         apiKey: encrypt(dto.apiKey, this.masterKey),
         secretKey: encrypt(dto.secretKey, this.masterKey),
       },

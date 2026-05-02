@@ -13,6 +13,10 @@ import { OrdersModule } from './orders/orders.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
 import { ActivityModule } from './activity/activity.module';
+import { ClaudeTokensModule } from './claude-tokens/claude-tokens.module';
+import { LlmTradesModule } from './llm-trades/llm-trades.module';
+import { DashboardModule } from './dashboard/dashboard.module';
+import { DebugModule } from './debug/debug.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 
 @Module({
@@ -48,6 +52,10 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
     NotificationsModule,
     PortfolioModule,
     ActivityModule,
+    ClaudeTokensModule,
+    LlmTradesModule,
+    DashboardModule,
+    DebugModule,
   ],
   controllers: [AppController],
   providers: [

@@ -1,6 +1,8 @@
+export type PortfolioNetwork = 'testnet' | 'mainnet' | 'all';
+
 export class GetPortfolioSummaryQuery {
   constructor(
     public readonly userId: string,
-    public readonly mode?: 'paper' | 'real' | 'all',
+    public readonly network?: PortfolioNetwork,
   ) {}
 }

@@ -2,7 +2,7 @@ import { Logger } from '@nestjs/common';
 import { Producer } from 'kafkajs';
 import { KAFKA_TOPICS } from '@coin/kafka-contracts';
 import type { OrderRequestedEvent } from '@coin/kafka-contracts';
-import type { ExchangeId } from '@coin/types';
+import type { ExchangeId, PositionSide, MarginType } from '@coin/types';
 import type { SagaStep } from '../../saga/saga-step.interface';
 import { PrismaService } from '../../prisma/prisma.service';
 import { randomUUID } from 'crypto';
@@ -17,6 +17,10 @@ export interface OrderLifecycleContext {
   quantity: string;
   price?: string;
   exchangeKeyId?: string;
+  leverage: number;
+  marginType?: string;
+  takeProfitPrice?: string;
+  stopLossPrice?: string;
   orderId?: string;
   requestId?: string;
 }
@@ -40,6 +44,11 @@ export class CreateOrderStep implements SagaStep<OrderLifecycleContext> {
         status: 'pending',
         quantity: context.quantity,
         price: context.price || null,
+        leverage: context.leverage,
+        marginType: context.marginType ?? 'ISOLATED',
+        positionSide: context.side,
+        takeProfitPrice: context.takeProfitPrice,
+        stopLossPrice: context.stopLossPrice,
       },
     });
 
@@ -74,10 +83,14 @@ export class PublishOrderRequestStep implements SagaStep<OrderLifecycleContext> 
       order: {
         exchange: context.exchange as ExchangeId,
         symbol: context.symbol,
-        side: context.side as 'buy' | 'sell',
-        type: context.type as 'limit' | 'market',
+        side: context.side as PositionSide,
+        type: context.type as 'market' | 'limit',
         quantity: context.quantity,
         price: context.price,
+        leverage: context.leverage,
+        marginType: (context.marginType as MarginType | undefined) ?? 'ISOLATED',
+        takeProfitPrice: context.takeProfitPrice,
+        stopLossPrice: context.stopLossPrice,
       },
       mode: context.mode as 'paper' | 'real',
       dbOrderId: context.orderId!,
@@ -93,6 +106,6 @@ export class PublishOrderRequestStep implements SagaStep<OrderLifecycleContext> 
   }
 
   async compensate(_context: OrderLifecycleContext): Promise<void> {
-    // noop — Kafka message already sent, worker will handle idempotency
+    // noop
   }
 }

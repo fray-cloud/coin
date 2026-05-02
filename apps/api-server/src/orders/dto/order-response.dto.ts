@@ -45,6 +45,19 @@ export class OrderResponse {
 
   @ApiProperty({ description: '수정일시' })
   updatedAt!: string;
+
+  @ApiPropertyOptional({
+    description: '종료 사유 (TP/SL/청산/수동/거래소-직접 종료/동기화-사유미상)',
+    enum: [
+      'take_profit',
+      'stop_loss',
+      'liquidation',
+      'manual',
+      'manual_on_exchange',
+      'reconciled_unknown',
+    ],
+  })
+  closeReason?: string | null;
 }
 
 export class OrderListResponse {

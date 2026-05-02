@@ -14,6 +14,25 @@ export interface ActivityItem {
   createdAt: Date;
 }
 
+function formatCloseReason(reason: string): string {
+  switch (reason) {
+    case 'take_profit':
+      return 'TP 익절';
+    case 'stop_loss':
+      return 'SL 손절';
+    case 'liquidation':
+      return '청산';
+    case 'manual':
+      return '수동 종료';
+    case 'manual_on_exchange':
+      return '거래소에서 종료';
+    case 'reconciled_unknown':
+      return '동기화';
+    default:
+      return reason;
+  }
+}
+
 @Injectable()
 export class ActivityService {
   constructor(private readonly prisma: PrismaService) {}
@@ -44,18 +63,21 @@ export class ActivityService {
       }),
     ]);
 
-    const orderItems: ActivityItem[] = orders.map((o) => ({
-      id: `order-${o.id}`,
-      type: 'order' as const,
-      title: `${o.side.toUpperCase()} ${o.symbol}`,
-      description: `${o.type} ${o.quantity} @ ${o.filledPrice !== '0' ? o.filledPrice : o.price || 'market'} (${o.mode})`,
-      exchange: o.exchange,
-      symbol: o.symbol,
-      status: o.status,
-      side: o.side,
-      link: '/orders',
-      createdAt: o.createdAt,
-    }));
+    const orderItems: ActivityItem[] = orders.map((o) => {
+      const reasonSuffix = o.closeReason ? ` · ${formatCloseReason(o.closeReason)}` : '';
+      return {
+        id: `order-${o.id}`,
+        type: 'order' as const,
+        title: `${o.side.toUpperCase()} ${o.symbol}`,
+        description: `${o.type} ${o.quantity} @ ${o.filledPrice !== '0' ? o.filledPrice : o.price || 'market'} (${o.mode})${reasonSuffix}`,
+        exchange: o.exchange,
+        symbol: o.symbol,
+        status: o.closedAt ? 'closed' : o.status,
+        side: o.side,
+        link: `/orders/${o.id}`,
+        createdAt: o.createdAt,
+      };
+    });
 
     const loginItems: ActivityItem[] = logins.map((l) => ({
       id: `login-${l.id}`,
