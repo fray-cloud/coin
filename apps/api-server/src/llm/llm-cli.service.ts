@@ -1,13 +1,11 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
-import type { Candle } from '@coin/types';
 import { runClaudeCli } from './cli-runner';
 import { TRADING_SYSTEM_PROMPT } from './prompts/trading-system';
+import type { MarketContext } from '../llm-trades/market-context/market-context.types';
 
 export interface LlmDecisionInput {
   oauthToken: string;
-  symbol: string;
-  interval: string;
-  candles: Candle[];
+  marketContext: MarketContext;
 }
 
 export interface LlmDecision {
@@ -87,9 +85,9 @@ export class LlmCliService {
           throw new Error(`claude cli exit ${cli.exitCode}: ${cli.stderr.slice(0, 500)}`);
         }
 
-        const decision = this.parse(cli.stdout, input.candles);
+        const decision = this.parse(cli.stdout, input.marketContext);
         this.logger.log(
-          `LLM decision for ${input.symbol}: ${decision.signal} tp=${decision.takeProfitPrice} sl=${decision.stopLossPrice} (${cli.durationMs}ms)`,
+          `LLM decision for ${input.marketContext.symbol}: ${decision.signal} tp=${decision.takeProfitPrice} sl=${decision.stopLossPrice} (${cli.durationMs}ms)`,
         );
         return {
           ...decision,
@@ -106,25 +104,12 @@ export class LlmCliService {
   }
 
   private buildUserPrompt(input: LlmDecisionInput): string {
-    const compact = input.candles.map((c) => ({
-      t: c.timestamp,
-      o: c.open,
-      h: c.high,
-      l: c.low,
-      c: c.close,
-      v: c.volume,
-    }));
-    return [
-      `Symbol: ${input.symbol}`,
-      `Interval: ${input.interval}`,
-      `Candles (${input.candles.length}, oldest → newest):`,
-      JSON.stringify(compact),
-    ].join('\n');
+    return JSON.stringify(input.marketContext);
   }
 
   private parse(
     cliStdout: string,
-    candles: Candle[],
+    marketContext: MarketContext,
   ): Omit<LlmDecision, 'rawResponse' | 'latencyMs' | 'model'> {
     let envelope: { result?: string };
     try {
@@ -159,7 +144,8 @@ export class LlmCliService {
 
     const tp = Number(signal.takeProfitPrice);
     const sl = Number(signal.stopLossPrice);
-    const lastClose = Number(candles[candles.length - 1].close);
+    const lastCandle = marketContext.candles[marketContext.candles.length - 1];
+    const lastClose = Number(lastCandle?.c);
     if (!Number.isFinite(tp) || !Number.isFinite(sl) || !Number.isFinite(lastClose)) {
       throw new BadRequestException('LLM returned non-numeric prices');
     }

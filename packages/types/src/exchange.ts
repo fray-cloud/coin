@@ -159,3 +159,51 @@ export interface IncomeRecord {
   tranId?: string;
   info?: string;
 }
+
+// ── Futures sentiment ────────────────────────────────────────────────
+
+export interface FundingRateRecord {
+  symbol: string;
+  fundingTime: number;
+  fundingRate: string;
+}
+
+export interface OpenInterestSnapshot {
+  symbol: string;
+  /** OI in coin units (Binance USDT-M `openInterest` field). */
+  openInterest: string;
+  timestamp: number;
+}
+
+export interface OpenInterestPoint {
+  symbol: string;
+  /** Coin-denominated OI (`sumOpenInterest` from openInterestHist). */
+  sumOpenInterest: string;
+  /** USDT-denominated OI value (`sumOpenInterestValue` from openInterestHist). */
+  sumOpenInterestValueUsdt: string;
+  timestamp: number;
+}
+
+// ── Indicators (computed by @coin/indicators) ────────────────────────
+
+/** One row aligned with one OHLCV candle. Indicator values are `null`
+ * during the warmup period (when there isn't enough prior data to compute
+ * the value reliably). */
+export interface IndicatorRow {
+  ema20: number | null;
+  ema50: number | null;
+  ema200: number | null;
+  rsi14: number | null;
+  bbUpper: number | null;
+  bbMiddle: number | null;
+  bbLower: number | null;
+  macd: number | null;
+  macdSignal: number | null;
+  macdHistogram: number | null;
+  atr14: number | null;
+}
+
+export interface IndicatorSeries {
+  /** Same length as the input candles array. `rows[i]` corresponds to candles[i]. */
+  rows: IndicatorRow[];
+}
